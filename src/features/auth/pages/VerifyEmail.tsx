@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import AuthLayout from '../components/layout/AuthLayout';
+import AuthLayout from '../../../shared/layouts/AuthLayout';
 
 export default function VerifyEmail() {
   const navigate = useNavigate();
@@ -57,7 +57,7 @@ export default function VerifyEmail() {
     
     if (code.length === 6) {
       try {
-        const response = await fetch('http://localhost:3000/api/auth/verify-email', {
+        const response = await fetch('http://localhost:3000/api/v1/auth/verify-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: code }),
@@ -97,7 +97,7 @@ export default function VerifyEmail() {
             {otp.map((digit, index) => (
               <input
                 key={index}
-                ref={(el) => (inputRefs.current[index] = el)}
+                ref={(el) => { inputRefs.current[index] = el; }}
                 type="text"
                 inputMode="numeric"
                 maxLength={6} // Allow paste of full code
@@ -112,10 +112,10 @@ export default function VerifyEmail() {
 
           <button
             type="submit"
-            disabled={otp.join('').length !== 6}
+            disabled={otp.join('').length !== 6 || isLoading}
             className="w-full bg-[#0C5A69] hover:bg-[#084855] disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none text-white font-semibold py-3.5 rounded-xl transition-all shadow-[0_4px_14px_0_rgba(12,90,105,0.2)] hover:shadow-[0_6px_20px_rgba(12,90,105,0.23)] hover:-translate-y-0.5 active:translate-y-0"
           >
-            Verify & Complete Registration
+            {isLoading ? 'Verifying...' : 'Verify & Complete Registration'}
           </button>
         </form>
 

@@ -1,8 +1,10 @@
 import { Plus, Search, Sparkles } from 'lucide-react';
-import CourseCard from '../../components/courses/CourseCard';
-import { mockCourses } from '../../data/mockCourses';
+import CourseCard from '../components/CourseCard';
+import { mockCourses } from '../../../data/mockCourses';
+import { useNavigate } from 'react-router-dom';
 
 export default function CoursesDashboard() {
+  const navigate = useNavigate();
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -13,7 +15,10 @@ export default function CoursesDashboard() {
             Manage and configure all your academic modules and contents
           </p>
         </div>
-        <button className="flex items-center gap-2 bg-primary-800 hover:bg-primary-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+        <button 
+          onClick={() => navigate('/partner/courses/create')}
+          className="flex items-center gap-2 bg-primary-800 hover:bg-primary-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+        >
           <Plus className="w-4 h-4" strokeWidth={3} />
           Create Course
         </button>

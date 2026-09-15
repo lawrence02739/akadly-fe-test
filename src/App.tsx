@@ -1,10 +1,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import Login from './pages/Login';
-import DashboardLayout from './components/layout/DashboardLayout';
-import CoursesDashboard from './pages/Courses/CoursesDashboard';
+import Login from './features/auth/pages/Login';
+import DashboardLayout from './shared/layouts/DashboardLayout';
+import CoursesDashboard from './features/courses/pages/CoursesDashboard';
+import CreateCourse from './features/courses/pages/CreateCourse';
 
-import Signup from './pages/Signup';
-import VerifyEmail from './pages/VerifyEmail';
+import Signup from './features/auth/pages/Signup';
+import VerifyEmail from './features/auth/pages/VerifyEmail';
+import ForgotPassword from './features/auth/pages/ForgotPassword';
+import ResetPassword from './features/auth/pages/ResetPassword';
+import AuthCallback from './features/auth/pages/AuthCallback';
 
 function App() {
   return (
@@ -14,10 +18,14 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/verify-email" element={<VerifyEmail />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
         
         {/* Protected Routes (Static for now) */}
         <Route path="/partner" element={<DashboardLayout />}>
           <Route path="courses" element={<CoursesDashboard />} />
+          <Route path="courses/create" element={<CreateCourse />} />
           <Route index element={<Navigate to="/partner/courses" replace />} />
         </Route>
 

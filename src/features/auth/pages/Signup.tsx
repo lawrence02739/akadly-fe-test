@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
-import AuthLayout from '../components/layout/AuthLayout';
+import AuthLayout from '../../../shared/layouts/AuthLayout';
+import api from '../../../shared/api/axios';
 
 export default function Signup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
-
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -14,33 +14,23 @@ export default function Signup() {
     e.preventDefault();
     setIsLoading(true);
     setError(null);
-    
+
     const formData = new FormData(e.currentTarget);
     const fullName = formData.get('fullName') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
 
     try {
-      const response = await fetch('http://localhost:3000/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ownerName: fullName,
-          email: email,
-          password: password,
-          termsAccepted: true
-        }),
+      await api.post('/auth/register', {
+        ownerName: fullName,
+        email,
+        password,
+        termsAccepted: true,
       });
-
-      if (!response.ok) {
-        const data = await response.json().catch(() => null);
-        throw new Error(data?.message || 'Registration failed. Please try again.');
-      }
-
-      // Route to verification after signup submission
       navigate('/verify-email', { state: { email } });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+    } catch (err: any) {
+      const msg = err.response?.data?.message || 'Registration failed. Please try again.';
+      setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setIsLoading(false);
     }
@@ -53,8 +43,9 @@ export default function Signup() {
         <p className="text-slate-500 mb-8">Start your journey with Akadly today.</p>
 
         {/* Google Auth Button */}
-        <button 
-          type="button" 
+        <button
+          type="button"
+          onClick={() => { window.location.href = 'http://localhost:3000/api/v1/auth/google'; }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -110,14 +101,14 @@ export default function Signup() {
             <label className="block text-sm font-medium text-slate-700">Password</label>
             <div className="relative">
               <input
-                type={showPassword ? "text" : "password"}
+                type={showPassword ? 'text' : 'password'}
                 name="password"
                 className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
                 placeholder="Create a strong password"
                 required
               />
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
               >
@@ -133,7 +124,7 @@ export default function Signup() {
               <div className="relative flex items-center justify-center w-5 h-5 border border-slate-300 rounded group-hover:border-[#0C5A69] transition-colors shrink-0 mt-0.5">
                 <input type="checkbox" className="peer sr-only" required />
                 <div className="absolute inset-0 bg-[#0C5A69] rounded opacity-0 peer-checked:opacity-100 transition-opacity flex items-center justify-center">
-                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                  <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 </div>
@@ -150,9 +141,10 @@ export default function Signup() {
           {/* Submit */}
           <button
             type="submit"
-            className="w-full bg-[#0C5A69] hover:bg-[#084855] text-white font-semibold py-3.5 rounded-xl mt-6 transition-all shadow-[0_4px_14px_0_rgba(12,90,105,0.2)] hover:shadow-[0_6px_20px_rgba(12,90,105,0.23)] hover:-translate-y-0.5 active:translate-y-0"
+            disabled={isLoading}
+            className="w-full bg-[#0C5A69] hover:bg-[#084855] disabled:bg-slate-300 disabled:cursor-not-allowed disabled:shadow-none text-white font-semibold py-3.5 rounded-xl mt-6 transition-all shadow-[0_4px_14px_0_rgba(12,90,105,0.2)] hover:shadow-[0_6px_20px_rgba(12,90,105,0.23)] hover:-translate-y-0.5 active:translate-y-0"
           >
-            Create Account
+            {isLoading ? 'Creating Account…' : 'Create Account'}
           </button>
         </form>
 

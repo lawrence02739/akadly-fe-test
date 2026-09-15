@@ -1,12 +1,27 @@
 import { Search, Sparkles, Bell, Calendar, LogOut } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import type { RootState } from '../../store';
+import { logout as logoutAction } from '../../store/authSlice';
+import api from '../api/axios';
 
 export default function TopNav() {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const user = useSelector((state: RootState) => state.auth.user);
+  const auth = useSelector((state: RootState) => state.auth);
 
-  const handleLogout = () => {
-    // Basic logout logic for now
-    localStorage.removeItem('token');
+  console.log("1234", auth);
+
+  const userName = user?.name || 'Instructor';
+
+  const handleLogout = async () => {
+    try {
+      await api.post('/auth/logout');
+    } catch (e) {
+      // Ignore
+    }
+    dispatch(logoutAction());
     navigate('/login');
   };
 
@@ -48,10 +63,10 @@ export default function TopNav() {
             className="w-10 h-10 rounded-full border-2 border-white shadow-sm"
           />
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-slate-800">Akif Ansari</span>
+            <span className="text-sm font-bold text-slate-800">{userName}</span>
             <span className="text-xs text-slate-500 font-medium">Instructor</span>
           </div>
-          <button 
+          <button
             onClick={handleLogout}
             className="ml-4 p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
             title="Log out"

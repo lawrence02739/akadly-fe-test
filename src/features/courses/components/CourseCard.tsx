@@ -1,5 +1,5 @@
 import { Edit3, Copy, BarChart2, Upload, Trash2, Users, Star } from 'lucide-react';
-import type { Course } from '../../data/mockCourses';
+import type { Course } from '../../../data/mockCourses';
 
 export default function CourseCard({ course }: { course: Course }) {
   return (
