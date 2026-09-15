@@ -17,8 +17,10 @@ export default function AuthCallback() {
     const completeAuth = async () => {
       try {
         const { data } = await api.get('/auth/me');
-        if (data.user && mounted) {
-          dispatch(setAuth({ user: data.user }));
+        const user = data?.data?.user || data?.user;
+
+        if (user && mounted) {
+          dispatch(setAuth({ user }));
           navigate('/partner/courses', { replace: true });
         } else if (mounted) {
           navigate('/login', { replace: true });

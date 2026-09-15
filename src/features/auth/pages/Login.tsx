@@ -27,10 +27,9 @@ export default function Login() {
 
       // Cookie is set automatically by the backend
       // Save user to Redux
-      if (data.user) {
-        console.log("8989", data);
-
-        dispatch(setAuth({ user: data.user }));
+      const user = data?.data?.user || data?.user;
+      if (user) {
+        dispatch(setAuth({ user }));
       }
 
       navigate('/partner/courses');
