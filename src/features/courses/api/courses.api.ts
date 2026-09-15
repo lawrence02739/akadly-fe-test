@@ -16,7 +16,8 @@ export const createCourse = async (dto: any) => {
 };
 
 export const updateCourse = async (id: string, dto: any) => {
-  const { data } = await api.patch(`/courses/${id}`, dto);
+  const { id: _id, tenantId, createdAt, updatedAt, __v, nodes, ...updatePayload } = dto;
+  const { data } = await api.patch(`/courses/${id}`, updatePayload);
   return data.data;
 };
 

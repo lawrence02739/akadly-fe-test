@@ -18,14 +18,13 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
       try {
         const file = e.target.files[0];
         const key = `courses/thumbnails/${Date.now()}-${file.name}`;
-        await uploadFile({
+        const fileUrl = await uploadFile({
           file,
           key,
           onProgress: (p) => setProgress(p)
         });
-        // Assuming your presigned URL logic gives back a public URL or similar
-        // For now, we will store the key or the S3 public URL
-        onChange('thumbnail', key);
+        // Store the full S3 public URL
+        onChange('thumbnail', fileUrl);
         alert('Thumbnail uploaded successfully!');
       } catch (err) {
         alert('Failed to upload thumbnail');
@@ -140,9 +139,7 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
             <div className="flex gap-6">
               <div className="w-64 h-36 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center overflow-hidden shrink-0">
                 {courseData.thumbnail ? (
-                  <div className="w-full h-full bg-slate-200 flex items-center justify-center">
-                    <span className="text-xs text-slate-500">Thumbnail Uploaded</span>
-                  </div>
+                  <img src={courseData.thumbnail} alt="Course Thumbnail" className="w-full h-full object-cover" />
                 ) : (
                   <ImageIcon className="w-8 h-8 text-slate-400" />
                 )}

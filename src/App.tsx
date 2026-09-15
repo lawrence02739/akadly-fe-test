@@ -1,4 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
 import Login from './features/auth/pages/Login';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 import CoursesDashboard from './features/courses/pages/CoursesDashboard';
@@ -14,6 +15,7 @@ import AuthCallback from './features/auth/pages/AuthCallback';
 function App() {
   return (
     <Router>
+      <Toaster position="top-right" />
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />

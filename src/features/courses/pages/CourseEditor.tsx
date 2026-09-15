@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, BookOpen, Settings, Layout, Globe, Lock, FileText, Loader2, CheckCircle } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { useCreateCourse, useGetCourse, useUpdateCourse } from '../hooks/useCourses';
 import CourseDetailsTab from '../components/editor/CourseDetailsTab';
 import PricingPlansTab from '../components/editor/PricingPlansTab';
@@ -37,14 +38,14 @@ export default function CourseEditor() {
       if (courseId) {
         await updateCourse({ id: courseId, dto: courseData });
         setSavedCourseId(courseId);
-        setShowSuccessModal(true);
+        toast.success('Course details saved successfully!');
       } else {
         const newCourse = await createCourse(courseData);
         setSavedCourseId(newCourse.id);
         setShowSuccessModal(true);
       }
     } catch (e) {
-      alert('Failed to save course');
+      toast.error('Failed to save course');
     }
   };
 

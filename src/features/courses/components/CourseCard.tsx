@@ -13,7 +13,7 @@ export default function CourseCard({ course }: { course: Course }) {
         onClick={() => navigate(`/partner/courses/${course.id}/edit`)}
       >
         <img 
-          src={course.coverUrl || 'https://images.unsplash.com/photo-1610484826967-09c5720778c7?w=800&auto=format&fit=crop'} 
+          src={(course as any).thumbnail || 'https://images.unsplash.com/photo-1610484826967-09c5720778c7?w=800&auto=format&fit=crop'} 
           alt={course.title} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
