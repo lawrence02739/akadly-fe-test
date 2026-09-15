@@ -2,7 +2,8 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import Login from './features/auth/pages/Login';
 import DashboardLayout from './shared/layouts/DashboardLayout';
 import CoursesDashboard from './features/courses/pages/CoursesDashboard';
-import CreateCourse from './features/courses/pages/CreateCourse';
+import CourseEditor from './features/courses/pages/CourseEditor';
+import CourseStructureBuilder from './features/courses/pages/CourseStructureBuilder';
 
 import Signup from './features/auth/pages/Signup';
 import VerifyEmail from './features/auth/pages/VerifyEmail';
@@ -25,7 +26,9 @@ function App() {
         {/* Protected Routes (Static for now) */}
         <Route path="/partner" element={<DashboardLayout />}>
           <Route path="courses" element={<CoursesDashboard />} />
-          <Route path="courses/create" element={<CreateCourse />} />
+          <Route path="courses/create" element={<CourseEditor />} />
+          <Route path="courses/:courseId/edit" element={<CourseEditor />} />
+          <Route path="courses/:courseId/structure" element={<CourseStructureBuilder />} />
           <Route index element={<Navigate to="/partner/courses" replace />} />
         </Route>
 

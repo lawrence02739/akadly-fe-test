@@ -1,13 +1,19 @@
-import { Edit3, Copy, BarChart2, Upload, Trash2, Users, Star } from 'lucide-react';
+import { Edit3, BarChart2, Trash2, Users, Star, Layout } from 'lucide-react';
 import type { Course } from '../../../data/mockCourses';
+import { useNavigate } from 'react-router-dom';
 
 export default function CourseCard({ course }: { course: Course }) {
+  const navigate = useNavigate();
+
   return (
-    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group flex flex-col">
+    <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-lg transition-shadow group flex flex-col relative">
       {/* Cover Image */}
-      <div className="h-40 w-full overflow-hidden relative">
+      <div 
+        className="h-40 w-full overflow-hidden relative cursor-pointer"
+        onClick={() => navigate(`/partner/courses/${course.id}/edit`)}
+      >
         <img 
-          src={course.coverUrl} 
+          src={course.coverUrl || 'https://images.unsplash.com/photo-1610484826967-09c5720778c7?w=800&auto=format&fit=crop'} 
           alt={course.title} 
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
         />
@@ -20,8 +26,8 @@ export default function CourseCard({ course }: { course: Course }) {
         {/* Tags */}
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
-            {course.tags.map(tag => (
-              <span key={tag} className="text-xs font-semibold px-2 py-1 bg-slate-100 text-primary-700 rounded-md">
+            {(course.tags || [(course as any).category || 'Course']).slice(0, 2).map((tag, i) => (
+              <span key={i} className="text-xs font-semibold px-2 py-1 bg-slate-100 text-primary-700 rounded-md">
                 {tag}
               </span>
             ))}
@@ -47,10 +53,10 @@ export default function CourseCard({ course }: { course: Course }) {
 
         {/* Author */}
         <div className="flex items-center gap-3 mb-4">
-          <img src={course.author.avatar} alt={course.author.name} className="w-8 h-8 rounded-full border border-slate-200" />
+          <img src={course.author?.avatar || 'https://ui-avatars.com/api/?name=Instructor&background=f1f5f9'} alt={course.author?.name || 'Instructor'} className="w-8 h-8 rounded-full border border-slate-200" />
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-800">{course.author.name}</span>
-            <span className="text-[10px] text-slate-500 font-medium">{course.author.role}</span>
+            <span className="text-xs font-bold text-slate-800">{course.author?.name || 'Instructor'}</span>
+            <span className="text-[10px] text-slate-500 font-medium">{course.author?.role || 'Teacher'}</span>
           </div>
         </div>
 
@@ -59,15 +65,15 @@ export default function CourseCard({ course }: { course: Course }) {
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-1.5 text-slate-500">
               <Users className="w-4 h-4" />
-              <span className="text-xs font-semibold">{course.stats.users}</span>
+              <span className="text-xs font-semibold">{course.stats?.users || 0}</span>
             </div>
             <div className="flex items-center gap-1.5 text-slate-500">
               <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
-              <span className="text-xs font-semibold">{course.stats.rating}</span>
+              <span className="text-xs font-semibold">{course.stats?.rating || '0.0'}</span>
             </div>
           </div>
           <div className="text-right">
-            {course.price === 0 ? (
+            {(!course.price || course.price === 0) ? (
               <span className="text-sm font-bold text-slate-800">Free <span className="text-xs text-slate-400 font-medium">/ plan</span></span>
             ) : (
               <span className="text-sm font-bold text-slate-800">${course.price} <span className="text-xs text-slate-400 font-medium">/ one-time</span></span>
@@ -77,10 +83,21 @@ export default function CourseCard({ course }: { course: Course }) {
 
         {/* Footer Actions */}
         <div className="flex items-center justify-between pt-4 text-slate-400">
-          <button className="hover:text-primary-600 transition-colors p-1"><Edit3 className="w-4 h-4" /></button>
-          <button className="hover:text-primary-600 transition-colors p-1"><Copy className="w-4 h-4" /></button>
+          <button 
+             onClick={() => navigate(`/partner/courses/${course.id}/edit`)}
+             title="Edit Course Details"
+             className="hover:text-primary-600 transition-colors p-1"
+          >
+             <Edit3 className="w-4 h-4" />
+          </button>
+          <button 
+             onClick={() => navigate(`/partner/courses/${course.id}/structure`)}
+             title="Course Builder"
+             className="hover:text-primary-600 transition-colors p-1 text-primary-500"
+          >
+             <Layout className="w-4 h-4" />
+          </button>
           <button className="hover:text-primary-600 transition-colors p-1"><BarChart2 className="w-4 h-4" /></button>
-          <button className="hover:text-primary-600 transition-colors p-1"><Upload className="w-4 h-4" /></button>
           <button className="hover:text-rose-500 transition-colors p-1"><Trash2 className="w-4 h-4" /></button>
         </div>
       </div>

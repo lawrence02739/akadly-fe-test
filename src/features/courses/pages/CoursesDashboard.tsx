@@ -1,10 +1,12 @@
-import { Plus, Search, Sparkles } from 'lucide-react';
+import { Plus, Search, Sparkles, Loader2 } from 'lucide-react';
 import CourseCard from '../components/CourseCard';
-import { mockCourses } from '../../../data/mockCourses';
 import { useNavigate } from 'react-router-dom';
+import { useListCourses } from '../hooks/useCourses';
 
 export default function CoursesDashboard() {
   const navigate = useNavigate();
+  const { data: courses, isLoading, isError } = useListCourses();
+
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       {/* Header */}
@@ -66,11 +68,23 @@ export default function CoursesDashboard() {
       </div>
 
       {/* Course Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {mockCourses.map((course) => (
-          <CourseCard key={course.id} course={course} />
-        ))}
-      </div>
+      {isLoading ? (
+        <div className="py-12 flex justify-center">
+           <Loader2 className="w-8 h-8 animate-spin text-primary-600" />
+        </div>
+      ) : isError ? (
+        <div className="py-12 text-center text-red-500">Failed to load courses.</div>
+      ) : courses?.length === 0 ? (
+        <div className="py-12 text-center text-slate-500 bg-white rounded-xl border border-slate-200">
+           No courses created yet. Click "Create Course" to get started.
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {courses?.map((course: any) => (
+            <CourseCard key={course.id} course={course} />
+          ))}
+        </div>
+      )}
 
       {/* Pagination Footer */}
       <div className="flex items-center justify-between pt-4">
