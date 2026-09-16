@@ -42,4 +42,6 @@ export interface CreateCourseNodeDto {
 export interface UpdateCourseNodeDto {
   title?: string;
   content?: any;
+  parentId?: string;
+  sequence?: number;
 }

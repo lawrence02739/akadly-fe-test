@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, BookOpen, Settings, Layout, Globe, Lock, FileText, Loader2, CheckCircle } from 'lucide-react';
+import { ArrowLeft, BookOpen, Settings, Globe, Lock, FileText, Loader2, CheckCircle } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useCreateCourse, useGetCourse, useUpdateCourse } from '../hooks/useCourses';
 import CourseDetailsTab from '../components/editor/CourseDetailsTab';

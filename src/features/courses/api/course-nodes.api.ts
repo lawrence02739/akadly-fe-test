@@ -5,17 +5,17 @@ import api from '../../../shared/api/axios';
 
 export const fetchCourseNodes = async (courseId: string): Promise<CourseNode[]> => {
   const { data } = await api.get(`/courses/${courseId}/nodes`);
-  return data;
+  return data.data;
 };
 
 export const createCourseNode = async (courseId: string, dto: CreateCourseNodeDto): Promise<CourseNode> => {
   const { data } = await api.post(`/courses/${courseId}/nodes`, dto);
-  return data;
+  return data.data;
 };
 
 export const updateCourseNode = async (courseId: string, nodeId: string, dto: UpdateCourseNodeDto): Promise<CourseNode> => {
   const { data } = await api.patch(`/courses/${courseId}/nodes/${nodeId}`, dto);
-  return data;
+  return data.data;
 };
 
 export const deleteCourseNode = async (courseId: string, nodeId: string): Promise<void> => {
