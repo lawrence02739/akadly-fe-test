@@ -1,8 +1,9 @@
 import { Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
 import { useUpload } from '../../hooks/useUpload';
+import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import CreatableDropdown from '../../../../shared/components/CreatableDropdown';
-import { useCategories, useTags, useCreateCategory, useCreateTag } from '../../hooks/useMasterData';
+import { useCategories, useTags, useCreateCategory, useCreateTag, useInstructors } from '../../hooks/useMasterData';
 
 export default function CourseDetailsTab({ courseData, onChange, onSave, isSaving }: { courseData: any, onChange: (field: string, value: any) => void, onSave: () => void, isSaving: boolean }) {
   const { mutateAsync: uploadFile, isPending } = useUpload();
@@ -10,6 +11,7 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
 
   const { data: categories } = useCategories();
   const { data: tagsList } = useTags();
+  const { data: instructors } = useInstructors();
   const { mutateAsync: createCategory, isPending: isCreatingCategory } = useCreateCategory();
   const { mutateAsync: createTag, isPending: isCreatingTag } = useCreateTag();
 
@@ -25,9 +27,9 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
         });
         // Store the full S3 public URL
         onChange('thumbnail', fileUrl);
-        alert('Thumbnail uploaded successfully!');
+        toast.success('Thumbnail uploaded successfully!');
       } catch (err) {
-        alert('Failed to upload thumbnail');
+        toast.error('Failed to upload thumbnail');
       }
     }
   };
@@ -115,23 +117,39 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">Select Instructor</option>
-                <option value="1">Jane Doe</option>
-                <option value="2">John Smith</option>
+                {instructors?.map((inst: any) => (
+                  <option key={inst.id} value={inst.id}>
+                    {inst.name}
+                  </option>
+                ))}
               </select>
             </div>
           </div>
 
-          <div>
-            <CreatableDropdown
-              label="Tags"
-              items={tagsList || []}
-              value={courseData.tags || []}
-              onChange={(val: any) => onChange('tags', val)}
-              onCreate={(name: string) => createTag(name)}
-              isCreating={isCreatingTag}
-              multiple={true}
-              placeholder="Select or type tags..."
-            />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <CreatableDropdown
+                label="Tags"
+                items={tagsList || []}
+                value={courseData.tags || []}
+                onChange={(val: any) => onChange('tags', val)}
+                onCreate={(name: string) => createTag(name)}
+                isCreating={isCreatingTag}
+                multiple={true}
+                placeholder="Select or type tags..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">Status</label>
+              <select
+                value={courseData.status || 'DRAFT'}
+                onChange={(e) => onChange('status', e.target.value)}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+              >
+                <option value="DRAFT">Draft</option>
+                <option value="PUBLISHED">Published</option>
+              </select>
+            </div>
           </div>
 
           <div className="pt-4 border-t border-slate-200">

@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchMasterData, createMasterData } from '../api/master-data.api';
+import { fetchMasterData, createMasterData, fetchInstructors } from '../api/master-data.api';
 
 export const useCategories = () => {
   return useQuery({
@@ -32,5 +32,12 @@ export const useCreateTag = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['tags'] });
     },
+  });
+};
+
+export const useInstructors = () => {
+  return useQuery({
+    queryKey: ['instructors'],
+    queryFn: fetchInstructors,
   });
 };

@@ -18,3 +18,8 @@ export const createMasterData = async (type: 'CATEGORY' | 'TAG', name: string): 
   const { data } = await api.post('/master-data', { type, name });
   return data.data || data; // handle both wrapped and unwrapped just in case
 };
+
+export const fetchInstructors = async (): Promise<{ id: string, name: string, email: string }[]> => {
+  const { data } = await api.get('/auth/users');
+  return data.data.users;
+};

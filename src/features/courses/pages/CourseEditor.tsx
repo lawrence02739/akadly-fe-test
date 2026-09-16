@@ -92,16 +92,7 @@ export default function CourseEditor() {
             );
           })}
 
-          {/* Action button in sidebar to Course Builder */}
-          {courseId && (
-            <button
-              onClick={() => navigate(`/partner/courses/${courseId}/structure`)}
-              className="w-full mt-4 flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium text-primary-700 bg-primary-50 hover:bg-primary-100 transition-colors"
-            >
-              <Layout className="w-4 h-4 text-primary-600" />
-              Course Builder
-            </button>
-          )}
+
         </nav>
       </div>
 
@@ -109,12 +100,9 @@ export default function CourseEditor() {
       <div className="flex-1">
         {activeTab === 'details' && <CourseDetailsTab courseData={courseData} onChange={handleFieldChange} onSave={handleSave} isSaving={isCreating || isUpdating} />}
         {activeTab === 'pricing' && <PricingPlansTab courseData={courseData} onChange={handleFieldChange} onSave={handleSave} isSaving={isCreating || isUpdating} />}
-        {activeTab === 'landing' && <LandingPagesTab onSave={handleSave} isSaving={isCreating || isUpdating} />}
-        {activeTab === 'advanced' && <AdvancedSettingsTab onSave={handleSave} isSaving={isCreating || isUpdating} />}
-        {activeTab === 'access' && <AccessControlTab onSave={handleSave} isSaving={isCreating || isUpdating} />}
-
-        {/* Sticky Footer */}
-
+        {activeTab === 'landing' && <LandingPagesTab courseData={courseData} onChange={handleFieldChange} onSave={handleSave} isSaving={isCreating || isUpdating} />}
+        {activeTab === 'advanced' && <AdvancedSettingsTab courseData={courseData} onChange={handleFieldChange} onSave={handleSave} isSaving={isCreating || isUpdating} />}
+        {activeTab === 'access' && <AccessControlTab courseData={courseData} onChange={handleFieldChange} onSave={handleSave} isSaving={isCreating || isUpdating} />}
       </div>
 
       {/* Success Modal */}
@@ -131,13 +119,13 @@ export default function CourseEditor() {
               Your course details have been successfully saved.
             </p>
             <div className="flex flex-col gap-3 w-full">
-              <button 
+              <button
                 onClick={() => navigate(`/partner/courses/${savedCourseId}/structure`)}
                 className="w-full py-2.5 bg-primary-600 hover:bg-primary-700 text-white rounded-lg font-medium transition-colors"
               >
                 Continue to Course Builder
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setShowSuccessModal(false);
                   if (!courseId && savedCourseId) {
