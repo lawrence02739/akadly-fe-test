@@ -8,11 +8,11 @@ import {
 } from 'lucide-react';
 import {
   DndContext, DragOverlay, PointerSensor, KeyboardSensor,
-  useSensor, useSensors, closestCenter, pointerWithin,
-  rectIntersection, getFirstCollision
+  useSensor, useSensors, pointerWithin,
+  rectIntersection
 } from '@dnd-kit/core';
 import type {
-  DragEndEvent, DragStartEvent, DragOverEvent,
+  DragEndEvent, DragStartEvent,
   UniqueIdentifier, CollisionDetection
 } from '@dnd-kit/core';
 import {
@@ -47,7 +47,6 @@ export default function CourseStructureBuilder() {
 
   // ── local optimistic state ────────────────────────────────────────────────
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
-  const [overId, setOverId] = useState<UniqueIdentifier | null>(null);
 
   // Backend Integration
   const { data: rawNodes, isLoading } = useCourseNodes(courseId as string);
@@ -56,8 +55,8 @@ export default function CourseStructureBuilder() {
   const { mutate: updateNode } = useUpdateCourseNode();
 
   // Transform flat nodes → { modules, itemsByModule }
-  const { modules, itemsByModule, allIds } = useMemo(() => {
-    if (!rawNodes) return { modules: [], itemsByModule: {}, allIds: [] };
+  const { modules, itemsByModule } = useMemo(() => {
+    if (!rawNodes) return { modules: [], itemsByModule: {} };
     const mods = rawNodes
       .filter((n: any) => n.type === 'MODULE')
       .sort((a: any, b: any) => a.sequence - b.sequence);
@@ -67,11 +66,7 @@ export default function CourseStructureBuilder() {
         .filter((n: any) => n.parentId === m.id)
         .sort((a: any, b: any) => a.sequence - b.sequence);
     }
-    const allIds: UniqueIdentifier[] = [
-      ...mods.map((m: any) => m.id),
-      ...Object.values(ibm).flat().map((i: any) => i.id),
-    ];
-    return { modules: mods, itemsByModule: ibm, allIds };
+    return { modules: mods, itemsByModule: ibm };
   }, [rawNodes]);
 
   // helper: which module does an item belong to?
@@ -119,13 +114,8 @@ export default function CourseStructureBuilder() {
     setActiveId(active.id);
   };
 
-  const handleDragOver = ({ active, over }: DragOverEvent) => {
-    setOverId(over?.id ?? null);
-  };
-
   const handleDragEnd = ({ active, over }: DragEndEvent) => {
     setActiveId(null);
-    setOverId(null);
     if (!over) return;
 
     const ovr = over.id;
@@ -259,7 +249,6 @@ export default function CourseStructureBuilder() {
           sensors={sensors}
           collisionDetection={collisionDetection}
           onDragStart={handleDragStart}
-          onDragOver={handleDragOver}
           onDragEnd={handleDragEnd}
         >
           {/* Left Panel – Palette */}
@@ -308,7 +297,6 @@ export default function CourseStructureBuilder() {
                       onSelectItem={setSelectedItem}
                       onDeleteNode={handleDeleteNode}
                       isPreviewMode={isPreviewMode}
-                      activeId={activeId}
                     />
                   ))}
                 </SortableContext>
@@ -374,14 +362,13 @@ export default function CourseStructureBuilder() {
 
 // ─── SortableModule ──────────────────────────────────────────────────────────
 function SortableModule({
-  module, items, onSelectItem, onDeleteNode, isPreviewMode, activeId
+  module, items, onSelectItem, onDeleteNode, isPreviewMode
 }: {
   module: any;
   items: any[];
   onSelectItem: (item: any) => void;
   onDeleteNode: (id: string) => void;
   isPreviewMode?: boolean;
-  activeId: UniqueIdentifier | null;
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
