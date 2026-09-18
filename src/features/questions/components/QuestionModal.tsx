@@ -54,7 +54,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const [matchColI, setMatchColI] = useState<{text: string; match: string}[]>([
     { text: '', match: '' }, { text: '', match: '' }
   ]);
-  const [matchColII, setMatchColII] = useState('');
+  const [matchColII, setMatchColII] = useState<string[]>(['', '']);
 
   useEffect(() => {
     if (isOpen) {
@@ -78,7 +78,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           setNumericRange(!!question.range);
         } else if (question.type === 'MATCH') {
           setMatchColI(question.colI?.length ? [...question.colI] : [{ text: '', match: '' }, { text: '', match: '' }]);
-          setMatchColII(question.colII ? question.colII.join('\n') : '');
+          setMatchColII(question.colII?.length ? [...question.colII] : ['', '']);
         }
       } else {
         setType('SINGLE');
@@ -96,7 +96,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         setNumericAnswer('');
         setNumericRange(false);
         setMatchColI([{ text: '', match: '' }, { text: '', match: '' }]);
-        setMatchColII('');
+        setMatchColII(['', '']);
       }
       setShowAdvanced(false);
     }
@@ -127,8 +127,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         alert('Fill in every Column I row.');
         return;
       }
-      if (!matchColII.trim()) {
-        alert('Column II options are required.');
+      if (matchColII.filter(o => o.trim() !== '').length < 2) {
+        alert('At least two Column II options are required.');
         return;
       }
     } else if (type === 'NUMERIC') {
@@ -159,7 +159,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
       dto.range = numericRange ? 1 : 0;
     } else if (type === 'MATCH') {
       dto.colI = matchColI;
-      dto.colII = matchColII.split('\n');
+      dto.colII = matchColII.filter(o => o.trim() !== '');
     }
 
     await onSave(dto);
@@ -250,11 +250,43 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     } else if (type === 'MATCH') {
       return (
         <>
-          <div className="section-label">Column I options <span className="req">*</span></div>
-          <div className="field-hint-row">Enter Column I options in the same sequence as Column II.</div>
+          <div className="section-label">Column II options (Answers) <span className="req">*</span></div>
+          <div className="field-hint-row">e.g. A. 18th century, B. 20th century. Provide the options here first.</div>
+          <div style={{ marginBottom: '24px' }}>
+            {matchColII.map((text, i) => (
+              <div key={i} className="match-row" style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
+                <input
+                  type="text"
+                  placeholder={`Option e.g. ${String.fromCharCode(65 + i)}. `}
+                  value={text}
+                  onChange={(e) => {
+                    const newColII = [...matchColII];
+                    newColII[i] = e.target.value;
+                    setMatchColII(newColII);
+                  }}
+                  style={{ flex: 1 }}
+                />
+                {matchColII.length > 2 ? (
+                  <button className="opt-remove" onClick={() => {
+                    const newColII = [...matchColII];
+                    newColII.splice(i, 1);
+                    setMatchColII(newColII);
+                  }}>
+                    <Trash2 size={15} />
+                  </button>
+                ) : <span style={{ width: '31px' }} />}
+              </div>
+            ))}
+            <button className="add-opt-btn" onClick={() => setMatchColII([...matchColII, ''])}>
+              <Plus size={13} strokeWidth={2.6} /> Add option
+            </button>
+          </div>
+
+          <div className="section-label">Column I options (Questions) <span className="req">*</span></div>
+          <div className="field-hint-row">Enter Column I items and select their correct match from Column II.</div>
           <div>
             {matchColI.map((p, i) => (
-              <div key={i} className="match-row">
+              <div key={i} className="match-row" style={{ display: 'flex', gap: '10px', marginBottom: '8px' }}>
                 <input
                   type="text"
                   placeholder="Option text"
@@ -264,17 +296,29 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     newColI[i].text = e.target.value;
                     setMatchColI(newColI);
                   }}
+                  style={{ flex: 1 }}
                 />
-                <input
-                  type="text"
-                  placeholder="Correct match e.g. A"
+                <select
                   value={p.match}
                   onChange={(e) => {
                     const newColI = [...matchColI];
                     newColI[i].match = e.target.value;
                     setMatchColI(newColI);
                   }}
-                />
+                  style={{ width: '200px' }}
+                >
+                  <option value="">Select match...</option>
+                  {matchColII.map((col2Item, idx) => {
+                    const trimmed = col2Item.trim();
+                    if (!trimmed) return null;
+                    const matchId = col2Item.includes('.') ? col2Item.split('.')[0].trim() : String.fromCharCode(65 + idx);
+                    return (
+                      <option key={idx} value={matchId}>
+                        {trimmed.length > 30 ? trimmed.substring(0, 30) + '...' : trimmed}
+                      </option>
+                    );
+                  })}
+                </select>
                 {matchColI.length > 2 ? (
                   <button className="opt-remove" onClick={() => {
                     const newColI = [...matchColI];
@@ -283,23 +327,13 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                   }}>
                     <Trash2 size={15} />
                   </button>
-                ) : <span />}
+                ) : <span style={{ width: '31px' }} />}
               </div>
             ))}
           </div>
           <button className="add-opt-btn" onClick={() => setMatchColI([...matchColI, { text: '', match: '' }])}>
             <Plus size={13} strokeWidth={2.6} /> Add row
           </button>
-          
-          <div className="section-label">Column II options <span className="req">*</span></div>
-          <div className="field-hint-row">e.g. A, B, C, D or I, II, III, IV — one per line.</div>
-          <div className="field full">
-            <textarea
-              placeholder={`A. 18th century\nB. 20th century`}
-              value={matchColII}
-              onChange={(e) => setMatchColII(e.target.value)}
-            />
-          </div>
         </>
       );
     } else if (type === 'SUBJECTIVE') {
@@ -337,7 +371,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     setType(t.id);
                     if (t.id === 'SINGLE' || t.id === 'MULTIPLE') setOptions([{ text: '', correct: false }, { text: '', correct: false }]);
                     else if (t.id === 'NUMERIC') { setNumericAnswer(''); setNumericRange(false); }
-                    else if (t.id === 'MATCH') { setMatchColI([{ text: '', match: '' }, { text: '', match: '' }]); setMatchColII(''); }
+                    else if (t.id === 'MATCH') { setMatchColI([{ text: '', match: '' }, { text: '', match: '' }]); setMatchColII(['', '']); }
                   }
                 }}
               >

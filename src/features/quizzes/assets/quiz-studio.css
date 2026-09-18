@@ -190,11 +190,14 @@
 .quiz-studio-root .field input[type=number],
 .quiz-studio-root .field input[type=datetime-local],
 .quiz-studio-root .field select,
-.quiz-studio-root .field textarea {
+.quiz-studio-root .field textarea,
+.quiz-studio-root .match-row input[type=text],
+.quiz-studio-root .match-row select {
   border: 1px solid var(--rule-strong); border-radius: var(--radius-s);
   padding: 9px 11px; background: var(--paper); color: var(--ink); width: 100%;
 }
-.quiz-studio-root .field input:focus, .quiz-studio-root .field select:focus, .quiz-studio-root .field textarea:focus { border-color: var(--indigo); outline: none; }
+.quiz-studio-root .field input:focus, .quiz-studio-root .field select:focus, .quiz-studio-root .field textarea:focus,
+.quiz-studio-root .match-row input:focus, .quiz-studio-root .match-row select:focus { border-color: var(--indigo); outline: none; }
 .quiz-studio-root .field textarea { resize: vertical; min-height: 70px; }
 .quiz-studio-root .radio-row { display: flex; gap: 18px; flex-wrap: wrap; padding-top: 4px; }
 .quiz-studio-root .radio-opt { display: flex; align-items: center; gap: 7px; font-size: 13px; cursor: pointer; margin: 0; }

@@ -7,6 +7,7 @@ import CourseEditor from './features/courses/pages/CourseEditor';
 import CourseStructureBuilder from './features/courses/pages/CourseStructureBuilder';
 import QuizStudioPage from './features/quizzes/pages/QuizStudioPage';
 import TestStudioPage from './features/tests/TestStudioPage';
+import QuestionBankPage from './features/questions/components/QuestionBankPage';
 
 import Signup from './features/auth/pages/Signup';
 import VerifyEmail from './features/auth/pages/VerifyEmail';
@@ -35,6 +36,7 @@ function App() {
           <Route path="courses/:courseId/structure" element={<CourseStructureBuilder />} />
           <Route path="quiz-studio" element={<QuizStudioPage />} />
           <Route path="test-studio" element={<TestStudioPage />} />
+          <Route path="question-bank" element={<QuestionBankPage />} />
           <Route index element={<Navigate to="/partner/courses" replace />} />
         </Route>
 

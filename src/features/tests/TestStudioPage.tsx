@@ -64,33 +64,20 @@ export default function TestStudioPage() {
 
   return (
     <div className="quiz-studio-root max-w-7xl mx-auto w-full h-full flex flex-col">
-      <div className="topbar pt-0 pb-4 px-0">
-        {view === 'dashboard' ? (
-          <div className="crumb"><b>All tests</b></div>
-        ) : (
+
+      <div className="topbar-actions">
+        {activeTest && (
           <>
-            <div className="crumb">
-              <a href="#" onClick={(e) => { e.preventDefault(); handleBackToDashboard(); }} style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>
-                All tests
-              </a>
-              <span>/</span><b>{activeTest?.title}</b>
-            </div>
-            <div className="topbar-actions">
-              {activeTest && (
-                <>
-                  <span className={`status-pill ${activeTest.status.toLowerCase()}`}>
-                    {activeTest.status}
-                  </span>
-                  <button
-                    className="btn btn-sm"
-                    onClick={() => handleToggleStatus(activeTest.id, activeTest.status)}
-                    disabled={updateMutation.isPending}
-                  >
-                    {activeTest.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
-                  </button>
-                </>
-              )}
-            </div>
+            <span className={`status-pill ${activeTest.status.toLowerCase()}`}>
+              {activeTest.status}
+            </span>
+            <button
+              className="btn btn-sm"
+              onClick={() => handleToggleStatus(activeTest.id, activeTest.status)}
+              disabled={updateMutation.isPending}
+            >
+              {activeTest.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
+            </button>
           </>
         )}
       </div>

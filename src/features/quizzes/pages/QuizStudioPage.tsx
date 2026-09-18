@@ -64,34 +64,21 @@ export default function QuizStudioPage() {
 
   return (
     <div className="quiz-studio-root max-w-7xl mx-auto w-full h-full flex flex-col">
-      <div className="topbar pt-0 pb-4 px-0">
-        {view === 'dashboard' ? (
-          <div className="crumb"><b>All quizzes</b></div>
-        ) : (
+
+      <div className="topbar-actions">
+        {activeQuiz && (
           <>
-            <div className="crumb">
-              <a href="#" onClick={(e) => { e.preventDefault(); handleBackToDashboard(); }} style={{ color: 'var(--ink-soft)', textDecoration: 'none' }}>
-                All quizzes
-              </a>
-              <span>/</span><b>{activeQuiz?.title}</b>
-            </div>
-        <div className="topbar-actions">
-          {activeQuiz && (
-            <>
-              <span className={`status-pill ${activeQuiz.status.toLowerCase()}`}>
-                {activeQuiz.status}
-              </span>
-              <button
-                className="btn btn-sm"
-                onClick={() => handleToggleStatus(activeQuiz.id, activeQuiz.status)}
-                disabled={updateMutation.isPending}
-              >
-                {activeQuiz.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
-              </button>
-            </>
-          )}
-        </div>
-      </>
+            <span className={`status-pill ${activeQuiz.status.toLowerCase()}`}>
+              {activeQuiz.status}
+            </span>
+            <button
+              className="btn btn-sm"
+              onClick={() => handleToggleStatus(activeQuiz.id, activeQuiz.status)}
+              disabled={updateMutation.isPending}
+            >
+              {activeQuiz.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'}
+            </button>
+          </>
         )}
       </div>
 

@@ -1,4 +1,4 @@
-import { Home, Book, Users, ClipboardList, Calendar, BarChart2, MessageSquare, Search, Sparkles, Settings, HelpCircle, FileText } from 'lucide-react';
+import { Home, Book, Users, ClipboardList, Calendar, BarChart2, MessageSquare, Search, Sparkles, Settings, HelpCircle, FileText, BookOpen } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
@@ -9,6 +9,7 @@ const navItems = [
   { icon: Calendar, label: 'Calendar', path: '/partner/calendar' },
   { icon: HelpCircle, label: 'Quiz Studio', path: '/partner/quiz-studio' },
   { icon: FileText, label: 'Test Studio', path: '/partner/test-studio' },
+  { icon: BookOpen, label: 'Question Bank', path: '/partner/question-bank' },
   { icon: BarChart2, label: 'Analytics', path: '/partner/analytics' },
   { icon: MessageSquare, label: 'Messages', path: '/partner/messages' },
 ];
