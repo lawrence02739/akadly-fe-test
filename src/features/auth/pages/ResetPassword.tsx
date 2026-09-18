@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -29,7 +30,7 @@ export default function ResetPassword() {
     const newPassword = formData.get('password') as string;
 
     try {
-      const response = await fetch('http://localhost:3000/api/v1/auth/reset-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, newPassword }),

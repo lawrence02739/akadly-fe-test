@@ -1,4 +1,17 @@
-# React + TypeScript + Vite
+# Akadly frontend
+
+Run `npm ci`, then `npm run dev` and open http://localhost:3001/login.
+
+Copy `.env.example` to `.env.local` to configure `VITE_API_BASE_URL` (default:
+`http://localhost:3000/api/v1`). Restart Vite after changing it. This setting is
+shared by Axios, Google login redirects, email verification and password reset.
+Keep credentials and other secrets out of frontend environment variables.
+
+The backend runs separately on port 3000. Use `localhost` consistently for both
+services so cookie authentication works with the existing CORS configuration.
+Run `npm run build` for a production build and `npm run lint` for lint checks.
+
+## React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
 

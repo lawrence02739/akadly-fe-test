@@ -165,12 +165,12 @@ export default function CourseStructureBuilder() {
           const items = itemsByModule[srcModId];
           const oldIndex = items.findIndex((i: any) => i.id === active.id);
           const newIndex = items.findIndex((i: any) => i.id === ovr);
-          
+
           const reordered = arrayMove(items, oldIndex, newIndex);
           const idx = reordered.findIndex((i: any) => i.id === active.id);
           const prev = reordered[idx - 1];
           const next = reordered[idx + 1];
-          
+
           if (!prev) newSeq = (next?.sequence ?? Date.now()) - 1000;
           else if (!next) newSeq = (prev?.sequence ?? Date.now()) + 1000;
           else newSeq = Math.floor((prev.sequence + next.sequence) / 2);
