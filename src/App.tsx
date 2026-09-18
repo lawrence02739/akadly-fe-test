@@ -5,6 +5,8 @@ import DashboardLayout from './shared/layouts/DashboardLayout';
 import CoursesDashboard from './features/courses/pages/CoursesDashboard';
 import CourseEditor from './features/courses/pages/CourseEditor';
 import CourseStructureBuilder from './features/courses/pages/CourseStructureBuilder';
+import QuizStudioPage from './features/quizzes/pages/QuizStudioPage';
+import TestStudioPage from './features/tests/TestStudioPage';
 
 import Signup from './features/auth/pages/Signup';
 import VerifyEmail from './features/auth/pages/VerifyEmail';
@@ -31,6 +33,8 @@ function App() {
           <Route path="courses/create" element={<CourseEditor />} />
           <Route path="courses/:courseId/edit" element={<CourseEditor />} />
           <Route path="courses/:courseId/structure" element={<CourseStructureBuilder />} />
+          <Route path="quiz-studio" element={<QuizStudioPage />} />
+          <Route path="test-studio" element={<TestStudioPage />} />
           <Route index element={<Navigate to="/partner/courses" replace />} />
         </Route>
 

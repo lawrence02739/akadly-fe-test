@@ -1,4 +1,4 @@
-import { File, Video, Headphones, FileText, Link as LinkIcon, Download } from 'lucide-react';
+import { File, Video, Headphones, FileText, Link as LinkIcon, Download, HelpCircle, ClipboardList } from 'lucide-react';
 
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string }> = {
   VIDEO: { icon: Video,     color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Video' },
@@ -6,6 +6,8 @@ const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; l
   PDF:   { icon: FileText,  color: 'text-red-600',    bgColor: 'bg-red-50',    label: 'PDF' },
   FILE:  { icon: File,      color: 'text-slate-600',  bgColor: 'bg-slate-100', label: 'File' },
   MODULE:{ icon: File,      color: 'text-teal-600',   bgColor: 'bg-teal-50',   label: 'Module' },
+  QUIZ:  { icon: HelpCircle,color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
+  TEST:  { icon: ClipboardList,color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Test' },
 };
 
 export default function NodeContentViewer({ item }: { item: any }) {
@@ -115,6 +117,39 @@ export default function NodeContentViewer({ item }: { item: any }) {
              <h3 className="text-2xl font-bold text-slate-800 mb-2">{item.title}</h3>
              <p className="text-slate-500">Select an item inside this module to view its content.</p>
           </div>
+        );
+
+      case 'QUIZ':
+      case 'TEST':
+        const AssesmentIcon = item.type === 'QUIZ' ? HelpCircle : ClipboardList;
+        return content.linkedQuiz ? (
+          <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
+             <div className={`w-24 h-24 rounded-full ${item.type === 'QUIZ' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center mb-6 shadow-sm`}>
+               <AssesmentIcon className="w-12 h-12" />
+             </div>
+             <h3 className="text-2xl font-bold text-slate-800 mb-3">{content.linkedQuiz.title}</h3>
+             <div className="flex items-center gap-4 text-sm font-medium text-slate-500 mb-8 bg-slate-50 px-6 py-3 rounded-lg border border-slate-200">
+               <div className="flex flex-col items-center">
+                 <span className="text-lg font-bold text-slate-700">{content.linkedQuiz.questionCount || (content.linkedQuiz.questionIds ? content.linkedQuiz.questionIds.length : 0)}</span>
+                 <span className="text-xs uppercase tracking-wider">Questions</span>
+               </div>
+               <div className="w-px h-10 bg-slate-300"></div>
+               <div className="flex flex-col items-center">
+                 <span className="text-lg font-bold text-slate-700">{content.timeLimitMinutes || content.linkedQuiz.timeLimitMinutes || '∞'}</span>
+                 <span className="text-xs uppercase tracking-wider">Minutes</span>
+               </div>
+               <div className="w-px h-10 bg-slate-300"></div>
+               <div className="flex flex-col items-center">
+                 <span className="text-lg font-bold text-slate-700">{content.passScore || 0}%</span>
+                 <span className="text-xs uppercase tracking-wider">To Pass</span>
+               </div>
+             </div>
+             <button className="px-10 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-lg shadow-sm transition-all transform hover:scale-105 active:scale-95">
+               Start {item.type === 'QUIZ' ? 'Quiz' : 'Test'}
+             </button>
+          </div>
+        ) : (
+          <EmptyState icon={AssesmentIcon} message={`No ${item.type.toLowerCase()} linked yet`} />
         );
 
       default:

@@ -5,7 +5,8 @@ import { useUpload } from '../../hooks/useUpload';
 import { useUpdateCourseNode } from '../../hooks/useCourseNodes';
 import { slateToHTML, parseEditorValue } from '../../../../utils/editorUtils';
 import toast from 'react-hot-toast';
-
+import { HelpCircle, ExternalLink, Trash2 } from 'lucide-react';
+import AssessmentLibraryModal from './AssessmentLibraryModal';
 // ─── Type Configs ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string; accept?: string; hint?: string }> = {
   VIDEO: { icon: Video,     color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Video',   accept: 'video/*',                   hint: 'MP4, WebM or OGG (max 2GB)' },
@@ -13,6 +14,7 @@ const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; l
   PDF:   { icon: FileText,  color: 'text-red-600',    bgColor: 'bg-red-50',    label: 'PDF',     accept: 'application/pdf',           hint: 'PDF only (max 100MB)' },
   FILE:  { icon: File,      color: 'text-slate-600',  bgColor: 'bg-slate-100', label: 'File',    accept: '*/*',                       hint: 'Any file type (max 1GB)' },
   MODULE:{ icon: File,      color: 'text-teal-600',   bgColor: 'bg-teal-50',   label: 'Module' },
+  QUIZ:  { icon: HelpCircle,color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
 };
 
 // ─── Shared Upload UI ─────────────────────────────────────────────────────────
@@ -153,6 +155,17 @@ export default function NodeContentEditor({
   const [linkUrl, setLinkUrl] = useState(item.content?.url ?? '');
   const [linkLabel, setLinkLabel] = useState(item.content?.label ?? '');
   const [openInNewTab, setOpenInNewTab] = useState(item.content?.newTab ?? true);
+  
+  // Quiz/Test specific state
+  const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
+  const [linkedQuiz, setLinkedQuiz] = useState<any>(item.content?.linkedQuiz ?? null);
+  const [quizSettings, setQuizSettings] = useState({
+    timeLimitMinutes: item.content?.timeLimitMinutes ?? 0,
+    passScore: item.content?.passScore ?? 0,
+    randomize: item.content?.randomize ?? false,
+    showCorrectAnswers: item.content?.showCorrectAnswers ?? false,
+    freePreview: item.content?.freePreview ?? false,
+  });
 
   useEffect(() => {
     setTitle(item.title ?? '');
@@ -162,7 +175,15 @@ export default function NodeContentEditor({
     setLinkUrl(item.content?.url ?? '');
     setLinkLabel(item.content?.label ?? '');
     setOpenInNewTab(item.content?.newTab ?? true);
-  }, [item.id]);
+    setLinkedQuiz(item.content?.linkedQuiz ?? null);
+    setQuizSettings({
+      timeLimitMinutes: item.content?.timeLimitMinutes ?? 0,
+      passScore: item.content?.passScore ?? 0,
+      randomize: item.content?.randomize ?? false,
+      showCorrectAnswers: item.content?.showCorrectAnswers ?? false,
+      freePreview: item.content?.freePreview ?? false,
+    });
+  }, [item.id, item.content]);
 
   const cfg = TYPE_CONFIG[item.type];
   const Icon = cfg?.icon ?? File;
@@ -187,7 +208,21 @@ export default function NodeContentEditor({
     );
   };
 
-  const typesThatAreComingSoon = ['QUIZ', 'TEST', 'CODING', 'ASSIGNMENT', 'FORM', 'LIVE'];
+  const handleSaveQuiz = () => {
+    const content = {
+      linkedQuiz,
+      ...quizSettings
+    };
+    updateNode(
+      { courseId, nodeId: item.id, dto: { title, content } },
+      {
+        onSuccess: () => toast.success('Quiz settings saved!'),
+        onError: () => toast.error('Failed to save quiz settings.'),
+      }
+    );
+  };
+
+  const typesThatAreComingSoon = ['CODING', 'ASSIGNMENT', 'FORM', 'LIVE'];
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -349,6 +384,80 @@ export default function NodeContentEditor({
           </button>
         )}
 
+        {(item.type === 'QUIZ' || item.type === 'TEST') && (
+          <div className="space-y-4">
+            {!linkedQuiz ? (
+              <button
+                onClick={() => setIsQuizModalOpen(true)}
+                className="w-full py-4 border-2 border-dashed border-slate-300 rounded-lg text-sm font-semibold text-teal-600 hover:bg-slate-50 flex items-center justify-center gap-2"
+              >
+                + Link {item.type === 'QUIZ' ? 'Quiz' : 'Test'} from Library
+              </button>
+            ) : (
+              <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-slate-800">{linkedQuiz.title}</h3>
+                  <p className="text-xs text-slate-500">{linkedQuiz.questionCount || (linkedQuiz.questionIds ? linkedQuiz.questionIds.length : 0)} Questions</p>
+                </div>
+                <button onClick={() => setLinkedQuiz(null)} className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded">
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Time Limit (Min)</label>
+                <input
+                  type="number"
+                  value={quizSettings.timeLimitMinutes}
+                  onChange={e => setQuizSettings(s => ({ ...s, timeLimitMinutes: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-slate-700 mb-1">Passing Score (%)</label>
+                <input
+                  type="number"
+                  value={quizSettings.passScore}
+                  onChange={e => setQuizSettings(s => ({ ...s, passScore: Number(e.target.value) }))}
+                  className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={quizSettings.randomize} onChange={e => setQuizSettings(s => ({ ...s, randomize: e.target.checked }))} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                Randomize Questions
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={quizSettings.showCorrectAnswers} onChange={e => setQuizSettings(s => ({ ...s, showCorrectAnswers: e.target.checked }))} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                Show Correct Answers after submission
+              </label>
+              <label className="flex items-center gap-2 text-sm text-slate-700">
+                <input type="checkbox" checked={quizSettings.freePreview} onChange={e => setQuizSettings(s => ({ ...s, freePreview: e.target.checked }))} className="rounded border-slate-300 text-teal-600 focus:ring-teal-500" />
+                Free Preview Lesson
+              </label>
+            </div>
+
+            {linkedQuiz && (
+              <a href={item.type === 'QUIZ' ? `/partner/quiz-studio?quizId=${linkedQuiz.id}` : `/partner/test-studio?testId=${linkedQuiz.id}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors">
+                Open Fullscreen Editor <ExternalLink className="w-4 h-4" />
+              </a>
+            )}
+
+            <button
+              onClick={handleSaveQuiz}
+              disabled={isSaving}
+              className="w-full px-4 py-2 bg-teal-700 text-white rounded-lg text-sm font-semibold hover:bg-teal-800 disabled:opacity-50 flex items-center justify-center gap-2"
+            >
+              {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+              Save Changes
+            </button>
+          </div>
+        )}
+
         {typesThatAreComingSoon.includes(item.type) && (
           <div className="flex flex-col items-center justify-center text-center py-12 gap-3">
             <div className="text-4xl">🚧</div>
@@ -359,6 +468,13 @@ export default function NodeContentEditor({
           </div>
         )}
       </div>
+
+      <AssessmentLibraryModal 
+        isOpen={isQuizModalOpen} 
+        type={item.type === 'TEST' ? 'TEST' : 'QUIZ'}
+        onClose={() => setIsQuizModalOpen(false)} 
+        onSelect={(q) => setLinkedQuiz(q)} 
+      />
     </div>
   );
 }
