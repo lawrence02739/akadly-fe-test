@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -50,7 +51,7 @@ export default function Login() {
         {/* Google Auth Button */}
         <button
           type="button"
-          onClick={() => { window.location.href = 'http://localhost:3000/api/v1/auth/google'; }}
+          onClick={() => { window.location.href = `${API_BASE_URL}/auth/google`; }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import AuthLayout from '../../../shared/layouts/AuthLayout';
@@ -16,7 +17,7 @@ export default function ForgotPassword() {
     const email = formData.get('email') as string;
 
     try {
-      const response = await fetch('http://localhost:3000/api/v1/auth/forgot-password', {
+      const response = await fetch(`${API_BASE_URL}/auth/forgot-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),
