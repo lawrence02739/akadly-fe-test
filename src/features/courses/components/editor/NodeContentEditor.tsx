@@ -1,20 +1,25 @@
 import { useState, useEffect } from 'react';
-import { Upload, Video, FileText, Headphones, File, Link as LinkIcon, Loader2, CheckCircle } from 'lucide-react';
+import { Upload, Video, FileText, Headphones, File, Link as LinkIcon, Loader2, CheckCircle, HelpCircle, ExternalLink, Trash2, ClipboardCheck, Radio, Code2 } from 'lucide-react';
 import { type Descendant, RichTextEditor } from '@myexamly/word-editor';
 import { useUpload } from '../../hooks/useUpload';
 import { useUpdateCourseNode } from '../../hooks/useCourseNodes';
 import { slateToHTML, parseEditorValue } from '../../../../utils/editorUtils';
 import toast from 'react-hot-toast';
-import { HelpCircle, ExternalLink, Trash2 } from 'lucide-react';
 import AssessmentLibraryModal from './AssessmentLibraryModal';
+import AssignmentContentEditor from './AssignmentContentEditor';
+import LiveClassContentEditor from './LiveClassContentEditor';
+import CodingContentEditor from './CodingContentEditor';
 // ─── Type Configs ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string; accept?: string; hint?: string }> = {
-  VIDEO: { icon: Video,     color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Video',   accept: 'video/*',                   hint: 'MP4, WebM or OGG (max 2GB)' },
-  AUDIO: { icon: Headphones,color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Audio',   accept: 'audio/*',                   hint: 'MP3, WAV or M4A (max 500MB)' },
-  PDF:   { icon: FileText,  color: 'text-red-600',    bgColor: 'bg-red-50',    label: 'PDF',     accept: 'application/pdf',           hint: 'PDF only (max 100MB)' },
-  FILE:  { icon: File,      color: 'text-slate-600',  bgColor: 'bg-slate-100', label: 'File',    accept: '*/*',                       hint: 'Any file type (max 1GB)' },
-  MODULE:{ icon: File,      color: 'text-teal-600',   bgColor: 'bg-teal-50',   label: 'Module' },
-  QUIZ:  { icon: HelpCircle,color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
+  VIDEO:      { icon: Video,         color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Video',      accept: 'video/*',         hint: 'MP4, WebM or OGG (max 2GB)' },
+  AUDIO:      { icon: Headphones,    color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Audio',      accept: 'audio/*',         hint: 'MP3, WAV or M4A (max 500MB)' },
+  PDF:        { icon: FileText,      color: 'text-red-600',    bgColor: 'bg-red-50',    label: 'PDF',        accept: 'application/pdf', hint: 'PDF only (max 100MB)' },
+  FILE:       { icon: File,          color: 'text-slate-600',  bgColor: 'bg-slate-100', label: 'File',       accept: '*/*',             hint: 'Any file type (max 1GB)' },
+  MODULE:     { icon: File,          color: 'text-teal-600',   bgColor: 'bg-teal-50',   label: 'Module' },
+  QUIZ:       { icon: HelpCircle,    color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
+  ASSIGNMENT: { icon: ClipboardCheck,color: 'text-amber-600',  bgColor: 'bg-amber-50',  label: 'Assignment' },
+  LIVE_CLASS: { icon: Radio,         color: 'text-rose-600',   bgColor: 'bg-rose-50',   label: 'Live Class' },
+  CODING:     { icon: Code2,         color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
 };
 
 // ─── Shared Upload UI ─────────────────────────────────────────────────────────
@@ -222,7 +227,7 @@ export default function NodeContentEditor({
     );
   };
 
-  const typesThatAreComingSoon = ['CODING', 'ASSIGNMENT', 'FORM', 'LIVE'];
+  const typesThatAreComingSoon = ['FORM'];
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -456,6 +461,33 @@ export default function NodeContentEditor({
               Save Changes
             </button>
           </div>
+        )}
+
+        {item.type === 'ASSIGNMENT' && (
+          <AssignmentContentEditor
+            item={item}
+            courseId={courseId}
+            onSave={handleSaveContent}
+            isSaving={isSaving}
+          />
+        )}
+
+        {item.type === 'LIVE_CLASS' && (
+          <LiveClassContentEditor
+            item={item}
+            courseId={courseId}
+            onSave={handleSaveContent}
+            isSaving={isSaving}
+          />
+        )}
+
+        {item.type === 'CODING' && (
+          <CodingContentEditor
+            item={item}
+            courseId={courseId}
+            onSave={handleSaveContent}
+            isSaving={isSaving}
+          />
         )}
 
         {typesThatAreComingSoon.includes(item.type) && (

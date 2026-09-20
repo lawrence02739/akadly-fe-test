@@ -30,7 +30,7 @@ const TYPE_ICONS: Record<string, any> = {
   VIDEO: Video, AUDIO: Headphones, PDF: FileText, FILE: File,
   TEXT: Type, HEADING: Heading, LINK: LinkIcon, QUIZ: HelpCircle,
   TEST: TestTube, CODING: Code, ASSIGNMENT: CheckSquare,
-  FORM: ListOrdered, LIVE: MonitorPlay,
+  FORM: ListOrdered, LIVE_CLASS: MonitorPlay,
 };
 const TYPE_COLORS: Record<string, string> = {
   VIDEO: 'bg-blue-50 text-blue-600', AUDIO: 'bg-purple-50 text-purple-600',
@@ -275,7 +275,7 @@ export default function CourseStructureBuilder() {
                 <PaletteTile id="palette-CODING"     icon={Code}        label="Coding" />
                 <PaletteTile id="palette-ASSIGNMENT" icon={CheckSquare} label="Assignment" />
                 <PaletteTile id="palette-FORM"       icon={ListOrdered} label="Form" />
-                <PaletteTile id="palette-LIVE"       icon={MonitorPlay} label="Live Class" />
+                <PaletteTile id="palette-LIVE_CLASS" icon={MonitorPlay} label="Live Class" />
               </div>
             </div>
           )}
