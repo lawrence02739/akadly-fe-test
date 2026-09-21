@@ -7,12 +7,24 @@ import toast from 'react-hot-toast';
 import '../../quizzes/assets/quiz-studio.css';
 
 const TYPE_LABELS: Record<string, string> = {
+  // Basic
   SINGLE: 'Single',
   MULTIPLE: 'Multiple',
   NUMERIC: 'Numeric',
-  MATCH: 'Match',
+  TRUE_FALSE: 'True/False',
+  FILL_BLANK: 'Fill Blank',
+  // Advanced
+  SHORT_ANSWER: 'Short Ans',
   SUBJECTIVE: 'Subjective',
+  MATCH: 'Match',
+  ASSERTION_REASON: 'Assert/Reason',
+  ARRANGEMENT: 'Arrangement',
+  // Specialized
+  MAP_BASED: 'Map Based',
+  DRAG_DROP: 'Drag & Drop',
+  CODING: 'Coding',
 };
+
 
 const DIFFICULTY_STYLES: Record<string, string> = {
   EASY: 'bg-emerald-100 text-emerald-700 border-emerald-200',

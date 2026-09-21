@@ -83,8 +83,9 @@ export const QuizBuilder: React.FC<QuizBuilderProps> = ({ quizId, onBack, onEdit
   };
 
   const renderQuestionRow = (q: Question, idx: number) => {
+    const c: any = q.content || {};
     let body = null;
-    
+
     if (q.type === 'SINGLE' || q.type === 'MULTIPLE') {
       body = (q.options || []).map((o, i) => (
         <div key={i} className={`opt-line ${o.correct ? 'correct' : ''}`}>
@@ -116,6 +117,136 @@ export const QuizBuilder: React.FC<QuizBuilderProps> = ({ quizId, onBack, onEdit
       );
     } else if (q.type === 'SUBJECTIVE') {
       body = <div className="opt-line" style={{ color: 'var(--ink-soft)' }}>Manually graded written response</div>;
+
+    // ── New types ────────────────────────────────────────────────────────────
+    } else if (q.type === 'TRUE_FALSE') {
+      const ans = c.correctAnswer;
+      body = (
+        <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
+          {[true, false].map((v) => (
+            <span
+              key={String(v)}
+              style={{
+                padding: '4px 14px', borderRadius: '20px', fontSize: '13px', fontWeight: 600,
+                background: ans === v ? (v ? '#d1fae5' : '#fee2e2') : 'var(--bg-alt, #f5f5f5)',
+                color: ans === v ? (v ? '#065f46' : '#991b1b') : 'var(--ink-soft)',
+                border: `1px solid ${ans === v ? (v ? '#6ee7b7' : '#fca5a5') : 'var(--rule)'}`,
+              }}
+            >
+              {v ? '✓ True' : '✗ False'}
+            </span>
+          ))}
+        </div>
+      );
+
+    } else if (q.type === 'FILL_BLANK') {
+      body = (
+        <div style={{ marginTop: '4px', fontSize: '13px', color: 'var(--ink-soft)', fontFamily: 'monospace', background: 'var(--bg-alt, #f5f5f5)', padding: '6px 10px', borderRadius: '6px' }}>
+          {c.template || '(No template)'}
+          {c.blanks?.length > 0 && (
+            <span style={{ marginLeft: '8px', fontFamily: 'sans-serif', fontSize: '11px', color: 'var(--primary)' }}>
+              {c.blanks.length} blank{c.blanks.length !== 1 ? 's' : ''}
+            </span>
+          )}
+        </div>
+      );
+
+    } else if (q.type === 'SHORT_ANSWER') {
+      const excerpt = c.modelAnswer ? c.modelAnswer.slice(0, 120) + (c.modelAnswer.length > 120 ? '...' : '') : '(No model answer)';
+      body = (
+        <div style={{ marginTop: '4px', fontSize: '13px', color: 'var(--ink-soft)', fontStyle: 'italic' }}>
+          Model: {excerpt}
+          {c.maxCharacterLimit && (
+            <span style={{ marginLeft: '8px', fontSize: '11px', fontStyle: 'normal', color: 'var(--primary)' }}>
+              ≤ {c.maxCharacterLimit} chars
+            </span>
+          )}
+        </div>
+      );
+
+    } else if (q.type === 'ASSERTION_REASON') {
+      body = (
+        <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+          {c.assertion && <div><b style={{ color: 'var(--primary)' }}>A:</b> {c.assertion.slice(0, 100)}{c.assertion.length > 100 ? '...' : ''}</div>}
+          {c.reason && <div><b style={{ color: 'var(--correct, #059669)' }}>R:</b> {c.reason.slice(0, 100)}{c.reason.length > 100 ? '...' : ''}</div>}
+          {(c.options || []).filter((o: any) => o.correct).map((o: any, i: number) => (
+            <div key={i} className="opt-line correct" style={{ marginTop: '4px' }}>
+              <span className="opt-mark"><svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="m5 13 4 4L19 7"/></svg></span>
+              <span style={{ fontSize: '12px' }}>{o.text}</span>
+            </div>
+          ))}
+        </div>
+      );
+
+    } else if (q.type === 'ARRANGEMENT') {
+      body = (
+        <div style={{ marginTop: '4px', display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+          {(c.correctOrder || []).map((id: string, pos: number) => {
+            const item = (c.items || []).find((it: any) => it.id === id);
+            return (
+              <span key={id} style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '3px 10px', background: 'var(--bg-alt, #f5f5f5)', border: '1px solid var(--rule)', borderRadius: '6px', fontSize: '12px' }}>
+                <span style={{ width: '18px', height: '18px', background: 'var(--primary)', color: '#fff', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, fontSize: '10px' }}>{pos + 1}</span>
+                {item?.text || '…'}
+              </span>
+            );
+          })}
+        </div>
+      );
+
+    } else if (q.type === 'MAP_BASED') {
+      body = (
+        <div style={{ marginTop: '4px', fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          {c.mapImage?.fileUrl && (
+            <img src={c.mapImage.fileUrl} alt="Map" style={{ width: '80px', height: '50px', objectFit: 'cover', borderRadius: '4px', border: '1px solid var(--rule)' }} />
+          )}
+          <div>
+            <span>{c.markers?.length || 0} marker{c.markers?.length !== 1 ? 's' : ''}</span>
+            <span style={{ marginLeft: '8px', padding: '2px 8px', background: 'var(--primary-50, #eff6ff)', color: 'var(--primary)', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+              {c.answerMode || 'OPTIONS'}
+            </span>
+          </div>
+        </div>
+      );
+
+    } else if (q.type === 'DRAG_DROP') {
+      body = (
+        <div style={{ marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '13px' }}>
+          {(c.targets || []).map((t: any, ti: number) => (
+            <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ padding: '2px 8px', background: 'var(--primary-50, #eff6ff)', border: '1px solid var(--primary)', borderRadius: '6px', fontSize: '12px', fontWeight: 600, color: 'var(--primary)', flexShrink: 0 }}>
+                {t.label || `Target ${ti+1}`}
+              </span>
+              <span style={{ color: 'var(--ink-soft)', fontSize: '12px' }}>
+                ← {(t.correctItemIds || []).map((id: string) => {
+                  const item = (c.items || []).find((it: any) => it.id === id);
+                  return item?.text;
+                }).filter(Boolean).join(', ') || 'no items mapped'}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+
+    } else if (q.type === 'CODING') {
+      const catLabel: Record<string, string> = {
+        CODING_CHALLENGE: 'Coding Challenge', CODE_DEBUGGING: 'Code Debugging',
+        SQL_QUERY: 'SQL Query', DOMAIN_SPECIFIC: 'Domain Specific',
+        MACHINE_CODING_UI: 'Machine Coding / UI', SYSTEM_DESIGN: 'System Design',
+      };
+      body = (
+        <div style={{ marginTop: '4px', display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <span style={{ padding: '2px 10px', background: '#f3f0ff', color: '#6d28d9', border: '1px solid #c4b5fd', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+            {catLabel[c.category] || c.category}
+          </span>
+          {c.language && (
+            <span style={{ padding: '2px 10px', background: 'var(--bg-alt, #f5f5f5)', border: '1px solid var(--rule)', borderRadius: '12px', fontSize: '11px', fontWeight: 600 }}>
+              {c.language}
+            </span>
+          )}
+          {c.title && <span style={{ fontSize: '13px', color: 'var(--ink-soft)' }}>{c.title}</span>}
+          {c.timeLimitMinutes && <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{c.timeLimitMinutes} min</span>}
+        </div>
+      );
     }
 
     return (
@@ -148,6 +279,7 @@ export const QuizBuilder: React.FC<QuizBuilderProps> = ({ quizId, onBack, onEdit
       </div>
     );
   };
+
 
   return (
     <div className="qs-view">

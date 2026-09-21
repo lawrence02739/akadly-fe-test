@@ -1,4 +1,11 @@
-export type QuestionType = 'SINGLE' | 'MULTIPLE' | 'NUMERIC' | 'MATCH' | 'SUBJECTIVE';
+export type QuestionType =
+  // Basic Types
+  | 'SINGLE' | 'MULTIPLE' | 'NUMERIC' | 'TRUE_FALSE' | 'FILL_BLANK'
+  // Advanced Types
+  | 'SHORT_ANSWER' | 'SUBJECTIVE' | 'MATCH' | 'ASSERTION_REASON' | 'ARRANGEMENT'
+  // Specialized Types
+  | 'MAP_BASED' | 'DRAG_DROP' | 'CODING';
+
 export type QuizStatus = 'DRAFT' | 'PUBLISHED';
 export type QuestionDifficulty = 'EASY' | 'MEDIUM' | 'HARD';
 
@@ -37,11 +44,18 @@ export interface Question {
   order: number;
   mark: number;
   penalty: number;
+  // Optional shared settings
+  categoryId?: string;
+  negativeMarking?: number;
+  completionTimeMinutes?: number;
+  // Legacy flat fields
   options?: any[];
   answer?: number;
   range?: number;
   colI?: any[];
   colII?: any[];
+  // Type-specific content bag
+  content?: Record<string, any>;
   createdAt?: string;
   updatedAt?: string;
 }
@@ -75,11 +89,18 @@ export interface CreateQuestionDto {
   order?: number;
   mark?: number;
   penalty?: number;
+  // Optional shared settings
+  categoryId?: string;
+  negativeMarking?: number;
+  completionTimeMinutes?: number;
+  // Legacy flat fields
   options?: any[];
   answer?: number;
   range?: number;
   colI?: any[];
   colII?: any[];
+  // Type-specific content bag
+  content?: Record<string, any>;
 }
 
 export type UpdateQuestionDto = Partial<CreateQuestionDto>;
