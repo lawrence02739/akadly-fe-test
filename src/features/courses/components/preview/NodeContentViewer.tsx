@@ -1,16 +1,16 @@
 import { File, Video, Headphones, FileText, Link as LinkIcon, Download, HelpCircle, ClipboardList, ClipboardCheck, Radio, Code2, Calendar, Clock, ExternalLink, AlertCircle, Upload, Terminal } from 'lucide-react';
 
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string }> = {
-  VIDEO:      { icon: Video,          color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Video' },
-  AUDIO:      { icon: Headphones,     color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Audio' },
-  PDF:        { icon: FileText,       color: 'text-red-600',    bgColor: 'bg-red-50',    label: 'PDF' },
-  FILE:       { icon: File,           color: 'text-slate-600',  bgColor: 'bg-slate-100', label: 'File' },
-  MODULE:     { icon: File,           color: 'text-teal-600',   bgColor: 'bg-teal-50',   label: 'Module' },
-  QUIZ:       { icon: HelpCircle,     color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
-  TEST:       { icon: ClipboardList,  color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Test' },
-  ASSIGNMENT: { icon: ClipboardCheck, color: 'text-amber-600',  bgColor: 'bg-amber-50',  label: 'Assignment' },
-  LIVE_CLASS: { icon: Radio,          color: 'text-rose-600',   bgColor: 'bg-rose-50',   label: 'Live Class' },
-  CODING:     { icon: Code2,          color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
+  VIDEO: { icon: Video, color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Video' },
+  AUDIO: { icon: Headphones, color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Audio' },
+  PDF: { icon: FileText, color: 'text-red-600', bgColor: 'bg-red-50', label: 'PDF' },
+  FILE: { icon: File, color: 'text-slate-600', bgColor: 'bg-slate-100', label: 'File' },
+  MODULE: { icon: File, color: 'text-teal-600', bgColor: 'bg-teal-50', label: 'Module' },
+  QUIZ: { icon: HelpCircle, color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
+  TEST: { icon: ClipboardList, color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Test' },
+  ASSIGNMENT: { icon: ClipboardCheck, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Assignment' },
+  LIVE_CLASS: { icon: Radio, color: 'text-rose-600', bgColor: 'bg-rose-50', label: 'Live Class' },
+  CODING: { icon: Code2, color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -65,7 +65,7 @@ export default function NodeContentViewer({ item }: { item: any }) {
         return content.fileUrl ? (
           <div className="bg-white p-8 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center gap-6">
             <div className="w-24 h-24 rounded-full bg-purple-100 text-purple-600 flex items-center justify-center shadow-inner">
-               <Headphones className="w-10 h-10" />
+              <Headphones className="w-10 h-10" />
             </div>
             <audio src={content.fileUrl} controls className="w-full max-w-md" />
           </div>
@@ -141,8 +141,8 @@ export default function NodeContentViewer({ item }: { item: any }) {
       case 'MODULE':
         return (
           <div className="flex flex-col items-center justify-center text-center py-20 px-4 bg-slate-50 border-2 border-dashed border-slate-200 rounded-xl">
-             <h3 className="text-2xl font-bold text-slate-800 mb-2">{item.title}</h3>
-             <p className="text-slate-500">Select an item inside this module to view its content.</p>
+            <h3 className="text-2xl font-bold text-slate-800 mb-2">{item.title}</h3>
+            <p className="text-slate-500">Select an item inside this module to view its content.</p>
           </div>
         );
 
@@ -151,29 +151,29 @@ export default function NodeContentViewer({ item }: { item: any }) {
         const AssessmentIcon = item.type === 'QUIZ' ? HelpCircle : ClipboardList;
         return content.linkedQuiz ? (
           <div className="bg-white p-12 rounded-xl shadow-sm border border-slate-200 flex flex-col items-center justify-center text-center">
-             <div className={`w-24 h-24 rounded-full ${item.type === 'QUIZ' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center mb-6 shadow-sm`}>
-               <AssessmentIcon className="w-12 h-12" />
-             </div>
-             <h3 className="text-2xl font-bold text-slate-800 mb-3">{content.linkedQuiz.title}</h3>
-             <div className="flex items-center gap-4 text-sm font-medium text-slate-500 mb-8 bg-slate-50 px-6 py-3 rounded-lg border border-slate-200">
-               <div className="flex flex-col items-center">
-                 <span className="text-lg font-bold text-slate-700">{content.linkedQuiz.questionCount || (content.linkedQuiz.questionIds ? content.linkedQuiz.questionIds.length : 0)}</span>
-                 <span className="text-xs uppercase tracking-wider">Questions</span>
-               </div>
-               <div className="w-px h-10 bg-slate-300" />
-               <div className="flex flex-col items-center">
-                 <span className="text-lg font-bold text-slate-700">{content.timeLimitMinutes || content.linkedQuiz.timeLimitMinutes || '∞'}</span>
-                 <span className="text-xs uppercase tracking-wider">Minutes</span>
-               </div>
-               <div className="w-px h-10 bg-slate-300" />
-               <div className="flex flex-col items-center">
-                 <span className="text-lg font-bold text-slate-700">{content.passScore || 0}%</span>
-                 <span className="text-xs uppercase tracking-wider">To Pass</span>
-               </div>
-             </div>
-             <button className="px-10 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-lg shadow-sm transition-all transform hover:scale-105 active:scale-95">
-               Start {item.type === 'QUIZ' ? 'Quiz' : 'Test'}
-             </button>
+            <div className={`w-24 h-24 rounded-full ${item.type === 'QUIZ' ? 'bg-orange-50 text-orange-600' : 'bg-blue-50 text-blue-600'} flex items-center justify-center mb-6 shadow-sm`}>
+              <AssessmentIcon className="w-12 h-12" />
+            </div>
+            <h3 className="text-2xl font-bold text-slate-800 mb-3">{content.linkedQuiz.title}</h3>
+            <div className="flex items-center gap-4 text-sm font-medium text-slate-500 mb-8 bg-slate-50 px-6 py-3 rounded-lg border border-slate-200">
+              <div className="flex flex-col items-center">
+                <span className="text-lg font-bold text-slate-700">{content.linkedQuiz.questionCount || (content.linkedQuiz.questionIds ? content.linkedQuiz.questionIds.length : 0)}</span>
+                <span className="text-xs uppercase tracking-wider">Questions</span>
+              </div>
+              <div className="w-px h-10 bg-slate-300" />
+              <div className="flex flex-col items-center">
+                <span className="text-lg font-bold text-slate-700">{content.timeLimitMinutes || content.linkedQuiz.timeLimitMinutes || '∞'}</span>
+                <span className="text-xs uppercase tracking-wider">Minutes</span>
+              </div>
+              <div className="w-px h-10 bg-slate-300" />
+              <div className="flex flex-col items-center">
+                <span className="text-lg font-bold text-slate-700">{content.passScore || 0}%</span>
+                <span className="text-xs uppercase tracking-wider">To Pass</span>
+              </div>
+            </div>
+            <button className="px-10 py-3 bg-teal-600 hover:bg-teal-700 text-white rounded-lg font-bold text-lg shadow-sm transition-all transform hover:scale-105 active:scale-95">
+              Start {item.type === 'QUIZ' ? 'Quiz' : 'Test'}
+            </button>
           </div>
         ) : (
           <EmptyState icon={AssessmentIcon} message={`No ${item.type.toLowerCase()} linked yet`} />
@@ -472,9 +472,9 @@ export default function NodeContentViewer({ item }: { item: any }) {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto p-8">
+      <div className="flex-1 overflow-y-auto p-2">
         <div className="max-w-4xl mx-auto">
-           {renderContent()}
+          {renderContent()}
         </div>
       </div>
     </div>

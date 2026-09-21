@@ -157,20 +157,20 @@ export default function CourseStructureBuilder() {
       if (isItemId(ovr) && active.id !== ovr) {
         const srcModId = findModuleOfItem(active.id)!;
         const dstModId = findModuleOfItem(ovr)!;
-        
+
         let newSeq: number;
-        
+
         if (srcModId === dstModId) {
           // Reordering within the same module
           const items = itemsByModule[srcModId];
           const oldIndex = items.findIndex((i: any) => i.id === active.id);
           const newIndex = items.findIndex((i: any) => i.id === ovr);
-          
+
           const reordered = arrayMove(items, oldIndex, newIndex);
           const idx = reordered.findIndex((i: any) => i.id === active.id);
           const prev = reordered[idx - 1];
           const next = reordered[idx + 1];
-          
+
           if (!prev) newSeq = (next?.sequence ?? Date.now()) - 1000;
           else if (!next) newSeq = (prev?.sequence ?? Date.now()) + 1000;
           else newSeq = Math.floor((prev.sequence + next.sequence) / 2);
@@ -253,35 +253,35 @@ export default function CourseStructureBuilder() {
         >
           {/* Left Panel – Palette */}
           {!isPreviewMode && (
-            <div className="w-64 bg-white border-r border-slate-200 p-4 overflow-y-auto shrink-0">
+            <div className="w-64 bg-white border-r border-slate-200 p-4 overflow-y-auto shrink-0 ">
               <h2 className="font-bold text-slate-800 mb-1">Course Structure</h2>
               <p className="text-xs text-slate-500 mb-6">Drag to add to course</p>
 
               <h3 className="text-xs font-bold text-slate-800 mb-3">Upload Content</h3>
               <div className="grid grid-cols-2 gap-2 mb-6">
-                <PaletteTile id="palette-VIDEO"      icon={Video}      label="Video" />
-                <PaletteTile id="palette-PDF"        icon={FileText}   label="PDF" />
-                <PaletteTile id="palette-AUDIO"      icon={Headphones} label="Audio" />
-                <PaletteTile id="palette-FILE"       icon={File}       label="File" />
+                <PaletteTile id="palette-VIDEO" icon={Video} label="Video" />
+                <PaletteTile id="palette-PDF" icon={FileText} label="PDF" />
+                <PaletteTile id="palette-AUDIO" icon={Headphones} label="Audio" />
+                <PaletteTile id="palette-FILE" icon={File} label="File" />
               </div>
 
               <h3 className="text-xs font-bold text-slate-800 mb-3">Create Content</h3>
               <div className="grid grid-cols-2 gap-2">
-                <PaletteTile id="palette-TEXT"       icon={Type}        label="Text" />
-                <PaletteTile id="palette-HEADING"    icon={Heading}     label="Heading" />
-                <PaletteTile id="palette-LINK"       icon={LinkIcon}    label="Link" />
-                <PaletteTile id="palette-QUIZ"       icon={HelpCircle}  label="Quiz" />
-                <PaletteTile id="palette-TEST"       icon={TestTube}    label="Test" />
-                <PaletteTile id="palette-CODING"     icon={Code}        label="Coding" />
+                <PaletteTile id="palette-TEXT" icon={Type} label="Text" />
+                <PaletteTile id="palette-HEADING" icon={Heading} label="Heading" />
+                <PaletteTile id="palette-LINK" icon={LinkIcon} label="Link" />
+                <PaletteTile id="palette-QUIZ" icon={HelpCircle} label="Quiz" />
+                <PaletteTile id="palette-TEST" icon={TestTube} label="Test" />
+                <PaletteTile id="palette-CODING" icon={Code} label="Coding" />
                 <PaletteTile id="palette-ASSIGNMENT" icon={CheckSquare} label="Assignment" />
-                <PaletteTile id="palette-FORM"       icon={ListOrdered} label="Form" />
+                <PaletteTile id="palette-FORM" icon={ListOrdered} label="Form" />
                 <PaletteTile id="palette-LIVE_CLASS" icon={MonitorPlay} label="Live Class" />
               </div>
             </div>
           )}
 
           {/* Center Panel – Tree */}
-          <div className="flex-1 bg-slate-50 p-6 overflow-y-auto relative">
+          <div className="flex-1 bg-slate-50 p-6 overflow-y-auto relative h-[100vh]">
             <div className="max-w-3xl mx-auto space-y-4">
               {isLoading ? (
                 <div className="flex justify-center py-12">
@@ -338,7 +338,7 @@ export default function CourseStructureBuilder() {
         </DndContext>
 
         {/* Right Panel – Editor / Viewer */}
-        <div className={`${isPreviewMode ? 'flex-1' : 'w-[420px] shrink-0'} bg-white border-l border-slate-200 flex flex-col`}>
+        <div className={`${isPreviewMode ? 'flex-1' : 'w-[420px] shrink-0'} bg-white border-l border-slate-200 flex flex-col overflow-y-auto h-[100vh]`}>
           {selectedItem ? (
             isPreviewMode
               ? <NodeContentViewer key={selectedItem.id} item={selectedItem} />
@@ -398,9 +398,8 @@ function SortableModule({
     <div
       ref={setNodeRef}
       style={style}
-      className={`bg-white border-2 rounded-xl transition-all ${
-        isHighlighted ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-slate-200'
-      } ${isDragging ? 'shadow-2xl' : 'shadow-sm'}`}
+      className={`bg-white border-2 rounded-xl transition-all ${isHighlighted ? 'border-teal-500 ring-2 ring-teal-500/20' : 'border-slate-200'
+        } ${isDragging ? 'shadow-2xl' : 'shadow-sm'}`}
     >
       {/* Module Header */}
       <div className="flex items-center justify-between p-4">
@@ -463,11 +462,10 @@ function SortableModule({
             ))}
           </SortableContext>
           {items.length === 0 && !isPreviewMode && (
-            <div className={`border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center text-sm font-medium transition-colors min-h-[64px] ${
-              isOver
-                ? 'border-teal-400 bg-teal-50 text-teal-600'
-                : 'border-blue-200 bg-blue-50/50 text-slate-400'
-            }`}>
+            <div className={`border-2 border-dashed rounded-xl p-5 flex flex-col items-center justify-center text-sm font-medium transition-colors min-h-[64px] ${isOver
+              ? 'border-teal-400 bg-teal-50 text-teal-600'
+              : 'border-blue-200 bg-blue-50/50 text-slate-400'
+              }`}>
               {isOver ? '✓ Drop here' : 'Drag items from the left palette'}
             </div>
           )}
@@ -507,9 +505,8 @@ function SortableItem({
       ref={setNodeRef}
       style={style}
       onClick={() => onSelectItem(item)}
-      className={`flex items-center gap-3 p-3 bg-white border rounded-lg hover:border-teal-400 transition-all cursor-pointer group ${
-        isDragging ? 'border-teal-400 shadow-lg' : 'border-slate-200'
-      }`}
+      className={`flex items-center gap-3 p-3 bg-white border rounded-lg hover:border-teal-400 transition-all cursor-pointer group ${isDragging ? 'border-teal-400 shadow-lg' : 'border-slate-200'
+        }`}
     >
       {!isPreviewMode && (
         <div
@@ -549,9 +546,8 @@ function PaletteTile({ id, icon: Icon, label }: { id: string; icon: any; label: 
       ref={setNodeRef}
       {...listeners}
       {...attributes}
-      className={`flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-200 rounded-xl hover:border-teal-400 hover:shadow-md cursor-grab active:cursor-grabbing transition-all touch-none select-none ${
-        isDragging ? 'opacity-40 border-teal-400' : 'opacity-100'
-      }`}
+      className={`flex flex-col items-center justify-center gap-2 p-3 bg-white border border-slate-200 rounded-xl hover:border-teal-400 hover:shadow-md cursor-grab active:cursor-grabbing transition-all touch-none select-none ${isDragging ? 'opacity-40 border-teal-400' : 'opacity-100'
+        }`}
     >
       <Icon className="w-5 h-5 text-slate-600" strokeWidth={1.5} />
       <span className="text-[11px] font-medium text-slate-600">{label}</span>

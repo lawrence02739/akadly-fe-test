@@ -8,7 +8,7 @@ export default function DashboardLayout() {
       <Sidebar />
       <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
         <TopNav />
-        <main className="flex-1 overflow-y-auto p-8">
+        <main className="flex-1 overflow-y-auto p-2">
           <Outlet />
         </main>
       </div>

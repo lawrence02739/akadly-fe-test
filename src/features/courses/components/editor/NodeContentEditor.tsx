@@ -11,15 +11,15 @@ import LiveClassContentEditor from './LiveClassContentEditor';
 import CodingContentEditor from './CodingContentEditor';
 // ─── Type Configs ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string; accept?: string; hint?: string }> = {
-  VIDEO:      { icon: Video,         color: 'text-blue-600',   bgColor: 'bg-blue-50',   label: 'Video',      accept: 'video/*',         hint: 'MP4, WebM or OGG (max 2GB)' },
-  AUDIO:      { icon: Headphones,    color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Audio',      accept: 'audio/*',         hint: 'MP3, WAV or M4A (max 500MB)' },
-  PDF:        { icon: FileText,      color: 'text-red-600',    bgColor: 'bg-red-50',    label: 'PDF',        accept: 'application/pdf', hint: 'PDF only (max 100MB)' },
-  FILE:       { icon: File,          color: 'text-slate-600',  bgColor: 'bg-slate-100', label: 'File',       accept: '*/*',             hint: 'Any file type (max 1GB)' },
-  MODULE:     { icon: File,          color: 'text-teal-600',   bgColor: 'bg-teal-50',   label: 'Module' },
-  QUIZ:       { icon: HelpCircle,    color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
-  ASSIGNMENT: { icon: ClipboardCheck,color: 'text-amber-600',  bgColor: 'bg-amber-50',  label: 'Assignment' },
-  LIVE_CLASS: { icon: Radio,         color: 'text-rose-600',   bgColor: 'bg-rose-50',   label: 'Live Class' },
-  CODING:     { icon: Code2,         color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
+  VIDEO: { icon: Video, color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Video', accept: 'video/*', hint: 'MP4, WebM or OGG (max 2GB)' },
+  AUDIO: { icon: Headphones, color: 'text-purple-600', bgColor: 'bg-purple-50', label: 'Audio', accept: 'audio/*', hint: 'MP3, WAV or M4A (max 500MB)' },
+  PDF: { icon: FileText, color: 'text-red-600', bgColor: 'bg-red-50', label: 'PDF', accept: 'application/pdf', hint: 'PDF only (max 100MB)' },
+  FILE: { icon: File, color: 'text-slate-600', bgColor: 'bg-slate-100', label: 'File', accept: '*/*', hint: 'Any file type (max 1GB)' },
+  MODULE: { icon: File, color: 'text-teal-600', bgColor: 'bg-teal-50', label: 'Module' },
+  QUIZ: { icon: HelpCircle, color: 'text-orange-600', bgColor: 'bg-orange-50', label: 'Quiz' },
+  ASSIGNMENT: { icon: ClipboardCheck, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Assignment' },
+  LIVE_CLASS: { icon: Radio, color: 'text-rose-600', bgColor: 'bg-rose-50', label: 'Live Class' },
+  CODING: { icon: Code2, color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
 };
 
 // ─── Shared Upload UI ─────────────────────────────────────────────────────────
@@ -160,7 +160,7 @@ export default function NodeContentEditor({
   const [linkUrl, setLinkUrl] = useState(item.content?.url ?? '');
   const [linkLabel, setLinkLabel] = useState(item.content?.label ?? '');
   const [openInNewTab, setOpenInNewTab] = useState(item.content?.newTab ?? true);
-  
+
   // Quiz/Test specific state
   const [isQuizModalOpen, setIsQuizModalOpen] = useState(false);
   const [linkedQuiz, setLinkedQuiz] = useState<any>(item.content?.linkedQuiz ?? null);
@@ -501,11 +501,11 @@ export default function NodeContentEditor({
         )}
       </div>
 
-      <AssessmentLibraryModal 
-        isOpen={isQuizModalOpen} 
+      <AssessmentLibraryModal
+        isOpen={isQuizModalOpen}
         type={item.type === 'TEST' ? 'TEST' : 'QUIZ'}
-        onClose={() => setIsQuizModalOpen(false)} 
-        onSelect={(q) => setLinkedQuiz(q)} 
+        onClose={() => setIsQuizModalOpen(false)}
+        onSelect={(q) => setLinkedQuiz(q)}
       />
     </div>
   );
