@@ -9,6 +9,7 @@ import AssessmentLibraryModal from './AssessmentLibraryModal';
 import AssignmentContentEditor from './AssignmentContentEditor';
 import LiveClassContentEditor from './LiveClassContentEditor';
 import CodingContentEditor from './CodingContentEditor';
+import FormContentEditor from './FormContentEditor';
 // ─── Type Configs ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string; accept?: string; hint?: string }> = {
   VIDEO: { icon: Video, color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Video', accept: 'video/*', hint: 'MP4, WebM or OGG (max 2GB)' },
@@ -227,7 +228,7 @@ export default function NodeContentEditor({
     );
   };
 
-  const typesThatAreComingSoon = ['FORM'];
+  const typesThatAreComingSoon: string[] = [];
 
   return (
     <div className="flex flex-col h-full bg-white">
@@ -487,6 +488,15 @@ export default function NodeContentEditor({
             courseId={courseId}
             onSave={handleSaveContent}
             isSaving={isSaving}
+          />
+        )}
+
+        {item.type === 'FORM' && (
+          <FormContentEditor
+            item={item}
+            isSaving={isSaving}
+            onSaveContent={handleSaveContent}
+            onCancel={() => {}}
           />
         )}
 

@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import AuthLayout from '../../../shared/layouts/AuthLayout';
@@ -57,7 +58,7 @@ export default function VerifyEmail() {
     
     if (code.length === 6) {
       try {
-        const response = await fetch('http://localhost:3000/api/v1/auth/verify-email', {
+        const response = await fetch(`${API_BASE_URL}/auth/verify-email`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ token: code }),

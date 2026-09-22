@@ -1,3 +1,4 @@
+import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
@@ -7,6 +8,7 @@ import api from '../../../shared/api/axios';
 export default function Signup() {
   const navigate = useNavigate();
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -19,12 +21,24 @@ export default function Signup() {
     const fullName = formData.get('fullName') as string;
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
+    const confirmPassword = formData.get('confirmPassword') as string;
+    const organizationName = formData.get('organizationName') as string;
+    const organizationAddress = formData.get('organizationAddress') as string;
+
+    if (password !== confirmPassword) {
+      setError('Passwords do not match. Please try again.');
+      setIsLoading(false);
+      return;
+    }
 
     try {
       await api.post('/auth/register', {
         ownerName: fullName,
         email,
         password,
+        organizationName,
+        organizationAddress,
+        workspaceName: organizationName, // Setting workspace name same as org name for simplicity
         termsAccepted: true,
       });
       navigate('/verify-email', { state: { email } });
@@ -45,7 +59,7 @@ export default function Signup() {
         {/* Google Auth Button */}
         <button
           type="button"
-          onClick={() => { window.location.href = 'http://localhost:3000/api/v1/auth/google'; }}
+          onClick={() => { window.location.href = `${API_BASE_URL}/auth/google`; }}
           className="w-full flex items-center justify-center gap-3 px-4 py-3 border border-slate-200 rounded-xl bg-white hover:bg-slate-50 text-slate-700 font-semibold transition-colors"
         >
           <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -96,6 +110,30 @@ export default function Signup() {
             />
           </div>
 
+          {/* Organization Name */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">Organization Name</label>
+            <input
+              type="text"
+              name="organizationName"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
+              placeholder="e.g. Acme Corporation"
+              required
+            />
+          </div>
+
+          {/* Organization Address */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">Organization Location / Address</label>
+            <input
+              type="text"
+              name="organizationAddress"
+              className="w-full px-4 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
+              placeholder="e.g. Bengaluru, India"
+              required
+            />
+          </div>
+
           {/* Password */}
           <div className="space-y-1.5">
             <label className="block text-sm font-medium text-slate-700">Password</label>
@@ -116,6 +154,27 @@ export default function Signup() {
               </button>
             </div>
             <p className="text-xs text-slate-500 mt-1.5">Must be at least 8 characters.</p>
+          </div>
+
+          {/* Confirm Password */}
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">Confirm Password</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? 'text' : 'password'}
+                name="confirmPassword"
+                className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
+                placeholder="Re-enter your password"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {/* Terms */}
