@@ -6,6 +6,7 @@
   --ink: #0f172a;
   --ink-soft: #64748b;
   --indigo: #0f172a;
+  --primary: var(--indigo);
   --indigo-deep: #020617;
   --rule: #e2e8f0;
   --rule-strong: #cbd5e1;
