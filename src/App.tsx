@@ -13,6 +13,9 @@ import CourseStructureBuilder from "./features/courses/pages/CourseStructureBuil
 import QuizStudioPage from "./features/quizzes/pages/QuizStudioPage";
 import TestStudioPage from "./features/tests/TestStudioPage";
 import QuestionBankPage from "./features/questions/components/QuestionBankPage";
+import FormsDashboard from "./features/form-builder/pages/FormsDashboard";
+import { FormBuilderLayout } from "./features/form-builder/components/FormBuilderLayout";
+import { PublicFormPage } from "./features/form-builder/components/PublicFormPage";
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -78,6 +81,9 @@ function App() {
               </AccessRoute>
             }
           />
+          <Route path="forms" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormsDashboard /></AccessRoute>} />
+          <Route path="forms/create" element={<AccessRoute anyOf={["form:manage"]}><FormBuilderLayout /></AccessRoute>} />
+          <Route path="forms/:formId/edit" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormBuilderLayout /></AccessRoute>} />
           <Route
             path="courses/:courseId/edit"
             element={
@@ -197,6 +203,7 @@ function App() {
 
         {/* Redirect Root to Login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/f/:id" element={<PublicFormPage />} />
       </Routes>
     </Router>
   );

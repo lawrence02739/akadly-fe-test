@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import toast from 'react-hot-toast';
 import {
   ArrowLeft, Video, FileText, Headphones, File, Type, Heading,
   Link as LinkIcon, HelpCircle, TestTube, Code, CheckSquare,
@@ -44,6 +45,7 @@ export default function CourseStructureBuilder() {
   const { courseId = '' } = useParams();
   const [selectedItem, setSelectedItem] = useState<any>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [isSequential, setIsSequential] = useState(false);
 
   // ── local optimistic state ────────────────────────────────────────────────
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
@@ -232,13 +234,22 @@ export default function CourseStructureBuilder() {
           >
             <Eye className="w-4 h-4" /> {isPreviewMode ? 'Exit Preview' : 'Preview Mode'}
           </button>
-          <div className="flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-lg">
+          <div className="flex items-center gap-3 px-3 py-1.5 border border-slate-200 rounded-lg">
             <span className="text-sm font-medium text-slate-700">Sequential</span>
-            <div className="w-8 h-4 bg-slate-200 rounded-full relative cursor-pointer">
-              <div className="absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full"></div>
-            </div>
+            <label className="relative inline-flex items-center cursor-pointer">
+              <input
+                type="checkbox"
+                checked={isSequential}
+                onChange={e => setIsSequential(e.target.checked)}
+                className="sr-only peer"
+              />
+              <div className="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-teal-700"></div>
+            </label>
           </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-semibold transition-colors">
+          <button 
+            onClick={() => toast.success('Course successfully published!', { icon: '🎉' })}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-700 hover:bg-teal-800 text-white rounded-lg text-sm font-semibold transition-colors"
+          >
             <Share className="w-4 h-4" /> Publish Course
           </button>
         </div>

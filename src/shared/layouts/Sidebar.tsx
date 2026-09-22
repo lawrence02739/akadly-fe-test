@@ -26,6 +26,12 @@ const navItems = [
     permissions: ["course:read", "course:manage"],
   },
   {
+    icon: FileText,
+    label: "Forms",
+    path: "/partner/forms",
+    permissions: [],
+  },
+  {
     icon: Users,
     label: "Users",
     path: "/partner/users",
