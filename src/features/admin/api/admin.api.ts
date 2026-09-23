@@ -53,10 +53,9 @@ export interface SubscriptionQuery {
   sortOrder?: 'asc' | 'desc';
 }
 export interface AdminAccessRole { id: string; name: string; description: string; permissions: string[]; isSystem: boolean; createdAt: string; updatedAt: string }
-export interface AdminTeam { id: string; name: string; code: string; description: string; status: 'active' | 'inactive'; memberCount?: number; createdAt: string; updatedAt: string }
-export interface AdminTeamMember { id: string; tenantId: string | { name?: string; owner?: { name?: string; email?: string } }; teamId: string | AdminTeam; accessRoleId: string | AdminAccessRole; permissions: string[]; status: 'active' | 'suspended'; joinedAt: string }
-export interface AdminTenantInvitation { id: string; tenantId: string | { name?: string; owner?: { name?: string; email?: string } } | null; teamId: string | AdminTeam; accessRoleId: string | AdminAccessRole; name: string; email: string; workspaceName: string; workspaceSlug: string; permissions: string[]; status: 'pending' | 'accepted' | 'expired' | 'revoked'; deliveryStatus: 'pending' | 'sent' | 'failed'; expiresAt: string; createdAt: string }
-export interface AdminTeamInvitationPreview { name: string; email: string; workspaceName: string; workspaceSlug: string; teamName: string; roleName: string }
+export interface AdminTeamMember { id: string; userId: string; email: string; displayName: string; roleIds: string[]; permissions: string[] | null; status: 'invited' | 'accepted' | 'active' | 'suspended' | 'disabled'; invitationDeliveryStatus: 'pending' | 'sent' | 'failed' | null; invitationExpiresAt: string | null; invitationAcceptedAt: string | null; createdAt: string }
+export type AdminInvitation = AdminTeamMember;
+export interface AdminTeamInvitationPreview { name: string; email: string; expiresAt: string | null }
 export interface TeamManagementQuery { page: number; pageSize: number; search?: string; status?: string; teamId?: string; roleId?: string }
 const withId = <T>(item: T): T => {
   if (typeof item !== 'object' || item === null) return item;
@@ -172,22 +171,16 @@ export const adminApi = {
   async createAccessRole(payload: { name: string; description?: string; permissions: string[] }) { const { data } = await client.post<Envelope<AdminAccessRole>>('/team-management/roles', payload); return data.data; },
   async updateAccessRole(id: string, payload: { name?: string; description?: string; permissions?: string[] }) { const { data } = await client.patch<Envelope<AdminAccessRole>>(`/team-management/roles/${id}`, payload); return data.data; },
   async deleteAccessRole(id: string) { await client.delete(`/team-management/roles/${id}`); },
-  async teams(params: TeamManagementQuery) { const { data } = await client.get<Envelope<AdminTeam[]>>('/team-management/teams', { params }); return pageResult(data, params); },
-  async team(id: string) { const { data } = await client.get<Envelope<AdminTeam>>(`/team-management/teams/${id}`); return data.data; },
-  async createTeam(payload: { name: string; code: string; description?: string; status?: AdminTeam['status'] }) { const { data } = await client.post<Envelope<AdminTeam>>('/team-management/teams', payload); return data.data; },
-  async updateTeam(id: string, payload: Partial<{ name: string; code: string; description: string; status: AdminTeam['status'] }>) { const { data } = await client.patch<Envelope<AdminTeam>>(`/team-management/teams/${id}`, payload); return data.data; },
-  async deleteTeam(id: string) { await client.delete(`/team-management/teams/${id}`); },
   async teamMembers(params: TeamManagementQuery) { const { data } = await client.get<Envelope<AdminTeamMember[]>>('/team-management/members', { params }); return pageResult(data, params); },
   async teamMember(id: string) { const { data } = await client.get<Envelope<AdminTeamMember>>(`/team-management/members/${id}`); return data.data; },
-  async updateTeamMember(id: string, payload: Partial<{ teamId: string; accessRoleId: string; permissions: string[]; status: 'active' | 'suspended' }>) { const { data } = await client.patch<Envelope<AdminTeamMember>>(`/team-management/members/${id}`, payload); return data.data; },
+  async updateTeamMember(id: string, payload: Partial<{ roleIds: string[]; status: 'active' | 'suspended' | 'disabled' }>) { const { data } = await client.patch<Envelope<AdminTeamMember>>(`/team-management/members/${id}`, payload); return data.data; },
   async deleteTeamMember(id: string) { await client.delete(`/team-management/members/${id}`); },
-  async invitations(params: TeamManagementQuery) { const { data } = await client.get<Envelope<AdminTenantInvitation[]>>('/team-management/invitations', { params }); return pageResult(data, params); },
-  async createInvitation(payload: { workspaceName: string; workspaceSlug: string; name: string; email: string; teamId: string; accessRoleId: string; permissions?: string[] }) { const { data } = await client.post<Envelope<AdminTenantInvitation>>('/team-management/invitations', payload); return data.data; },
-  async updateInvitation(id: string, payload: Partial<{ teamId: string; accessRoleId: string; permissions: string[] }>) { const { data } = await client.patch<Envelope<AdminTenantInvitation>>(`/team-management/invitations/${id}`, payload); return data.data; },
-  async resendInvitation(id: string) { const { data } = await client.post<Envelope<AdminTenantInvitation>>(`/team-management/invitations/${id}/resend`); return data.data; },
+  async invitations(params: TeamManagementQuery) { const { data } = await client.get<Envelope<AdminInvitation[]>>('/team-management/invitations', { params }); return pageResult(data, params); },
+  async createInvitation(payload: { name: string; email: string; roleIds: string[]; permissions: string[] }) { const { data } = await client.post<Envelope<AdminInvitation>>('/team-management/invitations', payload); return data.data; },
+  async resendInvitation(id: string) { const { data } = await client.post<Envelope<AdminInvitation>>(`/team-management/invitations/${id}/resend`); return data.data; },
   async revokeInvitation(id: string) { await client.delete(`/team-management/invitations/${id}`); },
   async previewTeamInvitation(token: string) { const { data } = await client.post<Envelope<AdminTeamInvitationPreview>>('/team-management/invitations/preview', { token }); return data.data; },
-  async acceptTeamInvitation(token: string, password: string, confirmPassword: string) { const { data } = await client.post<Envelope<{ accepted: boolean; tenantId: string }>>('/team-management/invitations/accept', { token, password, confirmPassword }); return data.data; },
+  async acceptTeamInvitation(token: string, password: string) { const { data } = await client.post<Envelope<{ accepted: boolean }>>('/team-management/invitations/accept', { token, password }); return data.data; },
 };
 
 export const adminError = (error: unknown) => {

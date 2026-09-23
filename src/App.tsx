@@ -57,6 +57,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/accept-invite" element={<AcceptInvitation />} />
+        <Route path="/admin/accept-invitation" element={<AdminTeamInvitationAccept />} />
         <Route path="/admin/team/invitations/accept" element={<AdminTeamInvitationAccept />} />
         <Route path="/admin" element={<AdminSessionProvider><AdminGuard /></AdminSessionProvider>}>
           <Route element={<AdminLayout />}>
