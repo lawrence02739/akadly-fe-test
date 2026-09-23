@@ -1,10 +1,10 @@
 export type QuestionType =
   // Basic Types
-  | 'SINGLE' | 'MULTIPLE' | 'NUMERIC' | 'TRUE_FALSE' | 'FILL_BLANK'
+  | 'SINGLE' | 'MULTIPLE' | 'NUMERIC' | 'INTEGER' | 'TRUE_FALSE' | 'FILL_BLANK'
   // Advanced Types
   | 'SHORT_ANSWER' | 'SUBJECTIVE' | 'MATCH' | 'ASSERTION_REASON' | 'ARRANGEMENT'
   // Specialized Types
-  | 'MAP_BASED' | 'DRAG_DROP' | 'CODING' | 'LINKED_COMPREHENSION' | 'VIVA_ORAL';
+  | 'MAP_BASED' | 'DRAG_DROP' | 'CODING' | 'LINKED_COMPREHENSION' | 'VIVA_ORAL' | 'CALCULATION';
 
 
 export type QuizStatus = 'DRAFT' | 'PUBLISHED';
@@ -105,3 +105,9 @@ export interface CreateQuestionDto {
 }
 
 export type UpdateQuestionDto = Partial<CreateQuestionDto>;
+
+export interface InlineSubQuestion extends Omit<CreateQuestionDto, 'type'> {
+  id: string;
+  inline: true;
+  type: QuestionType;
+}

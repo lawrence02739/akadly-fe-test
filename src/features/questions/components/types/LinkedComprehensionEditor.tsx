@@ -1,7 +1,7 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, Upload } from 'lucide-react';
 import { SubQuestionPicker } from '../SubQuestionPicker';
-import type { QuestionType } from '../../../quizzes/types';
+import type { QuestionType, InlineSubQuestion } from '../../../quizzes/types';
 
 const EXCLUDED_TYPES: QuestionType[] = ['LINKED_COMPREHENSION', 'VIVA_ORAL'];
 
@@ -37,7 +37,7 @@ export interface LinkedComprehensionContent {
   scenarioMode: 'COMPREHENSION' | 'CASE_STUDY' | 'CBQ' | 'DATA_INTERPRETATION' | 'TBS';
   passage: string;
   referenceData?: ReferenceData;
-  subQuestions: string[];
+  subQuestions: (string | InlineSubQuestion)[];
 }
 
 interface Props {
@@ -270,7 +270,7 @@ export const LinkedComprehensionEditor: React.FC<Props> = ({ value, onChange, on
       {/* Sub-questions */}
       <div className="section-label">Sub-Questions <span className="req">*</span></div>
       <div className="field-hint-row" style={{ marginBottom: '10px' }}>
-        Link existing questions from the bank. Students will see the passage above and answer these questions.
+        Link existing questions from the bank, or write a quick question right here — inline questions aren't saved to your question bank, they only exist inside this one.
       </div>
       <SubQuestionPicker
         value={value.subQuestions}

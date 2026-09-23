@@ -16,6 +16,7 @@ import { DragDropEditor, defaultDragDropContent } from './types/DragDropEditor';
 import { CodingEditor, defaultCodingContent } from './types/CodingEditor';
 import { LinkedComprehensionEditor, defaultLinkedComprehensionContent } from './types/LinkedComprehensionEditor';
 import { VivaOralEditor, defaultVivaOralContent } from './types/VivaOralEditor';
+import { NumericAnswerEditor, defaultNumericAnswerContent } from './types/NumericAnswerEditor';
 import { useUpload } from '../../courses/hooks/useUpload';
 
 
@@ -34,7 +35,8 @@ const PALETTE: { group: string; types: TypeMeta[] }[] = [
     types: [
       { id: 'SINGLE',    label: 'Single Choice',   icon: '◉', hint: 'One correct option' },
       { id: 'MULTIPLE',  label: 'Multiple Choice',  icon: '☑', hint: 'Multiple correct options' },
-      { id: 'NUMERIC',   label: 'Numeric',          icon: '1.5', hint: 'Numeric answer with optional tolerance' },
+      { id: 'NUMERIC',   label: 'Numerical Value',  icon: '1.5', hint: 'Numeric answer with optional tolerance' },
+      { id: 'INTEGER',   label: 'Integer Type',     icon: '#', hint: 'Exact integer answer (JEE/GATE)' },
       { id: 'TRUE_FALSE',label: 'True / False',     icon: 'T/F', hint: 'Binary true or false statement' },
       { id: 'FILL_BLANK',label: 'Fill in Blank',    icon: '___', hint: 'Text, number, or picklist blanks' },
     ],
@@ -57,6 +59,7 @@ const PALETTE: { group: string; types: TypeMeta[] }[] = [
       { id: 'CODING',    label: 'Coding',      icon: '</>', hint: 'Coding challenges, debugging, SQL' },
       { id: 'LINKED_COMPREHENSION', label: 'Linked Comprehension', icon: '📖', hint: 'Passage/Scenario with sub-questions' },
       { id: 'VIVA_ORAL', label: 'Viva / Oral', icon: '🎙', hint: 'Audio/listening and oral response' },
+      { id: 'CALCULATION', label: 'Calculation', icon: '∑', hint: 'Solve and enter a computed answer' },
     ],
   },
 ];
@@ -67,6 +70,9 @@ const PALETTE: { group: string; types: TypeMeta[] }[] = [
 
 const defaultContentForType = (t: QuestionType): Record<string, any> | undefined => {
   switch (t) {
+    case 'NUMERIC':
+    case 'INTEGER':
+    case 'CALCULATION':    return defaultNumericAnswerContent(t);
     case 'TRUE_FALSE':     return defaultTrueFalseContent();
     case 'FILL_BLANK':     return defaultFillBlankContent();
     case 'SHORT_ANSWER':   return defaultShortAnswerContent();
@@ -124,13 +130,12 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const [categoryId, setCategoryId] = useState<string>('');
   const [negativeMarking, setNegativeMarking] = useState<string>('');
   const [completionTimeMinutes, setCompletionTimeMinutes] = useState<string>('');
+  const [maxCharacterLimit, setMaxCharacterLimit] = useState<string>('');
 
   // ── Legacy flat fields (SINGLE / MULTIPLE / NUMERIC / MATCH) ─────────────
   const [options, setOptions] = useState<{ text: string; correct: boolean }[]>([
     { text: '', correct: false }, { text: '', correct: false },
   ]);
-  const [numericAnswer, setNumericAnswer] = useState('');
-  const [numericRange, setNumericRange] = useState(false);
   const [matchColI, setMatchColI] = useState<{ text: string; match: string }[]>([
     { text: '', match: '' }, { text: '', match: '' },
   ]);
@@ -163,17 +168,23 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         setCategoryId(question.categoryId || '');
         setNegativeMarking(question.negativeMarking !== undefined ? String(question.negativeMarking) : '');
         setCompletionTimeMinutes(question.completionTimeMinutes !== undefined ? String(question.completionTimeMinutes) : '');
+        setMaxCharacterLimit((question as any).maxCharacterLimit !== undefined ? String((question as any).maxCharacterLimit) : '');
 
         if (question.type === 'SINGLE' || question.type === 'MULTIPLE') {
           setOptions(question.options?.length ? [...question.options] : [{ text: '', correct: false }, { text: '', correct: false }]);
-        } else if (question.type === 'NUMERIC') {
-          setNumericAnswer(question.answer !== undefined ? String(question.answer) : '');
-          setNumericRange(!!question.range);
         } else if (question.type === 'MATCH') {
           setMatchColI(question.colI?.length ? [...question.colI] : [{ text: '', match: '' }, { text: '', match: '' }]);
           setMatchColII(question.colII?.length ? [...question.colII] : ['', '']);
         } else {
-          setContent(question.content || defaultContentForType(question.type));
+          let c = question.content;
+          if (question.type === 'NUMERIC' && !c?.correctAnswer && question.answer !== undefined) {
+             c = {
+               ...defaultNumericAnswerContent('NUMERIC'),
+               correctAnswer: Number(question.answer),
+               integerOnly: false,
+             };
+          }
+          setContent(c || defaultContentForType(question.type));
         }
       } else {
         // Reset all to defaults
@@ -191,9 +202,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         setCategoryId('');
         setNegativeMarking('');
         setCompletionTimeMinutes('');
+        setMaxCharacterLimit('');
         setOptions([{ text: '', correct: false }, { text: '', correct: false }]);
-        setNumericAnswer('');
-        setNumericRange(false);
         setMatchColI([{ text: '', match: '' }, { text: '', match: '' }]);
         setMatchColII(['', '']);
         setContent(undefined);
@@ -202,6 +212,15 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     }
   }, [isOpen, question, nextOrder]);
 
+  useEffect(() => {
+    if (isOpen && !embedded) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => { document.body.style.overflow = ''; };
+  }, [isOpen, embedded]);
+
   if (!isOpen) return null;
 
   // ── Type change handler ─────────────────────────────────────────────────────
@@ -209,7 +228,6 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     if (newType === type) return;
     setType(newType);
     if (newType === 'SINGLE' || newType === 'MULTIPLE') setOptions([{ text: '', correct: false }, { text: '', correct: false }]);
-    else if (newType === 'NUMERIC') { setNumericAnswer(''); setNumericRange(false); }
     else if (newType === 'MATCH') { setMatchColI([{ text: '', match: '' }, { text: '', match: '' }]); setMatchColII(['', '']); }
     setContent(defaultContentForType(newType));
   };
@@ -228,11 +246,20 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
     } else if (type === 'MATCH') {
       if (matchColI.some((p) => !p.text.trim() || !p.match.trim())) { toast.error('Fill in every Column I row.'); return; }
       if (matchColII.filter((o) => o.trim() !== '').length < 2) { toast.error('At least two Column II options are required.'); return; }
-    } else if (type === 'NUMERIC') {
-      if (!numericAnswer.trim()) { toast.error('Enter the correct answer.'); return; }
     } else if (type === 'TRUE_FALSE') {
       if ((content as any)?.correctAnswer === null || (content as any)?.correctAnswer === undefined) {
         toast.error('Select True or False as the correct answer.'); return;
+      }
+    } else if (type === 'NUMERIC' || type === 'INTEGER' || type === 'CALCULATION') {
+      const c = content as any;
+      if (c?.correctAnswer === undefined || c?.correctAnswer === null || c?.correctAnswer === '') {
+        toast.error('Enter the correct answer.'); return;
+      }
+      if ((type === 'INTEGER' || c?.integerOnly) && !Number.isInteger(c?.correctAnswer)) {
+        toast.error('Correct answer must be a whole number for integer questions.'); return;
+      }
+      if ((type === 'INTEGER' || c?.integerOnly) && c?.min !== undefined && c?.max !== undefined && c?.min > c?.max) {
+        toast.error('Min value cannot be greater than Max value.'); return;
       }
     } else if (type === 'CODING') {
       const c = content as any;
@@ -257,14 +284,12 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
       categoryId: categoryId || undefined,
       negativeMarking: negativeMarking !== '' ? Number(negativeMarking) : undefined,
       completionTimeMinutes: completionTimeMinutes !== '' ? Number(completionTimeMinutes) : undefined,
-    };
+      maxCharacterLimit: type === 'NUMERIC' && maxCharacterLimit !== '' ? Number(maxCharacterLimit) : undefined,
+    } as any;
 
     // Legacy flat fields
     if (type === 'SINGLE' || type === 'MULTIPLE') {
       dto.options = options.filter((o) => o.text.trim() !== '');
-    } else if (type === 'NUMERIC') {
-      dto.answer = Number(numericAnswer);
-      dto.range = numericRange ? 1 : 0;
     } else if (type === 'MATCH') {
       dto.colI = matchColI;
       dto.colII = matchColII.filter((o) => o.trim() !== '');
@@ -331,21 +356,14 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         );
 
       case 'NUMERIC':
+      case 'INTEGER':
+      case 'CALCULATION':
         return (
-          <>
-            <div className="section-label">Answer</div>
-            <div className="form-grid">
-              <div className="field full">
-                <input type="text" placeholder="Correct numeric answer" value={numericAnswer} onChange={(e) => setNumericAnswer(e.target.value)} />
-              </div>
-              <div className="field full">
-                <label className="check-row" style={{ width: 'fit-content' }}>
-                  <input type="checkbox" checked={numericRange} onChange={(e) => setNumericRange(e.target.checked)} />
-                  Accept a range of answers
-                </label>
-              </div>
-            </div>
-          </>
+          <NumericAnswerEditor
+            value={(content as any) || defaultNumericAnswerContent(type)}
+            onChange={setContent}
+            variant={type}
+          />
         );
 
       case 'MATCH':
@@ -642,6 +660,21 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                     onChange={(e) => setCompletionTimeMinutes(e.target.value)}
                   />
                 </div>
+                {type === 'NUMERIC' && (
+                  <div className="field">
+                    <label>
+                      Max Character Limit
+                      <span style={{ fontWeight: 400, color: 'var(--ink-soft)', fontSize: '11px', marginLeft: '4px' }}>(optional)</span>
+                    </label>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="e.g. 5"
+                      value={maxCharacterLimit}
+                      onChange={(e) => setMaxCharacterLimit(e.target.value)}
+                    />
+                  </div>
+                )}
                 <div className="field">
                   <label>Order / Sequence</label>
                   <input type="number" min="1" value={order} onChange={(e) => setOrder(Number(e.target.value))} />

@@ -1,7 +1,7 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Trash2, X } from 'lucide-react';
 import { SubQuestionPicker } from '../SubQuestionPicker';
-import type { QuestionType } from '../../../quizzes/types';
+import type { QuestionType, InlineSubQuestion } from '../../../quizzes/types';
 
 const EXCLUDED_TYPES: QuestionType[] = ['LINKED_COMPREHENSION', 'VIVA_ORAL'];
 
@@ -15,7 +15,7 @@ export interface VivaOralContent {
   targetAccent?: string;
   wordLimitPerBlank?: number;
   answerMatchMode?: 'STRICT_CASE_SENSITIVE' | 'STRICT_CASE_INSENSITIVE';
-  subQuestions?: string[];
+  subQuestions?: (string | InlineSubQuestion)[];
   prompts?: { question: string; expectedPoints: string[]; responseTimeLimitSeconds?: number }[];
   recordingRequired?: boolean;
 }
@@ -199,7 +199,7 @@ export const VivaOralEditor: React.FC<Props> = ({ value, onChange, onFileUpload 
 
           <div className="section-label" style={{ marginTop: '16px' }}>Sub-Questions <span className="req">*</span></div>
           <div className="field-hint-row" style={{ marginBottom: '10px' }}>
-            Students hear the audio then answer these linked questions.
+            Link existing questions from the bank, or write a quick question right here — inline questions aren't saved to your question bank, they only exist inside this one.
           </div>
           <SubQuestionPicker
             value={value.subQuestions || []}
