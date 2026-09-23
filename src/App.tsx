@@ -26,6 +26,13 @@ import WorkspacePage from "./shared/pages/WorkspacePage";
 import TeamAccessPage from "./features/team/pages/TeamAccessPage";
 import AcceptInvitation from "./features/team/pages/AcceptInvitation";
 import AccessRoute from "./shared/auth/AccessRoute";
+import { AdminGuard, AdminSessionProvider } from "./features/admin/AdminSession";
+import AdminLogin from "./features/admin/pages/AdminLogin";
+import AdminTenants, { AdminTenantDetails } from "./features/admin/pages/AdminTenants";
+import AdminLayout from "./features/admin/AdminLayout";
+import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
+import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
+import { SubscriptionLayout, SubscriptionList, SubscriptionDetail, SubscriptionForm } from "./features/admin/pages/AdminSubscriptions";
 import {
   BarChart2,
   Calendar,
@@ -50,6 +57,22 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/accept-invite" element={<AcceptInvitation />} />
+        <Route path="/admin/team/invitations/accept" element={<AdminTeamInvitationAccept />} />
+        <Route path="/admin" element={<AdminSessionProvider><AdminGuard /></AdminSessionProvider>}>
+          <Route element={<AdminLayout />}>
+            <Route index element={<Navigate to="tenants" replace />} />
+            <Route path="tenants" element={<AdminTenants />} />
+            <Route path="tenants/:id" element={<AdminTenantDetails />} />
+            <Route path="subscriptions" element={<SubscriptionLayout />}>
+              <Route index element={<SubscriptionList />} />
+              <Route path="new" element={<SubscriptionForm />} />
+              <Route path=":id" element={<SubscriptionDetail />} />
+              <Route path=":id/edit" element={<SubscriptionForm edit />} />
+            </Route>
+            <Route path="team" element={<AdminTeamManagement />} />
+          </Route>
+        </Route>
+        <Route path="/admin/login" element={<AdminSessionProvider><AdminLogin /></AdminSessionProvider>} />
 
         {/* Protected Routes (Static for now) */}
         <Route path="/partner" element={<DashboardLayout />}>
