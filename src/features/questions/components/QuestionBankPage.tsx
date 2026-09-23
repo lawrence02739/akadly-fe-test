@@ -23,6 +23,8 @@ const TYPE_LABELS: Record<string, string> = {
   MAP_BASED: 'Map Based',
   DRAG_DROP: 'Drag & Drop',
   CODING: 'Coding',
+  LINKED_COMPREHENSION: 'Comprehension',
+  VIVA_ORAL: 'Viva / Oral',
 };
 
 

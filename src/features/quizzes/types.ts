@@ -4,7 +4,8 @@ export type QuestionType =
   // Advanced Types
   | 'SHORT_ANSWER' | 'SUBJECTIVE' | 'MATCH' | 'ASSERTION_REASON' | 'ARRANGEMENT'
   // Specialized Types
-  | 'MAP_BASED' | 'DRAG_DROP' | 'CODING';
+  | 'MAP_BASED' | 'DRAG_DROP' | 'CODING' | 'LINKED_COMPREHENSION' | 'VIVA_ORAL';
+
 
 export type QuizStatus = 'DRAFT' | 'PUBLISHED';
 export type QuestionDifficulty = 'EASY' | 'MEDIUM' | 'HARD';

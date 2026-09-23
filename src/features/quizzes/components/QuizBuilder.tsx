@@ -247,6 +247,25 @@ export const QuizBuilder: React.FC<QuizBuilderProps> = ({ quizId, onBack, onEdit
           {c.timeLimitMinutes && <span style={{ fontSize: '11px', color: 'var(--ink-soft)' }}>{c.timeLimitMinutes} min</span>}
         </div>
       );
+    } else if (q.type === 'LINKED_COMPREHENSION') {
+      const modeLabel = c.scenarioMode?.replace('_', ' ') || 'Comprehension';
+      body = (
+        <div style={{ marginTop: '4px', fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <span style={{ padding: '2px 10px', background: 'var(--primary-50, #eff6ff)', color: 'var(--primary)', border: '1px solid var(--primary-100, #dbeafe)', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+            {modeLabel}
+          </span>
+          <span>{c.subQuestions?.length || 0} sub-question{(c.subQuestions?.length !== 1) ? 's' : ''}</span>
+        </div>
+      );
+    } else if (q.type === 'VIVA_ORAL') {
+      body = (
+        <div style={{ marginTop: '4px', fontSize: '13px', color: 'var(--ink-soft)', display: 'flex', gap: '12px', alignItems: 'center' }}>
+          <span style={{ padding: '2px 10px', background: '#fdf4ff', color: '#a21caf', border: '1px solid #f5d0fe', borderRadius: '12px', fontSize: '11px', fontWeight: 700 }}>
+            {c.mode === 'LISTEN_RESPOND' ? 'Listen & Respond' : 'Oral Prompt'}
+          </span>
+          <span>{c.subQuestions?.length || 0} sub-question{(c.subQuestions?.length !== 1) ? 's' : ''}</span>
+        </div>
+      );
     }
 
     return (

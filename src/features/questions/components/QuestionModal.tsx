@@ -14,6 +14,10 @@ import { ArrangementEditor, defaultArrangementContent } from './types/Arrangemen
 import { MapBasedEditor, defaultMapBasedContent } from './types/MapBasedEditor';
 import { DragDropEditor, defaultDragDropContent } from './types/DragDropEditor';
 import { CodingEditor, defaultCodingContent } from './types/CodingEditor';
+import { LinkedComprehensionEditor, defaultLinkedComprehensionContent } from './types/LinkedComprehensionEditor';
+import { VivaOralEditor, defaultVivaOralContent } from './types/VivaOralEditor';
+import { useUpload } from '../../courses/hooks/useUpload';
+
 
 // ── Palette definition ─────────────────────────────────────────────────────────
 
@@ -51,6 +55,8 @@ const PALETTE: { group: string; types: TypeMeta[] }[] = [
       { id: 'MAP_BASED', label: 'Map Based',   icon: '🗺', hint: 'Place markers on image/map' },
       { id: 'DRAG_DROP', label: 'Drag & Drop', icon: '⇌', hint: 'Drag items into drop targets' },
       { id: 'CODING',    label: 'Coding',      icon: '</>', hint: 'Coding challenges, debugging, SQL' },
+      { id: 'LINKED_COMPREHENSION', label: 'Linked Comprehension', icon: '📖', hint: 'Passage/Scenario with sub-questions' },
+      { id: 'VIVA_ORAL', label: 'Viva / Oral', icon: '🎙', hint: 'Audio/listening and oral response' },
     ],
   },
 ];
@@ -69,6 +75,8 @@ const defaultContentForType = (t: QuestionType): Record<string, any> | undefined
     case 'MAP_BASED':      return defaultMapBasedContent();
     case 'DRAG_DROP':      return defaultDragDropContent();
     case 'CODING':         return defaultCodingContent();
+    case 'LINKED_COMPREHENSION': return defaultLinkedComprehensionContent();
+    case 'VIVA_ORAL':      return defaultVivaOralContent();
     default:               return undefined;
   }
 };
@@ -82,6 +90,8 @@ export interface QuestionModalProps {
   nextOrder: number;
   onSave: (dto: CreateQuestionDto) => Promise<void>;
   isSaving?: boolean;
+  embedded?: boolean;
+  excludeTypes?: QuestionType[];
 }
 
 // ── Component ─────────────────────────────────────────────────────────────────
@@ -93,6 +103,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   nextOrder,
   onSave,
   isSaving = false,
+  embedded = false,
+  excludeTypes = [],
 }) => {
   // ── Core state ──────────────────────────────────────────────────────────────
   const [type, setType] = useState<QuestionType>('SINGLE');
@@ -131,6 +143,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const { data: tagsList } = useTags();
   const { data: categoriesList } = useCategories();
   const { mutateAsync: createTag, isPending: isCreatingTag } = useCreateTag();
+  const { mutateAsync: uploadFile } = useUpload();
 
   // ── Reset / hydrate on open ────────────────────────────────────────────────
   useEffect(() => {
@@ -439,6 +452,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           <MapBasedEditor
             value={(content as any) || defaultMapBasedContent()}
             onChange={setContent}
+            onFileUpload={(file) => uploadFile({ file, key: `questions/map/${Date.now()}_${file.name}` })}
           />
         );
 
@@ -458,20 +472,39 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           />
         );
 
+      case 'LINKED_COMPREHENSION':
+        return (
+          <LinkedComprehensionEditor
+            value={(content as any) || defaultLinkedComprehensionContent()}
+            onChange={setContent}
+            onFileUpload={(file) => uploadFile({ file, key: `questions/comp/${Date.now()}_${file.name}` })}
+          />
+        );
+
+      case 'VIVA_ORAL':
+        return (
+          <VivaOralEditor
+            value={(content as any) || defaultVivaOralContent()}
+            onChange={setContent}
+            onFileUpload={(file) => uploadFile({ file, key: `questions/viva/${Date.now()}_${file.name}` })}
+          />
+        );
+
       default:
         return null;
     }
   };
 
   // ── Render ──────────────────────────────────────────────────────────────────
-  return (
-    <div className="modal-overlay show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
-      <div className="modal wide">
+  const innerContent = (
+      <div className={`modal ${embedded ? '' : 'wide'}`} style={embedded ? { width: '100%', maxWidth: 'none', boxShadow: 'none' } : {}}>
         <div className="modal-head">
           <h2>{question ? 'Edit question' : 'New question'}</h2>
-          <button className="modal-close" onClick={onClose} disabled={isSaving}>
-            <X size={18} />
-          </button>
+          {!embedded && (
+            <button className="modal-close" onClick={onClose} disabled={isSaving}>
+              <X size={18} />
+            </button>
+          )}
         </div>
 
         <div className="modal-body">
@@ -483,19 +516,22 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
 
           {/* ── Type palette (grouped) ── */}
           <div style={{ marginBottom: '20px' }}>
-            {PALETTE.map((group) => (
+            {PALETTE.map((group) => {
+              const availableTypes = group.types.filter((t) => !excludeTypes.includes(t.id));
+              if (availableTypes.length === 0) return null;
+              return (
               <div key={group.group} style={{ marginBottom: '12px' }}>
                 <div style={{ fontSize: '10px', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--ink-soft)', marginBottom: '6px' }}>
                   {group.group}
                 </div>
                 <div className="type-select" style={{ flexWrap: 'wrap', gap: '6px' }}>
-                  {group.types.map((t) => (
+                  {availableTypes.map((t) => (
                     <div
                       key={t.id}
                       className={`type-chip ${type === t.id ? 'active' : ''}`}
                       onClick={() => handleTypeChange(t.id)}
                       title={t.hint}
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+                      style={{ display: 'flex', alignItems: 'center', gap: '6px', whiteSpace: 'nowrap' }}
                     >
                       <span style={{ fontFamily: 'monospace', fontSize: '11px', fontWeight: 700, opacity: 0.7 }}>{t.icon}</span>
                       {t.label}
@@ -503,7 +539,7 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                   ))}
                 </div>
               </div>
-            ))}
+            )})}
           </div>
 
           {/* ── Shared metadata ── */}
@@ -651,6 +687,12 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
           </button>
         </div>
       </div>
+  );
+
+  return embedded ? innerContent : (
+    <div className="modal-overlay show" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      {innerContent}
     </div>
   );
 };
+
