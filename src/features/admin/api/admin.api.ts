@@ -38,9 +38,20 @@ export interface AdminSubscription {
   currency: 'INR' | 'USD';
   interval: 'monthly' | 'yearly';
   status: 'active' | 'inactive';
-  features: string[];
+  allowedModules: string[];
+  userLimit: number | null;
+  studentLimit: number | null;
+  contentLimit: number | null;
+  courseLimit: number | null;
   createdAt: string;
   updatedAt: string;
+}
+export interface AdminPlanModule {
+  key: string;
+  group: string;
+  label: string;
+  description: string;
+  permissions: string[];
 }
 export type SubscriptionPayload = Omit<AdminSubscription, 'id' | 'createdAt' | 'updatedAt'>;
 export interface SubscriptionQuery {
@@ -155,6 +166,10 @@ export const adminApi = {
     const { data } = await client.get<Envelope<AdminSubscription>>(`/subscriptions/${encodeURIComponent(id)}`);
     return data.data;
   },
+  async subscriptionModules() {
+    const { data } = await client.get<Envelope<AdminPlanModule[]>>('/subscriptions/modules');
+    return data.data;
+  },
   async createSubscription(payload: SubscriptionPayload) {
     const { data } = await client.post<Envelope<AdminSubscription>>('/subscriptions', payload);
     return data.data;
@@ -164,7 +179,12 @@ export const adminApi = {
     return data.data;
   },
   async deleteSubscription(id: string) {
-    await client.delete(`/subscriptions/${encodeURIComponent(id)}`);
+    const { data } = await client.delete<Envelope<AdminSubscription>>(`/subscriptions/${encodeURIComponent(id)}`);
+    return data.data;
+  },
+  async setSubscriptionStatus(id: string, status: AdminSubscription['status']) {
+    const { data } = await client.post<Envelope<AdminSubscription>>(`/subscriptions/${encodeURIComponent(id)}/${status === 'active' ? 'activate' : 'deactivate'}`);
+    return data.data;
   },
   async teamPermissions() { const { data } = await client.get<Envelope<{ permissions: unknown[]; all: string[] }>>('/team-management/permissions'); return data.data; },
   async accessRoles(params: TeamManagementQuery) { const { data } = await client.get<Envelope<AdminAccessRole[]>>('/team-management/roles', { params }); return pageResult(data, params); },
