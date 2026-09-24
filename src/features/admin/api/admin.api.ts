@@ -38,6 +38,7 @@ export interface AdminSubscription {
   currency: 'INR' | 'USD';
   interval: 'monthly' | 'yearly';
   status: 'active' | 'inactive';
+  isPopular: boolean;
   allowedModules: string[];
   userLimit: number | null;
   studentLimit: number | null;
