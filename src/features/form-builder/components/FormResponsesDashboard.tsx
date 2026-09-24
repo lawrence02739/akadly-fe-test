@@ -1,171 +1,131 @@
-import React, { useState } from 'react';
-import { Download, Users, Clock, CheckCircle, Link } from 'lucide-react';
+import React from 'react';
+import { ChevronLeft, ChevronRight, FileText, Loader2, Users } from 'lucide-react';
+import api from '../../../shared/api/axios';
+import { useFormBuilderStore } from '../store/useFormBuilderStore';
+
+type FormResponse = {
+  id: string;
+  responses: Record<string, unknown>;
+  metadata?: { submittedAt?: string };
+  createdAt: string;
+};
+
+type ResponsePage = {
+  items: FormResponse[];
+  page: number;
+  limit: number;
+  total: number;
+  totalPages: number;
+};
+
+const formatAnswer = (value: unknown): string => {
+  if (value === null || value === undefined || value === '') return 'No answer';
+  if (Array.isArray(value)) return value.map(formatAnswer).join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+};
+
+const submittedAt = (response: FormResponse): string => {
+  const date = response.metadata?.submittedAt ?? response.createdAt;
+  return new Date(date).toLocaleString();
+};
 
 export const FormResponsesDashboard: React.FC = () => {
-  const [activeSubTab, setActiveSubTab] = useState<'SUMMARY' | 'INDIVIDUAL'>('SUMMARY');
-  const [webhookUrl, setWebhookUrl] = useState('');
+  const { formId, sections } = useFormBuilderStore();
+  const [data, setData] = React.useState<ResponsePage | null>(null);
+  const [page, setPage] = React.useState(1);
+  const [loading, setLoading] = React.useState(false);
+  const [error, setError] = React.useState<string | null>(null);
 
-  // Mock data for the dashboard
-  const responseCount = 42;
-  const averageTime = '4m 32s';
+  const questions = React.useMemo(
+    () =>
+      sections.flatMap((section) =>
+        section.blocks
+          .filter((block) => block.type === 'QUESTION')
+          .map((block) => ({
+            id: block.id,
+            title: block.title || 'Untitled question',
+          })),
+      ),
+    [sections],
+  );
 
-  return (
-    <div className="flex-1 overflow-y-auto custom-scrollbar flex flex-col items-center py-8">
-      <div className="w-[770px] max-w-[90%] flex flex-col gap-6">
-        
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 flex justify-between items-center">
-          <h2 className="text-2xl font-normal text-slate-800">{responseCount} Responses</h2>
-          <div className="flex items-center gap-4">
-            <button className="flex items-center gap-2 px-4 py-2 border border-slate-300 rounded-md text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
-              <Download className="w-4 h-4" />
-              CSV
-            </button>
-          </div>
-        </div>
+  React.useEffect(() => {
+    if (!formId) {
+      setData(null);
+      return;
+    }
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Users className="w-4 h-4" />
-              <span className="text-sm font-medium">Total Submissions</span>
-            </div>
-            <span className="text-2xl font-semibold text-slate-800">{responseCount}</span>
-          </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-slate-500">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm font-medium">Avg. Time to Complete</span>
-            </div>
-            <span className="text-2xl font-semibold text-slate-800">{averageTime}</span>
-          </div>
-          <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-slate-500">
-              <CheckCircle className="w-4 h-4" />
-              <span className="text-sm font-medium">Completion Rate</span>
-            </div>
-            <span className="text-2xl font-semibold text-slate-800">87%</span>
-          </div>
-        </div>
+    let active = true;
+    setLoading(true);
+    setError(null);
+    api
+      .get(`/form-builder/forms/${formId}/submissions`, {
+        params: { page, limit: 20 },
+      })
+      .then((response) => {
+        if (active) setData(response.data?.data ?? response.data);
+      })
+      .catch((requestError) => {
+        if (active) {
+          setError(
+            requestError?.response?.data?.message ??
+              'Unable to load form responses. Please try again.',
+          );
+        }
+      })
+      .finally(() => active && setLoading(false));
 
-        {/* Webhook Configuration */}
-        <div className="bg-white rounded-lg p-6 shadow-sm border border-slate-200 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-100 text-purple-700 rounded-md">
-              <Link className="w-5 h-5" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium text-slate-800">Connect Webhook</span>
-              <span className="text-xs text-slate-500">Send form responses automatically to your server.</span>
-            </div>
-          </div>
-          <div className="flex-1 max-w-md flex items-center gap-2">
-            <input 
-              type="url" 
-              placeholder="https://your-server.com/webhook"
-              value={webhookUrl}
-              onChange={(e) => setWebhookUrl(e.target.value)}
-              className="w-full text-sm border border-slate-300 rounded p-2 focus:ring-2 focus:ring-purple-600 focus:border-transparent outline-none"
-            />
-            <button className="px-4 py-2 bg-slate-800 text-white rounded text-sm font-medium hover:bg-slate-700 transition-colors shrink-0">
-              Save
-            </button>
-          </div>
-        </div>
+    return () => {
+      active = false;
+    };
+  }, [formId, page]);
 
-        {/* Sub-Tabs */}
-        <div className="flex items-center gap-6 border-b border-slate-200">
-          <button 
-            onClick={() => setActiveSubTab('SUMMARY')}
-            className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeSubTab === 'SUMMARY' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-          >
-            Summary
-          </button>
-          <button 
-            onClick={() => setActiveSubTab('INDIVIDUAL')}
-            className={`pb-2 text-sm font-medium transition-colors border-b-2 ${activeSubTab === 'INDIVIDUAL' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-800'}`}
-          >
-            Individual Responses
-          </button>
-        </div>
-
-        {activeSubTab === 'SUMMARY' ? (
-          <div className="flex flex-col gap-6">
-            {/* Individual question summaries (Mocked) */}
-            <div className="bg-white rounded-lg shadow-sm border border-slate-200 overflow-hidden">
-              <div className="p-6 border-b border-slate-200">
-                <h3 className="text-lg font-medium text-slate-800">Question Summary</h3>
-              </div>
-          <div className="p-6 flex flex-col gap-8">
-            {/* Mock Chart 1 */}
-            <div className="flex flex-col gap-4">
-              <h4 className="text-sm font-medium text-slate-800">How did you hear about us?</h4>
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center gap-4">
-                  <span className="w-32 text-sm text-slate-600">Social Media</span>
-                  <div className="flex-1 h-6 bg-slate-100 rounded-sm overflow-hidden">
-                    <div className="h-full bg-purple-500" style={{ width: '45%' }} />
-                  </div>
-                  <span className="w-12 text-sm text-slate-500 text-right">45%</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="w-32 text-sm text-slate-600">Friend</span>
-                  <div className="flex-1 h-6 bg-slate-100 rounded-sm overflow-hidden">
-                    <div className="h-full bg-purple-500" style={{ width: '30%' }} />
-                  </div>
-                  <span className="w-12 text-sm text-slate-500 text-right">30%</span>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="w-32 text-sm text-slate-600">Search Engine</span>
-                  <div className="flex-1 h-6 bg-slate-100 rounded-sm overflow-hidden">
-                    <div className="h-full bg-purple-500" style={{ width: '25%' }} />
-                  </div>
-                  <span className="w-12 text-sm text-slate-500 text-right">25%</span>
-                </div>
-              </div>
-            </div>
-
-            <hr className="border-slate-200" />
-
-            {/* Mock Chart 2 */}
-            <div className="flex flex-col gap-4">
-              <h4 className="text-sm font-medium text-slate-800">Any additional feedback?</h4>
-              <div className="bg-slate-50 rounded-lg p-4 flex flex-col gap-3">
-                <div className="bg-white p-3 rounded border border-slate-200 text-sm text-slate-600">"The event was organized perfectly!"</div>
-                <div className="bg-white p-3 rounded border border-slate-200 text-sm text-slate-600">"Would love to see more networking opportunities."</div>
-                <div className="bg-white p-3 rounded border border-slate-200 text-sm text-slate-600">"Great experience overall."</div>
-              </div>
-            </div>
-          </div>
+  if (!formId) {
+    return (
+      <div className="flex-1 grid place-items-center bg-slate-50 p-8">
+        <div className="max-w-md text-center">
+          <FileText className="mx-auto h-10 w-10 text-slate-300" />
+          <h2 className="mt-4 text-lg font-semibold text-slate-800">Save the form first</h2>
+          <p className="mt-2 text-sm text-slate-500">Responses are available after this form has been saved and shared.</p>
         </div>
       </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-slate-200 p-6 flex flex-col items-center justify-center py-12 text-slate-500 gap-4">
-            <Users className="w-12 h-12 text-slate-300" />
-            <div className="text-center">
-              <h3 className="text-lg font-medium text-slate-800 mb-1">Individual Responses</h3>
-              <p className="text-sm">View full responses from individuals here.</p>
-            </div>
-            <div className="flex items-center gap-4 mt-4">
-              <button className="px-3 py-1 border border-slate-300 rounded text-sm disabled:opacity-50" disabled>&lt; Previous</button>
-              <span className="text-sm">1 of {responseCount}</span>
-              <button className="px-3 py-1 border border-slate-300 rounded text-sm hover:bg-slate-50">Next &gt;</button>
-            </div>
-            <div className="w-full mt-6 bg-slate-50 rounded-lg border border-slate-200 p-6">
-              {/* Mock individual response */}
-              <div className="flex flex-col gap-6 text-left">
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-slate-800">How did you hear about us?</span>
-                  <span className="text-sm text-slate-600 bg-white p-2 rounded border border-slate-200">Social Media</span>
-                </div>
-                <div className="flex flex-col gap-1">
-                  <span className="text-sm font-semibold text-slate-800">Any additional feedback?</span>
-                  <span className="text-sm text-slate-600 bg-white p-2 rounded border border-slate-200">"The event was organized perfectly!"</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+    );
+  }
 
+  return (
+    <div className="flex-1 overflow-y-auto bg-slate-50 px-4 py-8 sm:px-8">
+      <div className="mx-auto max-w-4xl space-y-5">
+        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:flex sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="rounded-lg bg-purple-50 p-2 text-purple-700"><Users className="h-5 w-5" /></div>
+            <div><h2 className="text-xl font-semibold text-slate-900">Responses</h2><p className="text-sm text-slate-500">Submitted responses for this form.</p></div>
+          </div>
+          <div className="mt-4 text-2xl font-semibold text-slate-900 sm:mt-0">{data?.total ?? 0}</div>
+        </section>
+
+        {loading && <div className="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white py-16 text-sm text-slate-500"><Loader2 className="h-5 w-5 animate-spin" /> Loading responses...</div>}
+        {!loading && error && <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>}
+        {!loading && !error && data?.items.length === 0 && <div className="rounded-xl border border-slate-200 bg-white py-16 text-center"><Users className="mx-auto h-10 w-10 text-slate-300" /><h3 className="mt-3 font-semibold text-slate-800">No responses yet</h3><p className="mt-1 text-sm text-slate-500">Responses will appear here after people submit this form.</p></div>}
+
+        {!loading && !error && data?.items.map((response, index) => (
+          <article key={response.id} className="rounded-xl border border-slate-200 bg-white shadow-sm">
+            <header className="flex items-center justify-between border-b border-slate-100 px-5 py-4"><div><h3 className="font-semibold text-slate-900">Response {(page - 1) * data.limit + index + 1}</h3><p className="mt-1 text-xs text-slate-500">Submitted {submittedAt(response)}</p></div></header>
+            <dl className="divide-y divide-slate-100">
+              {questions.map((question) => <div key={question.id} className="px-5 py-4"><dt className="text-sm font-medium text-slate-800">{question.title}</dt><dd className="mt-1 whitespace-pre-wrap break-words text-sm text-slate-600">{formatAnswer(response.responses?.[question.id])}</dd></div>)}
+            </dl>
+          </article>
+        ))}
+
+        {!loading && !error && data && data.totalPages > 1 && (
+          <nav className="flex items-center justify-between rounded-xl border border-slate-200 bg-white px-4 py-3" aria-label="Response pages">
+            <p className="text-sm text-slate-500">Page {data.page} of {data.totalPages}</p>
+            <div className="flex gap-2">
+              <button onClick={() => setPage((value) => value - 1)} disabled={page <= 1} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"><ChevronLeft className="h-4 w-4" /> Previous</button>
+              <button onClick={() => setPage((value) => value + 1)} disabled={page >= data.totalPages} className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 disabled:cursor-not-allowed disabled:opacity-50">Next <ChevronRight className="h-4 w-4" /></button>
+            </div>
+          </nav>
+        )}
       </div>
     </div>
   );

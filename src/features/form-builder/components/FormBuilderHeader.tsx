@@ -75,6 +75,12 @@ export const FormBuilderHeader: React.FC = () => {
             BUILD
           </button>
           <button
+            onClick={() => setActiveTab('RESPONSES')}
+            className={`h-full px-6 text-[13px] font-bold tracking-wider transition-colors border-b-[3px] ${activeTab === 'RESPONSES' ? 'border-purple-600 text-purple-700' : 'border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50'}`}
+          >
+            RESPONSES
+          </button>
+          <button
             onClick={() => { toggleSettings(); setActiveTab('QUESTIONS'); }}
             className={`h-full px-6 text-[13px] font-bold tracking-wider transition-colors border-b-[3px] border-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-50`}
           >
