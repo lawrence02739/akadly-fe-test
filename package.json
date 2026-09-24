@@ -38,10 +38,17 @@
     "@types/uuid": "^10.0.0",
     "@vitejs/plugin-react": "^6.1.0",
     "autoprefixer": "^10.5.5",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.5.1",
     "oxlint": "^1.79.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.2.2"
+  },
+  "lint-staged": {
+    "*.{js,jsx,ts,tsx}": [
+      "oxlint"
+    ]
   }
 }
