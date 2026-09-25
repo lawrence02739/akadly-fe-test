@@ -532,7 +532,7 @@ export const useFormBuilderStore = create<FormStore>()(
               order: sectionIndex + 1,
               blocks: section.blocks.filter(block => !isEmptyStarterQuestion(block)).map(serializeField),
               goToSectionId: section.goToSectionId,
-              repeatable: section.isRepeatable,
+              isRepeatable: section.isRepeatable,
             })),
             settings: {
               ...state.settings,
