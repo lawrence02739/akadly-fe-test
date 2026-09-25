@@ -300,7 +300,7 @@ export const PublicFormView: React.FC = () => {
       const formId = useFormBuilderStore.getState().formId;
       if (formId) {
         const payload = {
-          responses,
+          answers: Object.entries(responses).map(([blockId, value]) => ({ blockId, value })),
           password: settings.requirePassword ? password : null,
           metadata: {
             userAgent: navigator.userAgent,

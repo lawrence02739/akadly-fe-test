@@ -130,6 +130,16 @@ export const FormBuilderHeader: React.FC = () => {
           )}
         </div>
 
+        {status === 'PUBLISHED' && (
+          <button
+            onClick={() => openShareModal()}
+            className="flex items-center gap-2 px-4 py-2 bg-white text-slate-700 hover:bg-slate-50 border border-slate-200 shadow-sm rounded-md text-sm font-medium transition-colors"
+          >
+            <Link2 className="w-4 h-4 text-slate-500" />
+            Share Link
+          </button>
+        )}
+
         <button
           onClick={async () => {
             const newId = await saveForm();

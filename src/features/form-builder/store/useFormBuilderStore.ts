@@ -4,6 +4,7 @@ import { immer } from 'zustand/middleware/immer';
 import { temporal } from 'zundo';
 import type { FormSection, FormBlock, FormOption, BlockType, QuestionType, FormSettings, FormTheme } from '../types/form-builder.types';
 import api from '../../../shared/api/axios';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
 interface FormState {
@@ -19,6 +20,8 @@ interface FormState {
   isSaving: boolean;
   isPublishing: boolean;
   lastSavedAt: string | null;
+  /** Write-only draft password — never persisted in settings on the read path */
+  passwordDraft: string;
   isSettingsOpen: boolean;
   isThemeOpen: boolean;
   isPreviewMode: boolean;
@@ -44,6 +47,7 @@ interface FormBuilderActions {
   setTitle: (title: string) => void;
   setDescription: (desc: string) => void;
   updateSettings: (settings: Partial<FormSettings>) => void;
+  setPasswordDraft: (password: string) => void;
 
   // Selection
   setActiveBlock: (blockId: string, sectionId: string) => void;
@@ -111,20 +115,16 @@ const getDefaultQuestionTitle = (questionType?: QuestionType) =>
   QUESTION_DEFAULT_TITLES[questionType || 'MULTIPLE_CHOICE'];
 
 const serializeField = (block: FormBlock, order: number) => {
-  const contentTypes: Partial<Record<BlockType, string>> = {
-    TITLE_DESCRIPTION: 'HEADING', IMAGE: 'DISPLAY_IMAGE', VIDEO: 'DISPLAY_VIDEO', SECTION_BREAK: 'SECTION_BREAK',
-  };
-  const type = block.type === 'QUESTION' ? block.questionType : contentTypes[block.type];
-  const isUpload = ['FILE_UPLOAD', 'IMAGE_UPLOAD', 'VIDEO_UPLOAD', 'AUDIO_UPLOAD'].includes(type || '');
+  const isUpload = ['FILE_UPLOAD', 'IMAGE_UPLOAD', 'VIDEO_UPLOAD', 'AUDIO_UPLOAD'].includes(block.questionType || '');
   const allowedMimeTypes = block.settings?.allowedFileTypes?.map(typeName => FILE_TYPE_MIME_MAP[typeName] || typeName);
   return {
     id: block.id,
-    type,
-    label: block.title,
+    type: block.type,
+    questionType: block.type === 'QUESTION' ? block.questionType : undefined,
+    title: block.title,
     description: block.description,
     order: order + 1,
     required: Boolean(block.validation?.required),
-    placeholder: block.settings?.placeholder,
     validation: block.validation ? {
       minLength: block.validation.minLength,
       maxLength: block.validation.maxLength,
@@ -135,7 +135,7 @@ const serializeField = (block: FormBlock, order: number) => {
     } : undefined,
     upload: isUpload ? {
       maxFiles: block.settings?.maxFiles || 1,
-      maxFileSizeMb: block.settings?.maxFileSizeMB || (type === 'VIDEO_UPLOAD' ? 500 : type === 'AUDIO_UPLOAD' ? 100 : 10),
+      maxFileSizeMb: block.settings?.maxFileSizeMB || (block.questionType === 'VIDEO_UPLOAD' ? 500 : block.questionType === 'AUDIO_UPLOAD' ? 100 : 10),
       allowedMimeTypes: block.settings?.allowSpecificFileTypes ? allowedMimeTypes : undefined,
     } : undefined,
     settings: block.settings ? {
@@ -149,11 +149,9 @@ const serializeField = (block: FormBlock, order: number) => {
     options: block.options,
     rows: block.rows,
     columns: block.columns,
-    logic: block.logicRules,
-    mediaUrl: block.mediaUrl,
-    mediaKey: block.mediaKey,
-    width: block.width,
-    labelAlignment: block.labelAlignment,
+    logicRules: block.logicRules,
+    media: (block.mediaUrl || block.mediaKey) ? { url: block.mediaUrl, key: block.mediaKey } : undefined,
+    layout: (block.width || block.labelAlignment) ? { width: block.width, labelAlignment: block.labelAlignment } : undefined,
     subLabel: block.subLabel,
     hidden: block.isHidden,
   };
@@ -201,6 +199,7 @@ const initialState: FormState = {
     shuffleQuestions: false,
     confirmationMessage: 'Your response has been recorded.',
   },
+  passwordDraft: '',
   status: 'DRAFT',
   isSettingsOpen: false,
   isThemeOpen: false,
@@ -249,6 +248,11 @@ export const useFormBuilderStore = create<FormStore>()(
 
       updateTheme: (updates) => set((state) => {
         state.theme = { ...state.theme, ...updates };
+        state.lastSavedAt = null;
+      }),
+
+      setPasswordDraft: (password) => set((state) => {
+        state.passwordDraft = password;
         state.lastSavedAt = null;
       }),
 
@@ -510,7 +514,7 @@ export const useFormBuilderStore = create<FormStore>()(
         });
         try {
           const state = get();
-          const password = state.settings.password?.trim();
+          const password = state.passwordDraft?.trim();
           if (state.settings.requirePassword && (!password || password.length < 6 || password.length > 128)) {
             throw new Error('Form password must be between 6 and 128 characters.');
           }
@@ -526,7 +530,7 @@ export const useFormBuilderStore = create<FormStore>()(
               title: section.title || `Section ${sectionIndex + 1}`,
               description: section.description,
               order: sectionIndex + 1,
-              fields: section.blocks.filter(block => !isEmptyStarterQuestion(block)).map(serializeField),
+              blocks: section.blocks.filter(block => !isEmptyStarterQuestion(block)).map(serializeField),
               goToSectionId: section.goToSectionId,
               repeatable: section.isRepeatable,
             })),
@@ -572,8 +576,11 @@ export const useFormBuilderStore = create<FormStore>()(
         } catch (error) {
           console.error('Failed to save form:', error);
           set((state) => { state.isSaving = false; state.isPublishing = false; });
-          const apiMessage = (error as any)?.response?.data?.message;
-          const message = Array.isArray(apiMessage) ? apiMessage.join(', ') : apiMessage;
+          let message: string | undefined;
+          if (axios.isAxiosError(error)) {
+            const apiMessage = error.response?.data?.message;
+            message = Array.isArray(apiMessage) ? apiMessage.join(', ') : (apiMessage as string | undefined);
+          }
           toast.error(message || (error instanceof Error ? error.message : 'Failed to save form. Please try again.'), { id: 'form-save-error' });
         } finally {
           set((state) => { state.isSaving = false; state.isPublishing = false; });
@@ -588,18 +595,15 @@ export const useFormBuilderStore = create<FormStore>()(
           const { data } = response.data;
 
           set((state) => {
-            state.formId = data.id || data._id;
-            state.title = data.title || 'Untitled form';
-            state.description = data.description || '';
-            state.status = data.status || 'DRAFT';
+            state.formId = data.id ?? (data._id as string | undefined) ?? formId;
+            state.title = (data.title as string | undefined) ?? 'Untitled form';
+            state.description = (data.description as string | undefined) ?? '';
+            state.status = (data.status as 'DRAFT' | 'PUBLISHED' | 'ARCHIVED' | undefined) ?? 'DRAFT';
 
-            if (data.schemaJson && data.schemaJson.sections && data.schemaJson.sections.length > 0) {
-              state.sections = data.schemaJson.sections.map((section: FormSection) => ({
-                ...section,
-                blocks: section.blocks.map(normalizeLoadedBlock),
-              }));
-            } else if (Array.isArray(data.schemaJson) && data.schemaJson.length > 0) {
-              state.sections = data.schemaJson.map((section: FormSection) => ({
+            // New API returns schema.sections directly — no dual-shape fallback needed
+            const sections = data.schema?.sections as FormSection[] | undefined;
+            if (Array.isArray(sections) && sections.length > 0) {
+              state.sections = sections.map((section: FormSection) => ({
                 ...section,
                 blocks: section.blocks.map(normalizeLoadedBlock),
               }));
@@ -607,10 +611,10 @@ export const useFormBuilderStore = create<FormStore>()(
               state.sections = [];
             }
 
-            if (data.settingsJson && Object.keys(data.settingsJson).length > 0) {
-              state.settings = { ...state.settings, ...data.settingsJson };
-              if (data.settingsJson.expiryDate) {
-                const expiry = new Date(data.settingsJson.expiryDate);
+            if (data.settings && Object.keys(data.settings).length > 0) {
+              state.settings = { ...state.settings, ...data.settings } as FormSettings;
+              if (typeof data.settings.expiryDate === 'string') {
+                const expiry = new Date(data.settings.expiryDate);
                 if (!Number.isNaN(expiry.getTime())) {
                   const local = new Date(expiry.getTime() - expiry.getTimezoneOffset() * 60000);
                   state.settings.expiryDate = local.toISOString().slice(0, 16);
@@ -618,11 +622,11 @@ export const useFormBuilderStore = create<FormStore>()(
               }
             }
 
-            if (data.themeJson && Object.keys(data.themeJson).length > 0) {
-              state.theme = { ...state.theme, ...data.themeJson };
+            if (data.theme && Object.keys(data.theme).length > 0) {
+              state.theme = { ...state.theme, ...data.theme } as FormTheme;
             }
 
-            state.activeSectionId = state.sections[0]?.id || null;
+            state.activeSectionId = state.sections[0]?.id ?? null;
             state.activeBlockId = null;
           });
         } catch (error) {
