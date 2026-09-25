@@ -12,6 +12,7 @@ import {
   HelpCircle,
   FileText,
   BookOpen,
+  CreditCard,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -78,6 +79,12 @@ const navItems = [
     label: "Messages",
     path: "/partner/messages",
     permissions: ["message:read", "message:send", "message:manage"],
+  },
+  {
+    icon: CreditCard,
+    label: "Payments",
+    path: "/partner/payments",
+    permissions: [],
   },
 ];
 
