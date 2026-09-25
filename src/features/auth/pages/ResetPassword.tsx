@@ -10,6 +10,9 @@ export default function ResetPassword() {
   const token = searchParams.get('token');
 
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -26,14 +29,16 @@ export default function ResetPassword() {
     setIsLoading(true);
     setError(null);
 
-    const formData = new FormData(e.currentTarget);
-    const newPassword = formData.get('password') as string;
+    if (password !== confirmPassword) {
+      setError('New password and confirm password must match.');
+      return;
+    }
 
     try {
       const response = await fetch(`${API_BASE_URL}/auth/reset-password`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, newPassword }),
+        body: JSON.stringify({ token, newPassword: password, confirmPassword }),
       });
 
       if (!response.ok) {
@@ -69,11 +74,12 @@ export default function ResetPassword() {
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
-                name="password"
                 className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
                 placeholder="Create a strong password"
                 required
                 disabled={!token}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
               />
               <button 
                 type="button" 
@@ -85,6 +91,29 @@ export default function ResetPassword() {
               </button>
             </div>
             <p className="text-xs text-slate-500 mt-1.5">Must be at least 8 characters.</p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="block text-sm font-medium text-slate-700">Confirm Password</label>
+            <div className="relative">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
+                placeholder="Re-enter your new password"
+                required
+                disabled={!token}
+                value={confirmPassword}
+                onChange={(event) => setConfirmPassword(event.target.value)}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+                disabled={!token}
+              >
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
           </div>
 
           {/* Submit */}
