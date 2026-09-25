@@ -16,6 +16,11 @@ import QuestionBankPage from "./features/questions/components/QuestionBankPage";
 import FormsDashboard from "./features/form-builder/pages/FormsDashboard";
 import { FormBuilderLayout } from "./features/form-builder/components/FormBuilderLayout";
 import { PublicFormPage } from "./features/form-builder/components/PublicFormPage";
+import BookInventoryDashboard from "./features/book-inventory/pages/BookInventoryDashboard";
+import ManageOrdersPage from "./features/order-management/pages/ManageOrdersPage";
+import CreateOrderPage from "./features/order-management/pages/CreateOrderPage";
+import OrderDetailsPage from "./features/order-management/pages/OrderDetailsPage";
+
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -107,6 +112,38 @@ function App() {
           <Route path="forms" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormsDashboard /></AccessRoute>} />
           <Route path="forms/create" element={<AccessRoute anyOf={["form:manage"]}><FormBuilderLayout /></AccessRoute>} />
           <Route path="forms/:formId/edit" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormBuilderLayout /></AccessRoute>} />
+          <Route
+            path="books"
+            element={
+              <AccessRoute anyOf={["book:read", "book:manage"]}>
+                <BookInventoryDashboard />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="orders"
+            element={
+              <AccessRoute anyOf={["order:read", "order:manage"]}>
+                <ManageOrdersPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="orders/new"
+            element={
+              <AccessRoute anyOf={["order:manage"]}>
+                <CreateOrderPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="orders/:id"
+            element={
+              <AccessRoute anyOf={["order:read", "order:manage"]}>
+                <OrderDetailsPage />
+              </AccessRoute>
+            }
+          />
           <Route
             path="courses/:courseId/edit"
             element={
