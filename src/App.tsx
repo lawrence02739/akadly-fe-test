@@ -33,6 +33,7 @@ import AdminLayout from "./features/admin/AdminLayout";
 import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
 import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
 import { SubscriptionLayout, SubscriptionList, SubscriptionDetail, SubscriptionForm } from "./features/admin/pages/AdminSubscriptions";
+import PlansPage from "./features/subscriptions/pages/PlansPage";
 import {
   BarChart2,
   Calendar,
@@ -131,6 +132,7 @@ function App() {
               </AccessRoute>
             }
           />
+          <Route path="subscriptions" element={<PlansPage />} />
           <Route path="quiz-studio" element={<QuizStudioPage />} />
           <Route path="test-studio" element={<TestStudioPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />

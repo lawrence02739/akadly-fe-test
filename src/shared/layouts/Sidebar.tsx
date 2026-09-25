@@ -12,6 +12,7 @@ import {
   HelpCircle,
   FileText,
   BookOpen,
+  CreditCard,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -36,6 +37,12 @@ const navItems = [
     label: "Users",
     path: "/partner/users",
     permissions: ["member:read"],
+  },
+  {
+    icon: CreditCard,
+    label: "Subscriptions",
+    path: "/partner/subscriptions",
+    permissions: [],
   },
   {
     icon: ClipboardList,
