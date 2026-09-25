@@ -5,6 +5,15 @@ import { plansApi, type TenantPlan } from '../api/plans.api';
 const limit = (value: number | null) =>
   value === null ? 'Unlimited' : value.toLocaleString();
 
+const formatStorageLimit = (value: number | null) => {
+  if (value === null) return 'Unlimited';
+  const megabyte = 1024 * 1024;
+  const gigabyte = 1024 * megabyte;
+  if (value >= gigabyte && value % gigabyte === 0) return `${value / gigabyte} GB`;
+  if (value >= megabyte && value % megabyte === 0) return `${value / megabyte} MB`;
+  return `${value.toLocaleString()} bytes`;
+};
+
 const price = (plan: TenantPlan) =>
   new Intl.NumberFormat('en-IN', {
     style: 'currency',
@@ -91,7 +100,7 @@ export default function PlansPage() {
               <dl className="mt-6 grid grid-cols-2 gap-3 border-y border-slate-100 py-5 text-sm">
                 <div><dt className="text-slate-500">Users</dt><dd className="mt-1 font-semibold">{limit(plan.userLimit)}</dd></div>
                 <div><dt className="text-slate-500">Students</dt><dd className="mt-1 font-semibold">{limit(plan.studentLimit)}</dd></div>
-                <div><dt className="text-slate-500">Content</dt><dd className="mt-1 font-semibold">{limit(plan.contentLimit)}</dd></div>
+                <div><dt className="text-slate-500">Content storage</dt><dd className="mt-1 font-semibold">{formatStorageLimit(plan.contentLimit)}</dd></div>
                 <div><dt className="text-slate-500">Courses</dt><dd className="mt-1 font-semibold">{limit(plan.courseLimit)}</dd></div>
               </dl>
               <div className="mt-5">
