@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { Link, NavLink, Outlet, useNavigate } from 'react-router-dom';
-import { Building2, CreditCard, LogOut, Menu, Users, X } from 'lucide-react';
+import { Building2, CreditCard, LogOut, Menu, Ticket, Users, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAdminSession } from './AdminSession';
 
 const links = [
   { to: '/admin/tenants', label: 'Tenants', icon: Building2 },
   { to: '/admin/subscriptions', label: 'Subscriptions', icon: CreditCard },
+  { to: '/admin/tickets', label: 'Tickets', icon: Ticket },
   { to: '/admin/team', label: 'Team Management', icon: Users },
 ];
 
