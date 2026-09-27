@@ -3,7 +3,7 @@ import { X, Globe, Lock } from 'lucide-react';
 import { useFormBuilderStore } from '../store/useFormBuilderStore';
 
 export const FormSettingsPanel: React.FC = () => {
-  const { settings, updateSettings, toggleSettings, isSettingsOpen } = useFormBuilderStore();
+  const { settings, updateSettings, toggleSettings, isSettingsOpen, passwordDraft, setPasswordDraft } = useFormBuilderStore();
   const expiryDate = settings.expiryDate?.slice(0, 10) || '';
   const expiryHour24 = Number(settings.expiryDate?.slice(11, 13) || 23);
   const expiryHour12 = expiryHour24 % 12 || 12;
@@ -89,8 +89,8 @@ export const FormSettingsPanel: React.FC = () => {
                 minLength={6}
                 maxLength={128}
                 placeholder="Enter password..."
-                value={settings.password || ''}
-                onChange={(e) => updateSettings({ password: e.target.value })}
+                value={passwordDraft}
+                onChange={(e) => setPasswordDraft(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-md text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all"
               />
               <span className="text-xs text-slate-500">Use 6–128 characters.</span>
