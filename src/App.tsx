@@ -16,6 +16,11 @@ import QuestionBankPage from "./features/questions/components/QuestionBankPage";
 import FormsDashboard from "./features/form-builder/pages/FormsDashboard";
 import { FormBuilderLayout } from "./features/form-builder/components/FormBuilderLayout";
 import { PublicFormPage } from "./features/form-builder/components/PublicFormPage";
+import BookInventoryDashboard from "./features/book-inventory/pages/BookInventoryDashboard";
+import ManageOrdersPage from "./features/order-management/pages/ManageOrdersPage";
+import CreateOrderPage from "./features/order-management/pages/CreateOrderPage";
+import OrderDetailsPage from "./features/order-management/pages/OrderDetailsPage";
+
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -44,6 +49,7 @@ import {
   SubscriptionDetail,
   SubscriptionForm,
 } from "./features/admin/pages/AdminSubscriptions";
+import PlansPage from "./features/subscriptions/pages/PlansPage";
 import {
   BarChart2,
   Calendar,
@@ -132,27 +138,38 @@ function App() {
               </AccessRoute>
             }
           />
+          <Route path="forms" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormsDashboard /></AccessRoute>} />
+          <Route path="forms/create" element={<AccessRoute anyOf={["form:manage"]}><FormBuilderLayout /></AccessRoute>} />
+          <Route path="forms/:formId/edit" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormBuilderLayout /></AccessRoute>} />
           <Route
-            path="forms"
+            path="books"
             element={
-              <AccessRoute anyOf={["form:read", "form:manage"]}>
-                <FormsDashboard />
+              <AccessRoute anyOf={["book:read", "book:manage"]}>
+                <BookInventoryDashboard />
               </AccessRoute>
             }
           />
           <Route
-            path="forms/create"
+            path="orders"
             element={
-              <AccessRoute anyOf={["form:manage"]}>
-                <FormBuilderLayout />
+              <AccessRoute anyOf={["order:read", "order:manage"]}>
+                <ManageOrdersPage />
               </AccessRoute>
             }
           />
           <Route
-            path="forms/:formId/edit"
+            path="orders/new"
             element={
-              <AccessRoute anyOf={["form:read", "form:manage"]}>
-                <FormBuilderLayout />
+              <AccessRoute anyOf={["order:manage"]}>
+                <CreateOrderPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="orders/:id"
+            element={
+              <AccessRoute anyOf={["order:read", "order:manage"]}>
+                <OrderDetailsPage />
               </AccessRoute>
             }
           />
@@ -180,6 +197,7 @@ function App() {
               </AccessRoute>
             }
           />
+          <Route path="subscriptions" element={<PlansPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="quiz-studio" element={<QuizStudioPage />} />
           <Route path="test-studio" element={<TestStudioPage />} />

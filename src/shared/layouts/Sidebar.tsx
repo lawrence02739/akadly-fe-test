@@ -12,6 +12,7 @@ import {
   HelpCircle,
   FileText,
   BookOpen,
+  Package,
   CreditCard,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -33,10 +34,28 @@ const navItems = [
     permissions: [],
   },
   {
+    icon: BookOpen,
+    label: "Books",
+    path: "/partner/books",
+    permissions: ["book:read", "book:manage"],
+  },
+  {
+    icon: Package,
+    label: "Orders",
+    path: "/partner/orders",
+    permissions: ["order:read", "order:manage"],
+  },
+  {
     icon: Users,
     label: "Users",
     path: "/partner/users",
     permissions: ["member:read"],
+  },
+  {
+    icon: CreditCard,
+    label: "Subscriptions",
+    path: "/partner/subscriptions",
+    permissions: [],
   },
   {
     icon: ClipboardList,
@@ -112,10 +131,9 @@ export default function Sidebar() {
             key={idx}
             to={item.path}
             className={({ isActive }) =>
-              `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                isActive
-                  ? "bg-primary-800 text-white shadow-md"
-                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
+                ? "bg-primary-800 text-white shadow-md"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               }`
             }
             title={item.label}
@@ -132,10 +150,9 @@ export default function Sidebar() {
             to="/partner/search"
             title="Search"
             className={({ isActive }) =>
-              `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                isActive
-                  ? "bg-primary-800 text-white shadow-md"
-                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
+                ? "bg-primary-800 text-white shadow-md"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               }`
             }
           >
@@ -145,37 +162,35 @@ export default function Sidebar() {
         {(user?.isOwner ||
           granted.has("ai:use") ||
           granted.has("ai:manage")) && (
-          <NavLink
-            to="/partner/ai-assistant"
-            title="AI Assistant"
-            className={({ isActive }) =>
-              `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                isActive
+            <NavLink
+              to="/partner/ai-assistant"
+              title="AI Assistant"
+              className={({ isActive }) =>
+                `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
                   ? "bg-accent-500 text-white shadow-md"
                   : "text-accent-500 hover:bg-accent-50"
-              }`
-            }
-          >
-            <Sparkles className="w-5 h-5" strokeWidth={2.5} />
-          </NavLink>
-        )}
+                }`
+              }
+            >
+              <Sparkles className="w-5 h-5" strokeWidth={2.5} />
+            </NavLink>
+          )}
         {(user?.isOwner ||
           granted.has("settings:read") ||
           granted.has("settings:manage")) && (
-          <NavLink
-            to="/partner/settings"
-            title="Settings"
-            className={({ isActive }) =>
-              `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
-                isActive
+            <NavLink
+              to="/partner/settings"
+              title="Settings"
+              className={({ isActive }) =>
+                `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
                   ? "bg-primary-800 text-white shadow-md"
                   : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-              }`
-            }
-          >
-            <Settings className="w-5 h-5" strokeWidth={2.5} />
-          </NavLink>
-        )}
+                }`
+              }
+            >
+              <Settings className="w-5 h-5" strokeWidth={2.5} />
+            </NavLink>
+          )}
       </div>
     </aside>
   );
