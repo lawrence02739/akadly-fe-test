@@ -21,7 +21,6 @@ import ManageOrdersPage from "./features/order-management/pages/ManageOrdersPage
 import CreateOrderPage from "./features/order-management/pages/CreateOrderPage";
 import OrderDetailsPage from "./features/order-management/pages/OrderDetailsPage";
 
-
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
@@ -31,6 +30,10 @@ import WorkspacePage from "./shared/pages/WorkspacePage";
 import TeamAccessPage from "./features/team/pages/TeamAccessPage";
 import AcceptInvitation from "./features/team/pages/AcceptInvitation";
 import PaymentsPage from "./features/payments/pages/PaymentsPage";
+import ReportsPage from "./features/reports/pages/ReportsPage";
+import TicketsListPage from "./features/tickets/pages/TicketsListPage";
+import TicketDetailsPage from "./features/tickets/pages/TicketDetailsPage";
+import TenantTicketDetailsPage from "./features/tickets/pages/TenantTicketDetailsPage";
 import AccessRoute from "./shared/auth/AccessRoute";
 import {
   AdminGuard,
@@ -43,6 +46,8 @@ import AdminTenants, {
 import AdminLayout from "./features/admin/AdminLayout";
 import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
 import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
+
+import AdminTicketsListPage from "./features/admin/pages/AdminTicketsListPage";
 import {
   SubscriptionLayout,
   SubscriptionList,
@@ -97,6 +102,11 @@ function App() {
               <Route path=":id/edit" element={<SubscriptionForm edit />} />
             </Route>
             <Route path="team" element={<AdminTeamManagement />} />
+            <Route path="tickets" element={<AdminTicketsListPage />} />
+            <Route
+              path="tickets/:ticketId"
+              element={<TicketDetailsPage adminMode />}
+            />
           </Route>
         </Route>
         <Route
@@ -138,9 +148,30 @@ function App() {
               </AccessRoute>
             }
           />
-          <Route path="forms" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormsDashboard /></AccessRoute>} />
-          <Route path="forms/create" element={<AccessRoute anyOf={["form:manage"]}><FormBuilderLayout /></AccessRoute>} />
-          <Route path="forms/:formId/edit" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormBuilderLayout /></AccessRoute>} />
+          <Route
+            path="forms"
+            element={
+              <AccessRoute anyOf={["form:read", "form:manage"]}>
+                <FormsDashboard />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="forms/create"
+            element={
+              <AccessRoute anyOf={["form:manage"]}>
+                <FormBuilderLayout />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="forms/:formId/edit"
+            element={
+              <AccessRoute anyOf={["form:read", "form:manage"]}>
+                <FormBuilderLayout />
+              </AccessRoute>
+            }
+          />
           <Route
             path="books"
             element={
@@ -199,6 +230,12 @@ function App() {
           />
           <Route path="subscriptions" element={<PlansPage />} />
           <Route path="payments" element={<PaymentsPage />} />
+          <Route path="tickets" element={<TicketsListPage />} />
+          <Route
+            path="tickets/:ticketId"
+            element={<TenantTicketDetailsPage />}
+          />
+          <Route path="reports" element={<ReportsPage />} />
           <Route path="quiz-studio" element={<QuizStudioPage />} />
           <Route path="test-studio" element={<TestStudioPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />

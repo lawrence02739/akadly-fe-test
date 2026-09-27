@@ -13,9 +13,9 @@ export default function DashboardLayout() {
 
   return (
     <AccessRoute>
-      <div className="flex h-screen bg-body overflow-hidden">
+      <div className="flex h-screen flex-col overflow-hidden bg-body md:flex-row">
         <Sidebar />
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
           <TopNav />
           {readOnly && (
             <div className="flex items-center justify-between gap-4 border-b border-amber-200 bg-amber-50 px-5 py-3 text-sm text-amber-950">
