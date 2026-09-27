@@ -7,6 +7,9 @@ export interface AuthUser {
   isOwner?: boolean;
   roles?: string[];
   permissions?: string[];
+  paymentStatus?: "due" | "paid" | "unpaid";
+  dueDate?: string | null;
+  isReadOnly?: boolean;
 }
 
 interface AuthState {

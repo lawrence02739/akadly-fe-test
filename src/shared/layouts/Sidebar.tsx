@@ -99,6 +99,12 @@ const navItems = [
     path: "/partner/messages",
     permissions: ["message:read", "message:send", "message:manage"],
   },
+  {
+    icon: CreditCard,
+    label: "Payments",
+    path: "/partner/payments",
+    permissions: [],
+  },
 ];
 
 export default function Sidebar() {
