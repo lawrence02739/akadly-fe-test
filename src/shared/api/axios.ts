@@ -1,23 +1,52 @@
-import axios from 'axios';
-import { API_BASE_URL } from './config';
+import axios from "axios";
+import { store } from "../../store";
+import { logout, setAuth } from "../../store/authSlice";
+import { API_BASE_URL } from "./config";
 
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  headers: { "Content-Type": "application/json" },
   withCredentials: true,
 });
 
-// Handle 401 globally — clear token and redirect to login
+let refreshRequest: Promise<unknown> | null = null;
+
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
-    if (error.response?.status === 401) {
-      // Don't redirect if it's the login route itself
-      if (!window.location.pathname.includes('/login')) {
-        window.location.href = '/login';
+  async (error) => {
+    const request = error.config as
+      { _retry?: boolean; url?: string } | undefined;
+    const canRefresh =
+      error.response?.status === 401 &&
+      request &&
+      !request._retry &&
+      !request.url?.includes("/auth/refresh") &&
+      !request.url?.includes("/auth/login");
+
+    if (canRefresh) {
+      request._retry = true;
+      try {
+        refreshRequest ??= api
+          .post("/auth/refresh")
+          .then((response) => {
+            const user = response.data?.data?.user || response.data?.user;
+            if (user) store.dispatch(setAuth({ user }));
+          })
+          .finally(() => {
+            refreshRequest = null;
+          });
+        await refreshRequest;
+        return api.request(request);
+      } catch {
+        store.dispatch(logout());
       }
+    }
+
+    if (
+      error.response?.status === 401 &&
+      !window.location.pathname.includes("/login")
+    ) {
+      window.location.href = "/login";
     }
     return Promise.reject(error);
   },

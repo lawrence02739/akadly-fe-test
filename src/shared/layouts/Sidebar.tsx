@@ -13,6 +13,7 @@ import {
   FileText,
   BookOpen,
   Package,
+  CreditCard,
   ChartNoAxesCombined,
   Ticket,
 } from "lucide-react";
@@ -65,6 +66,12 @@ const navItems = [
     permissions: ["member:read"],
   },
   {
+    icon: CreditCard,
+    label: "Subscriptions",
+    path: "/partner/subscriptions",
+    permissions: [],
+  },
+  {
     icon: ClipboardList,
     label: "Tasks",
     path: "/partner/tasks",
@@ -105,6 +112,12 @@ const navItems = [
     label: "Messages",
     path: "/partner/messages",
     permissions: ["message:read", "message:send", "message:manage"],
+  },
+  {
+    icon: CreditCard,
+    label: "Payments",
+    path: "/partner/payments",
+    permissions: [],
   },
 ];
 

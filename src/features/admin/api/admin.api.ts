@@ -16,6 +16,11 @@ export interface AdminTenant {
   slug: string;
   status: "active" | "suspended" | "archived";
   plan: string;
+  planId: string | null;
+  billingDate: string | null;
+  dueDate: string | null;
+  paymentStatus: 'due' | 'paid' | 'unpaid';
+  ownerInvitationStatus: 'pending' | 'accepted' | 'revoked';
   owner: { name: string; email: string };
   ownerUserId: string | null;
   settings: Record<string, unknown>;
@@ -23,24 +28,9 @@ export interface AdminTenant {
   updatedAt: string;
 }
 
-interface Tokens {
-  accessToken: string;
-  refreshToken: string;
-  expiresIn: number;
-}
-interface Envelope<T> {
-  data: T;
-  message: string;
-  meta?: { pagination?: Pagination };
-}
-export interface Pagination {
-  page: number;
-  pageSize: number;
-  total: number;
-  totalPages: number;
-  hasNext: boolean;
-  hasPrev: boolean;
-}
+interface Tokens { accessToken: string; refreshToken: string; expiresIn: number }
+interface Envelope<T> { data: T; message: string; meta?: { pagination?: Pagination } }
+export interface Pagination { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean }
 export interface AdminTicket {
   id: string;
   _id?: string;
@@ -141,36 +131,19 @@ export interface TicketMessage {
   attachments?: TicketAttachment[];
   createdAt: string;
 }
-export interface TenantQuery {
-  page: number;
-  pageSize: number;
-  search?: string;
-  status?: string;
-  sortBy?: string;
-  sortOrder?: string;
-}
-export interface TenantPayload {
-  name: string;
-  slug: string;
-  plan?: string;
-  owner: { name: string; email: string };
-  settings?: Record<string, unknown>;
-}
-export interface TenantUpdate {
-  name?: string;
-  ownerName?: string;
-  plan?: string;
-  settings?: Record<string, unknown>;
-}
+export interface TenantQuery { page: number; pageSize: number; search?: string; status?: string; sortBy?: string; sortOrder?: string }
+export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid' }
+export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; settings?: Record<string, unknown> }
 export interface AdminSubscription {
   id: string;
   name: string;
   code: string;
   description: string;
   price: number;
-  currency: "INR" | "USD";
-  interval: "monthly" | "yearly";
-  status: "active" | "inactive";
+  currency: 'INR' | 'USD';
+  interval: 'monthly' | 'yearly';
+  status: 'active' | 'inactive';
+  isPopular: boolean;
   allowedModules: string[];
   userLimit: number | null;
   studentLimit: number | null;
@@ -411,6 +384,9 @@ export const adminApi = {
       `/tenants/${encodeURIComponent(id)}/${action}`,
     );
     return data.data;
+  },
+  async revokeTenantOwnerInvitation(id: string) {
+    await client.delete(`/tenants/${encodeURIComponent(id)}/owner-invitation`);
   },
   async subscriptions(params: SubscriptionQuery) {
     const { data } = await client.get<Envelope<AdminSubscription[]>>(
