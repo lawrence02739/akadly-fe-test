@@ -20,6 +20,7 @@ export interface AdminTenant {
   billingDate: string | null;
   dueDate: string | null;
   paymentStatus: 'due' | 'paid' | 'unpaid';
+  paymentProofs: PaymentProof[];
   ownerInvitationStatus: 'pending' | 'accepted' | 'revoked';
   owner: { name: string; email: string };
   ownerUserId: string | null;
@@ -133,8 +134,9 @@ export interface TicketMessage {
   createdAt: string;
 }
 export interface TenantQuery { page: number; pageSize: number; search?: string; status?: string; sortBy?: string; sortOrder?: string }
-export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid' }
-export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; settings?: Record<string, unknown> }
+export interface PaymentProof { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number; uploadedAt?: string }
+export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[] }
+export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[]; settings?: Record<string, unknown> }
 export interface AdminSubscription {
   id: string;
   name: string;
@@ -371,6 +373,11 @@ export const adminApi = {
       "/tenants",
       payload,
     );
+    return data.data;
+  },
+  async uploadTenantPaymentProof(file: File): Promise<PaymentProof> {
+    const form = new FormData(); form.append('file', file);
+    const { data } = await client.post<Envelope<PaymentProof>>('/tenants/payment-proofs/uploads', form, { headers: { 'Content-Type': 'multipart/form-data' } });
     return data.data;
   },
   async updateTenant(id: string, payload: TenantUpdate) {
