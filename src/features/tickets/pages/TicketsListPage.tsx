@@ -149,15 +149,15 @@ export default function TicketsListPage() {
             Raise issues and track updates from the support team.
           </p>
         </div>
-        <button
-          onClick={() => {
-            setSubmitted("");
-            setModal(true);
-          }}
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white"
-        >
-          <Plus size={17} /> Raise an issue
-        </button>
+        <div className="flex flex-wrap gap-2"><Link to="/partner/tickets/dashboard" className="inline-flex items-center justify-center rounded-lg border border-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-[#0C5A69]">Ticket dashboard</Link><button
+            onClick={() => {
+              setSubmitted("");
+              setModal(true);
+            }}
+            className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white"
+          >
+            <Plus size={17} /> Raise an issue
+          </button></div>
       </header>
       <section className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
         <div className="grid gap-3 border-b border-slate-100 p-4 lg:grid-cols-[1fr_auto_auto]">

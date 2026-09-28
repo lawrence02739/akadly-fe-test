@@ -108,6 +108,15 @@ export interface AdminTicket {
   createdAt: string;
   updatedAt: string;
 }
+export interface AdminTicketDashboard {
+  total: number;
+  statuses: Record<string, number>;
+  priorities: Record<string, number>;
+  daily: Array<{ _id: string; total: number; resolved: number }>;
+  categories: Array<{ _id: string; total: number; open: number }>;
+  myQueue: AdminTicket[];
+  metrics: { open: number; active: number; pendingResponse: number; resolvedThisWeek: number; escalated: number; unassigned: number; assignedToMe: number; overdue: number; averageFirstResponseMinutes: number | null };
+}
 export interface TicketAssignee {
   id: string;
   _id?: string;
@@ -336,6 +345,10 @@ export const adminApi = {
   },
   async profile() {
     const { data } = await client.get<Envelope<AdminProfile>>("/auth/me");
+    return data.data;
+  },
+  async ticketDashboard() {
+    const { data } = await client.get<Envelope<AdminTicketDashboard>>("/tickets/dashboard");
     return data.data;
   },
   async logout() {

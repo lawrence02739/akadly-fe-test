@@ -465,8 +465,14 @@ export default function TicketDetailsPage({
                 className="mt-1 w-full rounded-lg border p-2 text-slate-800"
               >
                 <option value="open">Open</option>
-                <option value="assigned">Assigned</option>
-                <option value="in_progress">In progress</option>
+                {ticket.status === "assigned" && (
+                  <option value="assigned" disabled>
+                    Assigned — choose an owner
+                  </option>
+                )}
+                <option value="in_progress" disabled={!ticket.assignedAdminUserId}>
+                  In progress{!ticket.assignedAdminUserId ? " (assign an owner first)" : ""}
+                </option>
                 <option value="waiting_for_user">Waiting for user</option>
                 <option value="pending">Pending</option>
                 <option value="escalated">Escalated</option>

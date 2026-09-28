@@ -184,18 +184,4 @@ export const teamApi = {
   ): Promise<ApiMember> =>
     unwrap<ApiMember>(await api.post(`/users/${id}/${action}`)),
 
-  // Preview invite token (public — no auth)
-  previewInvite: async (token: string): Promise<ApiInvitation> =>
-    unwrap<ApiInvitation>(
-      await api.post("/users/invitations/preview", { token }),
-    ),
-
-  // Accept invitation and set password (public — no auth)
-  acceptInvite: async (
-    token: string,
-    password: string,
-  ): Promise<{ accepted: true }> =>
-    unwrap<{ accepted: true }>(
-      await api.post("/users/invitations/accept", { token, password }),
-    ),
 };

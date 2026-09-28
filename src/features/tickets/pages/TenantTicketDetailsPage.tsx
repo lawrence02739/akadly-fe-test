@@ -2,6 +2,7 @@ import {
   ArrowLeft,
   CircleUserRound,
   MessageCircle,
+  Pencil,
   RotateCcw,
   Send,
   ShieldCheck,
@@ -16,6 +17,27 @@ import {
   type TicketRecord,
 } from "../api/tickets.api";
 
+const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+function activityLabel(activity: TicketRecord["activityHistory"][number]) {
+  if (activity.type === "priority_changed") return `Support changed priority from ${titleCase(activity.previousValue || "not set")} to ${titleCase(activity.newValue || "not set")}`;
+  if (activity.type === "category_changed") return `Support updated ${activity.message?.toLowerCase().includes("issue type") ? "issue type" : "category"} from ${titleCase(activity.previousValue || "not set")} to ${titleCase(activity.newValue || "not set")}`;
+  return activity.message || titleCase(activity.type);
+}
+function slaState(due?: string | null) {
+  if (!due) return { label: "Not set", className: "bg-slate-100 text-slate-600" };
+  const milliseconds = new Date(due).getTime() - Date.now();
+  if (milliseconds < 0) return { label: "Overdue", className: "bg-rose-100 text-rose-700" };
+  if (milliseconds <= 2 * 60 * 60 * 1000) return { label: "Due soon", className: "bg-amber-100 text-amber-800" };
+  return { label: "On track", className: "bg-emerald-100 text-emerald-700" };
+}
+function SupportRow({ label, value }: { label: string; value: string }) {
+  return <div className="flex items-start justify-between gap-4"><dt className="text-slate-500">{label}</dt><dd className="max-w-[60%] text-right font-semibold capitalize text-slate-800">{value}</dd></div>;
+}
+function TenantSla({ label, due }: { label: string; due?: string | null }) {
+  const state = slaState(due);
+  return <div className="rounded-lg border border-slate-100 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-slate-700">{label}</p><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${state.className}`}>{state.label}</span></div><p className="mt-1 text-xs text-slate-500">{due ? `Due ${new Date(due).toLocaleString()}` : "Support has not set a deadline yet."}</p></div>;
+}
+
 export default function TenantTicketDetailsPage() {
   const { ticketId = "" } = useParams();
   const [ticket, setTicket] = useState<TicketRecord | null>(null);
@@ -24,6 +46,14 @@ export default function TenantTicketDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForm, setEditForm] = useState({
+    title: "",
+    description: "",
+    relatedEntityType: "",
+    referenceUrl: "",
+  });
+  const [editFiles, setEditFiles] = useState<File[]>([]);
   const [rating, setRating] = useState(0);
   const [ratingComment, setRatingComment] = useState("");
   const load = useCallback(async () => {
@@ -102,10 +132,45 @@ export default function TenantTicketDetailsPage() {
       setSaving(false);
     }
   };
+  const openEdit = () => {
+    if (!ticket) return;
+    setEditForm({
+      title: ticket.title,
+      description: ticket.description,
+      relatedEntityType: ticket.relatedEntityType ?? "",
+      referenceUrl: ticket.referenceUrl ?? "",
+    });
+    setEditFiles([]);
+    setEditOpen(true);
+  };
+  const saveEdit = async () => {
+    if (!ticket) return;
+    setSaving(true);
+    try {
+      const attachments = await Promise.all(
+        editFiles.map((file) => ticketsApi.presignAttachment(file)),
+      );
+      const updated = await ticketsApi.update(ticket.id, {
+        title: editForm.title.trim(),
+        description: editForm.description.trim(),
+        relatedEntityType: editForm.relatedEntityType.trim() || null,
+        referenceUrl: editForm.referenceUrl.trim() || null,
+        attachments,
+      });
+      setTicket(updated);
+      setEditOpen(false);
+      toast.success("Ticket updated");
+    } catch (e) {
+      toast.error(adminError(e));
+    } finally {
+      setSaving(false);
+    }
+  };
   if (loading) return <PageState text="Loading ticket…" />;
   if (error || !ticket)
     return <PageState text={error || "Ticket not found"} retry={load} />;
   const resolved = ticket.status === "resolved" || ticket.status === "closed";
+  const supportName = ticket.assignedAdminName || (ticket.assignedAdminUserId ? "Support team" : "Awaiting support assignment");
   return (
     <section className="mx-auto max-w-4xl space-y-5 p-5 sm:p-8">
       <Link
@@ -143,15 +208,57 @@ export default function TenantTicketDetailsPage() {
             Open affected page
           </a>
         )}
+        {ticket.attachments?.length ? (
+          <div className="mt-5 border-t pt-4">
+            <p className="text-xs font-bold uppercase text-slate-500">Attachments ({ticket.attachments.length})</p>
+            <div className="mt-3 flex flex-wrap gap-2">{ticket.attachments.map((attachment) => <a key={`${attachment.fileUrl}-${attachment.fileName}`} href={attachment.fileUrl} target="_blank" rel="noreferrer" className="max-w-full truncate rounded-lg border border-slate-200 px-3 py-2 text-sm font-semibold text-[#0C5A69] hover:bg-teal-50">{attachment.fileName}</a>)}</div>
+          </div>
+        ) : null}
+        {!resolved && (
+          <button
+            type="button"
+            onClick={openEdit}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+          >
+            <Pencil size={15} /> Edit issue
+          </button>
+        )}
       </header>
+      {editOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/45 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-ticket-title"
+          onMouseDown={() => !saving && setEditOpen(false)}
+        >
+          <section
+            className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-xl"
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <h2 id="edit-ticket-title" className="text-lg font-bold text-slate-900">Edit issue</h2>
+            <p className="mt-1 text-sm text-slate-500">Update the information that will help support resolve this ticket.</p>
+            <div className="mt-5 space-y-4">
+              <label className="block text-sm font-semibold text-slate-700">Title<input value={editForm.title} maxLength={200} onChange={(event) => setEditForm({ ...editForm, title: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></label>
+              <label className="block text-sm font-semibold text-slate-700">Description<textarea value={editForm.description} maxLength={10000} rows={6} onChange={(event) => setEditForm({ ...editForm, description: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></label>
+              <label className="block text-sm font-semibold text-slate-700">Related course, form, payment, or account item<input value={editForm.relatedEntityType} maxLength={80} onChange={(event) => setEditForm({ ...editForm, relatedEntityType: event.target.value })} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></label>
+              <label className="block text-sm font-semibold text-slate-700">Affected page URL<input type="url" value={editForm.referenceUrl} maxLength={2048} onChange={(event) => setEditForm({ ...editForm, referenceUrl: event.target.value })} placeholder="https://portal.example.com/page" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" /></label>
+              <section><p className="text-sm font-semibold text-slate-700">Add screenshots or files</p><p className="mt-1 text-xs text-slate-500">New files are added to existing attachments. Existing files are not replaced.</p><input type="file" multiple accept="image/png,image/jpeg,application/pdf,.doc,.docx,text/plain" onChange={(event) => { const selected = Array.from(event.target.files ?? []); const valid = selected.filter((file) => file.size <= 10 * 1024 * 1024); if (valid.length !== selected.length) toast.error("Each file must be 10 MB or smaller"); setEditFiles((current) => [...current, ...valid].slice(0, 5)); event.currentTarget.value = ""; }} className="mt-3 block w-full text-sm" />{editFiles.length > 0 && <ul className="mt-2 space-y-1 text-sm text-slate-600">{editFiles.map((file, index) => <li key={`${file.name}-${index}`} className="flex justify-between gap-3"><span className="truncate">{file.name}</span><button type="button" onClick={() => setEditFiles((current) => current.filter((_, currentIndex) => currentIndex !== index))} className="font-semibold text-red-700">Remove</button></li>)}</ul>}</section>
+            </div>
+            <div className="mt-6 flex justify-end gap-3"><button type="button" disabled={saving} onClick={() => setEditOpen(false)} className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 disabled:opacity-50">Cancel</button><button type="button" disabled={saving || editForm.title.trim().length < 3 || editForm.description.trim().length < 3} onClick={saveEdit} className="rounded-lg bg-[#0C5A69] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">{saving ? "Saving..." : "Save changes"}</button></div>
+          </section>
+        </div>
+      )}
+      <section className="grid gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:grid-cols-2">
+        <div><h2 className="font-bold">Support status</h2><dl className="mt-4 space-y-3 text-sm"><SupportRow label="Current status" value={ticket.status.replaceAll("_", " ")} /><SupportRow label="Assigned support" value={supportName} /><SupportRow label="Priority" value={ticket.priority} /></dl></div>
+        <div><h2 className="font-bold">Service deadlines</h2><div className="mt-4 space-y-3"><TenantSla label="First response" due={ticket.firstResponseDueAt} /><TenantSla label="Resolution" due={ticket.resolutionDueAt} /></div></div>
+      </section>
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="font-bold">Ticket progress</h2>
         <div className="mt-4 space-y-3 border-l border-slate-200 pl-4">
           {ticket.activityHistory.map((activity, index) => (
             <div key={`${activity.createdAt}-${index}`}>
-              <p className="text-sm font-semibold capitalize">
-                {activity.type.replaceAll("_", " ")}
-              </p>
+              <p className="text-sm font-semibold">{activityLabel(activity)}</p>
               <p className="text-xs text-slate-500">
                 {activity.message || "Ticket updated"} ·{" "}
                 {new Date(activity.createdAt).toLocaleString()}
