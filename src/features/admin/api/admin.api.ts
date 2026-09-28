@@ -205,38 +205,26 @@ export interface AdminTeam {
 }
 export interface AdminTeamMember {
   id: string;
-  tenantId:
-    string | { name?: string; owner?: { name?: string; email?: string } };
-  teamId: string | AdminTeam;
-  accessRoleId: string | AdminAccessRole;
-  permissions: string[];
-  status: "active" | "suspended";
-  joinedAt: string;
+  userId: string;
+  displayName: string;
+  email: string;
+  roleIds: Array<string | AdminAccessRole>;
+  status: "active" | "suspended" | "disabled";
+  createdAt: string;
 }
 export interface AdminTenantInvitation {
   id: string;
-  tenantId:
-    | string
-    | { name?: string; owner?: { name?: string; email?: string } }
-    | null;
-  teamId: string | AdminTeam;
-  accessRoleId: string | AdminAccessRole;
   name: string;
   email: string;
-  workspaceName: string;
-  workspaceSlug: string;
-  permissions: string[];
-  status: "pending" | "accepted" | "expired" | "revoked";
-  deliveryStatus: "pending" | "sent" | "failed";
-  expiresAt: string;
+  roleId: string;
+  roleName: string;
+  status: "pending" | "revoked";
+  expiresAt: string | null;
   createdAt: string;
 }
 export interface AdminTeamInvitationPreview {
   name: string;
   email: string;
-  workspaceName: string;
-  workspaceSlug: string;
-  teamName: string;
   roleName: string;
 }
 export interface TeamManagementQuery {
@@ -565,12 +553,7 @@ export const adminApi = {
   },
   async updateTeamMember(
     id: string,
-    payload: Partial<{
-      teamId: string;
-      accessRoleId: string;
-      permissions: string[];
-      status: "active" | "suspended";
-    }>,
+    payload: Partial<{ roleId: string; status: "active" | "suspended" | "disabled" }>,
   ) {
     const { data } = await client.patch<Envelope<AdminTeamMember>>(
       `/team-management/members/${id}`,
@@ -588,34 +571,15 @@ export const adminApi = {
     );
     return pageResult(data, params);
   },
-  async createInvitation(payload: {
-    workspaceName: string;
-    workspaceSlug: string;
-    name: string;
-    email: string;
-    teamId: string;
-    accessRoleId: string;
-    permissions?: string[];
-  }) {
+  async createInvitation(payload: { name: string; email: string; roleId: string }) {
     const { data } = await client.post<Envelope<AdminTenantInvitation>>(
       "/team-management/invitations",
       payload,
     );
     return data.data;
   },
-  async updateInvitation(
-    id: string,
-    payload: Partial<{
-      teamId: string;
-      accessRoleId: string;
-      permissions: string[];
-    }>,
-  ) {
-    const { data } = await client.patch<Envelope<AdminTenantInvitation>>(
-      `/team-management/invitations/${id}`,
-      payload,
-    );
-    return data.data;
+  async updateInvitation() {
+    throw new Error("Admin invitation roles are assigned before invitation delivery.");
   },
   async resendInvitation(id: string) {
     const { data } = await client.post<Envelope<AdminTenantInvitation>>(
@@ -639,7 +603,7 @@ export const adminApi = {
     confirmPassword: string,
   ) {
     const { data } = await client.post<
-      Envelope<{ accepted: boolean; tenantId: string }>
+      Envelope<{ accepted: boolean; adminUserId: string }>
     >("/team-management/invitations/accept", {
       token,
       password,
