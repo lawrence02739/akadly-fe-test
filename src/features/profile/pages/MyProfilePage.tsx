@@ -17,6 +17,19 @@ type Details = {
   dateOfBirth: string;
   gender: "" | "female" | "male" | "non_binary" | "prefer_not_to_say";
 };
+
+const profileFields = (value: Partial<Details>): Partial<Details> => ({
+  firstName: value.firstName,
+  lastName: value.lastName,
+  phone: value.phone,
+  jobTitle: value.jobTitle,
+  department: value.department,
+  location: value.location,
+  bio: value.bio,
+  dateOfBirth: value.dateOfBirth,
+  gender: value.gender,
+});
+
 const empty: Details = {
   firstName: "",
   lastName: "",
@@ -54,7 +67,10 @@ export default function MyProfilePage() {
       .then((response) => {
         const payload = response.data?.data ?? response.data;
         if (!active || !payload?.profile) return;
-        setDetails((current) => ({ ...current, ...payload.profile }));
+        setDetails((current) => ({
+          ...current,
+          ...profileFields(payload.profile),
+        }));
         if (payload.profile.profilePictureUrl)
           setProfilePicturePreview(payload.profile.profilePictureUrl);
       })
@@ -74,9 +90,13 @@ export default function MyProfilePage() {
       });
       if (panCardNumber) body.append("panCardNumber", panCardNumber);
       if (profilePicture) body.append("profilePicture", profilePicture);
-      const response = await api.patch("/auth/me/profile", body);
+      const response = await api.patch("/auth/me/profile", body, {
+        // The shared client defaults to JSON. This endpoint accepts a Multer
+        // file field, so it must receive the FormData body as multipart.
+        headers: { "Content-Type": "multipart/form-data" },
+      });
       const saved = response.data?.data ?? response.data;
-      const next = { ...details, ...saved } as Details;
+      const next = { ...details, ...profileFields(saved) } as Details;
       localStorage.setItem(storageKey, JSON.stringify(next));
       setDetails(next);
       setPanCardNumber("");
