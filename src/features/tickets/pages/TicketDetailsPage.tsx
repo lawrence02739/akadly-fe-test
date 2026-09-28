@@ -196,6 +196,16 @@ export default function TicketDetailsPage({
           <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-600">
             {ticket.description}
           </p>
+          {ticket.referenceUrl && (
+            <a
+              href={ticket.referenceUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="mt-3 inline-flex max-w-full break-all text-sm font-semibold text-[#0C5A69] underline"
+            >
+              Open affected page
+            </a>
+          )}
         </div>
         {ticket.attachments?.length ? (
           <div className="mt-5 border-t pt-4">

@@ -69,6 +69,7 @@ export interface TicketRecord {
   raisedByUserId: string;
   title: string;
   description: string;
+  referenceUrl?: string | null;
   module: TicketModule;
   category: TicketCategory;
   issueType: string;
@@ -158,6 +159,7 @@ export const ticketsApi = {
     issueType: string;
     priority: TicketPriority;
     relatedEntityType?: string;
+    referenceUrl?: string;
     attachments?: TicketAttachment[];
   }) {
     const { data } = await api.post<Envelope<TicketRecord>>(

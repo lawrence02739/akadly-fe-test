@@ -39,6 +39,7 @@ export interface AdminTicket {
   raisedByUserId: string;
   title: string;
   description: string;
+  referenceUrl?: string | null;
   tags?: string[];
   module: string;
   category: string;
