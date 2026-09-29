@@ -476,6 +476,16 @@ export default function TicketDetailsPage({
                 <option value="waiting_for_user">Waiting for user</option>
                 <option value="pending">Pending</option>
                 <option value="escalated">Escalated</option>
+                {ticket.status === "resolved" && (
+                  <option value="resolved" disabled>
+                    Resolved
+                  </option>
+                )}
+                {ticket.status === "closed" && (
+                  <option value="closed" disabled>
+                    Closed
+                  </option>
+                )}
               </select>
             </label>
             <dl className="mt-4 space-y-2 text-sm">
