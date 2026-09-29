@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Send,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -22,6 +23,7 @@ const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g,
 function activityLabel(activity: TicketRecord["activityHistory"][number]) {
   if (activity.type === "priority_changed") return `Support changed priority from ${titleCase(activity.previousValue || "not set")} to ${titleCase(activity.newValue || "not set")}`;
   if (activity.type === "category_changed") return `Support updated ${activity.message?.toLowerCase().includes("issue type") ? "issue type" : "category"} from ${titleCase(activity.previousValue || "not set")} to ${titleCase(activity.newValue || "not set")}`;
+  if (activity.type === "rating_submitted") return activity.message || `You rated the support experience ${activity.newValue || ""}/5`;
   return activity.message || titleCase(activity.type);
 }
 function slaState(due?: string | null) {
@@ -292,11 +294,15 @@ export default function TenantTicketDetailsPage() {
           >
             <RotateCcw size={15} /> Reopen issue
           </button>
-          {ticket.status === "closed" &&
+          {resolved &&
             (ticket.satisfactionRating ? (
-              <p className="mt-4 text-sm font-semibold text-emerald-900">
-                Thanks for your {ticket.satisfactionRating}/5 support rating.
-              </p>
+              <div className="mt-4 rounded-lg border border-emerald-200 bg-white p-3 text-emerald-900">
+                <div className="flex items-center gap-1" aria-label={`${ticket.satisfactionRating} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((value) => <Star key={value} size={18} className={value <= ticket.satisfactionRating! ? "fill-amber-400 text-amber-400" : "text-slate-300"} />)}
+                </div>
+                <p className="mt-2 text-sm font-semibold">Thanks for your {ticket.satisfactionRating}/5 support rating.</p>
+                {ticket.satisfactionComment && <p className="mt-1 text-sm text-emerald-800">“{ticket.satisfactionComment}”</p>}
+              </div>
             ) : (
               <div className="mt-5 border-t border-emerald-200 pt-4">
                 <p className="text-sm font-bold text-emerald-900">
@@ -313,8 +319,9 @@ export default function TenantTicketDetailsPage() {
                           ? "text-xl text-amber-500"
                           : "text-xl text-slate-300"
                       }
+                      aria-label={`Rate ${value} out of 5 stars`}
                     >
-                      ?
+                      <Star size={23} fill={value <= rating ? "currentColor" : "none"} />
                     </button>
                   ))}
                 </div>
