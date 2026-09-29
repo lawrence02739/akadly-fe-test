@@ -128,7 +128,7 @@ export interface AdminTicketDashboard {
   daily: Array<{ _id: string; total: number; resolved: number }>;
   categories: Array<{ _id: string; total: number; open: number }>;
   myQueue: AdminTicket[];
-  metrics: { open: number; active: number; pendingResponse: number; resolvedThisWeek: number; escalated: number; unassigned: number; assignedToMe: number; overdue: number; averageFirstResponseMinutes: number | null };
+  metrics: { open: number; active: number; pendingResponse: number; resolvedThisWeek: number; escalated: number; unassigned: number; assignedToMe: number; overdue: number; averageFirstResponseMinutes: number | null; satisfaction: { resolvedTickets: number; ratedTickets: number; averageRating: number | null; distribution: Record<1 | 2 | 3 | 4 | 5, number> } };
 }
 export interface TicketAssignee {
   id: string;
