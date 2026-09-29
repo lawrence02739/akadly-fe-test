@@ -36,6 +36,19 @@ export interface TicketAttachment {
   mimeType: string;
   sizeBytes: number;
 }
+export interface TenantPlanContext {
+  tenantName: string | null;
+  tenantStatus: string | null;
+  paymentStatus: string | null;
+  plan: {
+    name: string;
+    code: string | null;
+    interval: "monthly" | "yearly" | null;
+    allowedModules: string[];
+    limits: { users: number | null; students: number | null; courses: number | null; contentBytes: number | null };
+  } | null;
+  usage: { users: number; courses: number; students: null; contentBytes: null };
+}
 export interface TicketRecord {
   id: string;
   _id?: string;
@@ -65,6 +78,7 @@ export interface TicketRecord {
   resolutionEmailStatus: "pending" | "sent" | "failed";
   resolutionEmailSentAt: string | null;
   resolutionEmailError: string | null;
+  tenantPlan?: TenantPlanContext;
   satisfactionRating?: number | null;
   satisfactionComment?: string | null;
   satisfactionSubmittedAt?: string | null;
@@ -133,6 +147,10 @@ export const ticketsApi = {
       ...data.data,
       recentTickets: data.data.recentTickets.map(asId),
     };
+  },
+  async context() {
+    const { data } = await api.get<Envelope<TenantPlanContext>>("/tickets/context");
+    return data.data;
   },
   async list(params: Record<string, unknown>) {
     const { data } = await api.get<Envelope<TicketRecord[]>>("/tickets", {

@@ -506,7 +506,7 @@ export default function TicketDetailsPage({
             due={ticket.resolutionDueAt}
             state={resolve}
           />
-          <RequesterProfile profile={ticket.requesterProfile} />
+          <RequesterProfile profile={ticket.requesterProfile} tenantPlan={ticket.tenantPlan} />
           <RelatedTickets items={ticket.relatedTickets ?? []} />
           <Tags
             tags={ticket.tags ?? []}
@@ -767,9 +767,13 @@ function Message({ item }: { item: TicketMessage }) {
 }
 function RequesterProfile({
   profile,
+  tenantPlan,
 }: {
   profile?: AdminTicket["requesterProfile"];
+  tenantPlan?: AdminTicket["tenantPlan"];
 }) {
+  const plan = tenantPlan?.plan;
+  const limit = (value: number | null) => value === null ? "Unlimited" : String(value);
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
       <h2 className="text-xs font-bold uppercase text-slate-500">
@@ -804,6 +808,12 @@ function RequesterProfile({
             </>
           )}
           {profile.cohort && <Row label="Cohort" value={profile.cohort} />}
+          <div className="mt-4 border-t border-slate-100 pt-3">
+            <p className="text-xs font-bold uppercase text-slate-500">Workspace plan</p>
+            <p className="mt-1 font-bold text-slate-900">{plan?.name ?? "Plan not assigned"}</p>
+            <p className="mt-1 text-xs capitalize text-slate-500">Tenant: {tenantPlan?.tenantStatus ?? "unknown"} · Payment: {tenantPlan?.paymentStatus ?? "unknown"}</p>
+            {plan && <div className="mt-3 grid grid-cols-2 gap-2 text-xs"><PlanCell label="Users" value={`${tenantPlan?.usage.users ?? 0} / ${limit(plan.limits.users)}`} /><PlanCell label="Courses" value={`${tenantPlan?.usage.courses ?? 0} / ${limit(plan.limits.courses)}`} /><PlanCell label="Students" value={`Limit: ${limit(plan.limits.students)}`} /><PlanCell label="Storage" value={`Limit: ${limit(plan.limits.contentBytes)}`} /></div>}
+          </div>
         </div>
       ) : (
         <p className="mt-3 text-sm text-slate-500">
@@ -813,6 +823,7 @@ function RequesterProfile({
     </section>
   );
 }
+function PlanCell({ label, value }: { label: string; value: string }) { return <div className="rounded border border-slate-100 bg-slate-50 p-2"><p className="text-slate-500">{label}</p><p className="mt-0.5 font-bold text-slate-700">{value}</p></div>; }
 function RelatedTickets({
   items,
 }: {

@@ -97,6 +97,19 @@ export interface AdminTicket {
     courseLanguage: string | null;
     cohort: string | null;
   };
+  tenantPlan?: {
+    tenantName: string | null;
+    tenantStatus: string | null;
+    paymentStatus: string | null;
+    plan: {
+      name: string;
+      code: string | null;
+      interval: "monthly" | "yearly" | null;
+      allowedModules: string[];
+      limits: { users: number | null; students: number | null; courses: number | null; contentBytes: number | null };
+    } | null;
+    usage: { users: number; courses: number; students: null; contentBytes: null };
+  };
   relatedTickets?: Array<{
     _id: string;
     ticketNumber: string;

@@ -9,6 +9,7 @@ import {
   type TicketCategory,
   type TicketModule,
   type TicketPriority,
+  type TenantPlanContext,
   type TicketRecord,
   type TicketStatus,
 } from "../api/tickets.api";
@@ -94,6 +95,8 @@ export default function TicketsListPage() {
   const [submitted, setSubmitted] = useState("");
   const [form, setForm] = useState(blank);
   const [files, setFiles] = useState<File[]>([]);
+  const [planContext, setPlanContext] = useState<TenantPlanContext | null>(null);
+  const [planContextError, setPlanContextError] = useState(false);
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
@@ -153,6 +156,11 @@ export default function TicketsListPage() {
             onClick={() => {
               setSubmitted("");
               setModal(true);
+              setPlanContextError(false);
+              void ticketsApi.context().then(setPlanContext).catch(() => {
+                setPlanContext(null);
+                setPlanContextError(true);
+              });
             }}
             className="inline-flex items-center justify-center gap-2 rounded-lg bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white"
           >
@@ -326,6 +334,7 @@ export default function TicketsListPage() {
                   </button>
                 </div>
                 <div className="mt-6 space-y-4">
+                  <PlanContextCard context={planContext} unavailable={planContextError} />
                   <Field label="Issue title">
                     <input
                       required
@@ -533,6 +542,17 @@ export default function TicketsListPage() {
     </section>
   );
 }
+function PlanContextCard({ context, unavailable }: { context: TenantPlanContext | null; unavailable: boolean }) {
+  if (!context && !unavailable) return <section className="rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-500">Loading current plan and usage…</section>;
+  if (!context) return <section className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">Your plan information is temporarily unavailable. You can still raise this issue.</section>;
+  const limit = (value: number | null) => value === null ? "Unlimited" : String(value);
+  const plan = context.plan;
+  return <section className="rounded-xl border border-teal-200 bg-teal-50 p-4">
+    <div className="flex flex-wrap items-start justify-between gap-2"><div><p className="text-xs font-bold uppercase tracking-wide text-[#0C5A69]">Workspace plan context</p><h3 className="mt-1 font-bold text-slate-900">{plan?.name ?? "Plan not assigned"}</h3><p className="mt-1 text-xs text-slate-600">Support will receive this plan and usage context with your ticket.</p></div><span className="rounded-full bg-white px-2.5 py-1 text-xs font-semibold capitalize text-slate-700">{context.paymentStatus ?? "payment unknown"}</span></div>
+    {plan ? <div className="mt-4 grid gap-2 sm:grid-cols-2"><Usage label="Users" value={`${context.usage.users} / ${limit(plan.limits.users)}`} /><Usage label="Courses" value={`${context.usage.courses} / ${limit(plan.limits.courses)}`} /><Usage label="Students" value={`Limit: ${limit(plan.limits.students)}`} /><Usage label="Content storage" value={`Limit: ${limit(plan.limits.contentBytes)}`} /></div> : <p className="mt-3 text-sm text-slate-600">Ask support to confirm or assign the workspace plan.</p>}
+  </section>;
+}
+function Usage({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-teal-100 bg-white px-3 py-2"><p className="text-xs text-slate-500">{label}</p><p className="mt-0.5 text-sm font-bold text-slate-800">{value}</p></div>; }
 function Field({
   label,
   children,

@@ -15,6 +15,7 @@ import {
   ticketsApi,
   type TicketMessage,
   type TicketRecord,
+  type TenantPlanContext,
 } from "../api/tickets.api";
 
 const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
@@ -37,6 +38,13 @@ function TenantSla({ label, due }: { label: string; due?: string | null }) {
   const state = slaState(due);
   return <div className="rounded-lg border border-slate-100 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-slate-700">{label}</p><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${state.className}`}>{state.label}</span></div><p className="mt-1 text-xs text-slate-500">{due ? `Due ${new Date(due).toLocaleString()}` : "Support has not set a deadline yet."}</p></div>;
 }
+function TenantPlanCard({ context }: { context?: TenantPlanContext }) {
+  if (!context) return null;
+  const plan = context.plan;
+  const limit = (value: number | null) => value === null ? "Unlimited" : String(value);
+  return <section className="rounded-xl border border-teal-200 bg-teal-50 p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-bold text-slate-900">Workspace plan and usage</h2><p className="mt-1 text-sm text-slate-600">Support uses this live account context while handling your request.</p></div><span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{context.paymentStatus ?? "payment unknown"}</span></div>{plan ? <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><PlanValue label="Plan" value={plan.name} /><PlanValue label="Users" value={`${context.usage.users} / ${limit(plan.limits.users)}`} /><PlanValue label="Courses" value={`${context.usage.courses} / ${limit(plan.limits.courses)}`} /><PlanValue label="Students" value={`Limit: ${limit(plan.limits.students)}`} /><PlanValue label="Content storage" value={`Limit: ${limit(plan.limits.contentBytes)}`} /></div> : <p className="mt-3 text-sm text-slate-600">No plan is assigned to this workspace yet.</p>}</section>;
+}
+function PlanValue({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-teal-100 bg-white p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-sm font-bold text-slate-800">{value}</p></div>; }
 
 export default function TenantTicketDetailsPage() {
   const { ticketId = "" } = useParams();
@@ -253,6 +261,7 @@ export default function TenantTicketDetailsPage() {
         <div><h2 className="font-bold">Support status</h2><dl className="mt-4 space-y-3 text-sm"><SupportRow label="Current status" value={ticket.status.replaceAll("_", " ")} /><SupportRow label="Assigned support" value={supportName} /><SupportRow label="Priority" value={ticket.priority} /></dl></div>
         <div><h2 className="font-bold">Service deadlines</h2><div className="mt-4 space-y-3"><TenantSla label="First response" due={ticket.firstResponseDueAt} /><TenantSla label="Resolution" due={ticket.resolutionDueAt} /></div></div>
       </section>
+      <TenantPlanCard context={ticket.tenantPlan} />
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="font-bold">Ticket progress</h2>
         <div className="mt-4 space-y-3 border-l border-slate-200 pl-4">
