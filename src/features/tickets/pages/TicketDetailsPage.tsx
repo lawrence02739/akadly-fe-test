@@ -6,6 +6,7 @@ import {
   MessageCircle,
   RotateCcw,
   Send,
+  Star,
   X,
 } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -519,6 +520,11 @@ export default function TicketDetailsPage({
             state={resolve}
           />
           <RequesterProfile profile={ticket.requesterProfile} tenantPlan={ticket.tenantPlan} />
+          <TicketSatisfaction
+            rating={ticket.satisfactionRating}
+            comment={ticket.satisfactionComment}
+            submittedAt={ticket.satisfactionSubmittedAt}
+          />
           <RelatedTickets items={ticket.relatedTickets ?? []} />
           <Tags
             tags={ticket.tags ?? []}
@@ -836,6 +842,33 @@ function RequesterProfile({
   );
 }
 function PlanCell({ label, value }: { label: string; value: string }) { return <div className="rounded border border-slate-100 bg-slate-50 p-2"><p className="text-slate-500">{label}</p><p className="mt-0.5 font-bold text-slate-700">{value}</p></div>; }
+function TicketSatisfaction({
+  rating,
+  comment,
+  submittedAt,
+}: {
+  rating?: number | null;
+  comment?: string | null;
+  submittedAt?: string | null;
+}) {
+  return (
+    <section className="rounded-xl border border-amber-200 bg-amber-50/40 p-5 shadow-sm">
+      <h2 className="text-xs font-bold uppercase text-slate-500">Tenant rating</h2>
+      {rating ? (
+        <>
+          <div className="mt-3 flex items-center gap-1" aria-label={`${rating} out of 5 stars`}>
+            {[1, 2, 3, 4, 5].map((value) => (
+              <Star key={value} size={20} className={value <= rating ? "fill-amber-400 text-amber-400" : "text-slate-300"} />
+            ))}
+            <strong className="ml-2 text-sm text-slate-800">{rating}/5</strong>
+          </div>
+          {comment ? <p className="mt-3 text-sm leading-6 text-slate-700">“{comment}”</p> : <p className="mt-3 text-sm text-slate-500">No written feedback.</p>}
+          <p className="mt-3 text-xs text-slate-500">Submitted {display(submittedAt)}</p>
+        </>
+      ) : <p className="mt-3 text-sm text-slate-500">The tenant has not submitted a rating yet.</p>}
+    </section>
+  );
+}
 function RelatedTickets({
   items,
 }: {
