@@ -84,17 +84,27 @@ export default function MyProfilePage() {
     setSaving(true);
     const name = `${details.firstName} ${details.lastName}`.trim();
     try {
-      const body = new FormData();
+      const body: Record<string, string> = {};
       Object.entries(details).forEach(([key, value]) => {
-        if (value) body.append(key, value);
+        if (value) body[key] = value;
       });
-      if (panCardNumber) body.append("panCardNumber", panCardNumber);
-      if (profilePicture) body.append("profilePicture", profilePicture);
-      const response = await api.patch("/auth/me/profile", body, {
-        // The shared client defaults to JSON. This endpoint accepts a Multer
-        // file field, so it must receive the FormData body as multipart.
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      if (panCardNumber) body.panCardNumber = panCardNumber;
+      if (profilePicture) {
+        const { data } = await api.post("/auth/me/profile-picture/presign", {
+          fileName: profilePicture.name,
+          contentType: profilePicture.type,
+          sizeBytes: profilePicture.size,
+        });
+        const upload = data?.data ?? data;
+        const uploadResponse = await fetch(upload.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": profilePicture.type },
+          body: profilePicture,
+        });
+        if (!uploadResponse.ok) throw new Error("Profile picture could not be uploaded to storage");
+        body.profilePictureKey = upload.fileKey;
+      }
+      const response = await api.patch("/auth/me/profile", body);
       const saved = response.data?.data ?? response.data;
       const next = { ...details, ...profileFields(saved) } as Details;
       localStorage.setItem(storageKey, JSON.stringify(next));

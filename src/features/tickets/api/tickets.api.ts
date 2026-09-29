@@ -187,16 +187,18 @@ export const ticketsApi = {
     return asId(data.data);
   },
   async presignAttachment(file: File) {
-    const formData = new FormData();
-    formData.append("file", file);
-    const { data } = await api.post<Envelope<TicketAttachment>>(
-      "/tickets/uploads",
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      },
+    const { data } = await api.post<Envelope<{ uploadUrl: string; fileUrl: string; fileKey: string }>>(
+      "/tickets/uploads/presign",
+      { fileName: file.name, contentType: file.type, sizeBytes: file.size },
     );
-    return data.data;
+    const upload = data.data;
+    const response = await fetch(upload.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error("File could not be uploaded to storage");
+    return { fileName: file.name, fileUrl: upload.fileUrl, fileKey: upload.fileKey, mimeType: file.type, sizeBytes: file.size };
   },
   async update(
     id: string,

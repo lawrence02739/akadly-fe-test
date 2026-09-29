@@ -391,9 +391,18 @@ export const adminApi = {
     return data.data;
   },
   async uploadTenantPaymentProof(file: File): Promise<PaymentProof> {
-    const form = new FormData(); form.append('file', file);
-    const { data } = await client.post<Envelope<PaymentProof>>('/tenants/payment-proofs/uploads', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return data.data;
+    const { data } = await client.post<Envelope<PaymentProof & { uploadUrl: string }>>(
+      '/tenants/payment-proofs/presign',
+      { fileName: file.name, contentType: file.type, sizeBytes: file.size },
+    );
+    const upload = data.data;
+    const response = await fetch(upload.uploadUrl, {
+      method: 'PUT',
+      headers: { 'Content-Type': file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error('Payment proof could not be uploaded to storage');
+    return { fileName: upload.fileName, fileUrl: upload.fileUrl, mimeType: upload.mimeType, sizeBytes: upload.sizeBytes };
   },
   async updateTenant(id: string, payload: TenantUpdate) {
     const { data } = await client.patch<Envelope<AdminTenant>>(
@@ -724,14 +733,18 @@ export const adminApi = {
     return pageResult(data, params);
   },
   async uploadTicketAttachment(file: File) {
-    const form = new FormData();
-    form.append("file", file);
-    const { data } = await client.post<Envelope<TicketAttachment>>(
-      "/tickets/uploads",
-      form,
-      { headers: { "Content-Type": "multipart/form-data" } },
+    const { data } = await client.post<Envelope<{ uploadUrl: string; fileUrl: string; fileKey: string }>>(
+      "/tickets/uploads/presign",
+      { fileName: file.name, contentType: file.type, sizeBytes: file.size },
     );
-    return data.data;
+    const upload = data.data;
+    const response = await fetch(upload.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error("File could not be uploaded to storage");
+    return { fileName: file.name, fileUrl: upload.fileUrl, fileKey: upload.fileKey, mimeType: file.type, sizeBytes: file.size };
   },
   async addTicketMessage(
     id: string,
