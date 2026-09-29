@@ -140,6 +140,7 @@ export interface TicketAssignee {
 export interface TicketAttachment {
   fileName: string;
   fileUrl: string;
+  fileKey?: string;
   mimeType: string;
   sizeBytes: number;
 }

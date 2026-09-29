@@ -53,6 +53,7 @@ export default function TenantTicketDetailsPage() {
   const [ticket, setTicket] = useState<TicketRecord | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [reply, setReply] = useState("");
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -90,8 +91,10 @@ export default function TenantTicketDetailsPage() {
     if (!reply.trim() || !ticket) return;
     setSaving(true);
     try {
-      await ticketsApi.reply(ticket.id, reply);
+      const attachments = await Promise.all(replyFiles.map((file) => ticketsApi.presignAttachment(file)));
+      await ticketsApi.reply(ticket.id, reply, attachments);
       setReply("");
+      setReplyFiles([]);
       await load();
       toast.success("Reply sent to support");
     } catch (e) {
@@ -404,6 +407,15 @@ export default function TenantTicketDetailsPage() {
                     >
                       <p className="whitespace-pre-wrap">{message.body}</p>
                     </div>
+                    {message.attachments?.length ? (
+                      <div className={mine ? "mt-2 flex flex-wrap justify-end gap-2" : "mt-2 flex flex-wrap gap-2"}>
+                        {message.attachments.map((attachment, index) => (
+                          <a key={`${attachment.fileUrl}-${index}`} href={attachment.fileUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#0C5A69] hover:bg-teal-50">
+                            {attachment.fileName}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </article>
               );
@@ -439,6 +451,13 @@ export default function TenantTicketDetailsPage() {
               className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none transition focus:border-[#0C5A69] focus:ring-2 focus:ring-teal-100"
               placeholder="Describe the update, question, or information that can help support..."
             />
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-[#0C5A69] hover:bg-teal-50">
+                Attach files
+                <input type="file" multiple className="sr-only" accept="image/png,image/jpeg,application/pdf,.doc,.docx,text/plain" onChange={(event) => { const selected = Array.from(event.target.files ?? []); const valid = selected.filter((file) => file.size <= 10 * 1024 * 1024); if (valid.length !== selected.length) toast.error("Each file must be 10 MB or smaller"); setReplyFiles((current) => [...current, ...valid].slice(0, 5)); event.currentTarget.value = ""; }} />
+              </label>
+              {replyFiles.map((file, index) => <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{file.name}<button type="button" onClick={() => setReplyFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="font-bold text-red-700">Remove</button></span>)}
+            </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs text-slate-400">
                 {reply.length}/4000

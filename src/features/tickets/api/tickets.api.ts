@@ -33,6 +33,7 @@ export interface TicketActivity {
 export interface TicketAttachment {
   fileName: string;
   fileUrl: string;
+  fileKey?: string;
   mimeType: string;
   sizeBytes: number;
 }
@@ -95,6 +96,7 @@ export interface TicketMessage {
   messageType: "reply" | "internal_note" | "system";
   body: string;
   isInternal: boolean;
+  attachments?: TicketAttachment[];
   createdAt: string;
 }
 export interface TenantTicketDashboard {
@@ -243,10 +245,10 @@ export const ticketsApi = {
     );
     return paged(data, params);
   },
-  async reply(id: string, body: string) {
+  async reply(id: string, body: string, attachments?: TicketAttachment[]) {
     const { data } = await api.post<Envelope<TicketMessage>>(
       `/tickets/${encodeURIComponent(id)}/messages`,
-      { body },
+      { body, attachments },
     );
     return asId(data.data);
   },
