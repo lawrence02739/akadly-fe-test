@@ -20,6 +20,7 @@ export interface AdminTenant {
   billingDate: string | null;
   dueDate: string | null;
   paymentStatus: 'due' | 'paid' | 'unpaid';
+  paymentProofs: PaymentProof[];
   ownerInvitationStatus: 'pending' | 'accepted' | 'revoked';
   owner: { name: string; email: string };
   ownerUserId: string | null;
@@ -39,6 +40,7 @@ export interface AdminTicket {
   raisedByUserId: string;
   title: string;
   description: string;
+  referenceUrl?: string | null;
   tags?: string[];
   module: string;
   category: string;
@@ -106,6 +108,15 @@ export interface AdminTicket {
   createdAt: string;
   updatedAt: string;
 }
+export interface AdminTicketDashboard {
+  total: number;
+  statuses: Record<string, number>;
+  priorities: Record<string, number>;
+  daily: Array<{ _id: string; total: number; resolved: number }>;
+  categories: Array<{ _id: string; total: number; open: number }>;
+  myQueue: AdminTicket[];
+  metrics: { open: number; active: number; pendingResponse: number; resolvedThisWeek: number; escalated: number; unassigned: number; assignedToMe: number; overdue: number; averageFirstResponseMinutes: number | null };
+}
 export interface TicketAssignee {
   id: string;
   _id?: string;
@@ -132,8 +143,9 @@ export interface TicketMessage {
   createdAt: string;
 }
 export interface TenantQuery { page: number; pageSize: number; search?: string; status?: string; sortBy?: string; sortOrder?: string }
-export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid' }
-export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; settings?: Record<string, unknown> }
+export interface PaymentProof { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number; uploadedAt?: string }
+export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[] }
+export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[]; settings?: Record<string, unknown> }
 export interface AdminSubscription {
   id: string;
   name: string;
@@ -193,38 +205,26 @@ export interface AdminTeam {
 }
 export interface AdminTeamMember {
   id: string;
-  tenantId:
-    string | { name?: string; owner?: { name?: string; email?: string } };
-  teamId: string | AdminTeam;
-  accessRoleId: string | AdminAccessRole;
-  permissions: string[];
-  status: "active" | "suspended";
-  joinedAt: string;
+  userId: string;
+  displayName: string;
+  email: string;
+  roleIds: Array<string | AdminAccessRole>;
+  status: "active" | "suspended" | "disabled";
+  createdAt: string;
 }
 export interface AdminTenantInvitation {
   id: string;
-  tenantId:
-    | string
-    | { name?: string; owner?: { name?: string; email?: string } }
-    | null;
-  teamId: string | AdminTeam;
-  accessRoleId: string | AdminAccessRole;
   name: string;
   email: string;
-  workspaceName: string;
-  workspaceSlug: string;
-  permissions: string[];
-  status: "pending" | "accepted" | "expired" | "revoked";
-  deliveryStatus: "pending" | "sent" | "failed";
-  expiresAt: string;
+  roleId: string;
+  roleName: string;
+  status: "pending" | "revoked";
+  expiresAt: string | null;
   createdAt: string;
 }
 export interface AdminTeamInvitationPreview {
   name: string;
   email: string;
-  workspaceName: string;
-  workspaceSlug: string;
-  teamName: string;
   roleName: string;
 }
 export interface TeamManagementQuery {
@@ -335,6 +335,10 @@ export const adminApi = {
     const { data } = await client.get<Envelope<AdminProfile>>("/auth/me");
     return data.data;
   },
+  async ticketDashboard() {
+    const { data } = await client.get<Envelope<AdminTicketDashboard>>("/tickets/dashboard");
+    return data.data;
+  },
   async logout() {
     const refreshToken = tokens?.refreshToken;
     try {
@@ -370,6 +374,11 @@ export const adminApi = {
       "/tenants",
       payload,
     );
+    return data.data;
+  },
+  async uploadTenantPaymentProof(file: File): Promise<PaymentProof> {
+    const form = new FormData(); form.append('file', file);
+    const { data } = await client.post<Envelope<PaymentProof>>('/tenants/payment-proofs/uploads', form, { headers: { 'Content-Type': 'multipart/form-data' } });
     return data.data;
   },
   async updateTenant(id: string, payload: TenantUpdate) {
@@ -544,12 +553,7 @@ export const adminApi = {
   },
   async updateTeamMember(
     id: string,
-    payload: Partial<{
-      teamId: string;
-      accessRoleId: string;
-      permissions: string[];
-      status: "active" | "suspended";
-    }>,
+    payload: Partial<{ roleId: string; status: "active" | "suspended" | "disabled" }>,
   ) {
     const { data } = await client.patch<Envelope<AdminTeamMember>>(
       `/team-management/members/${id}`,
@@ -567,34 +571,15 @@ export const adminApi = {
     );
     return pageResult(data, params);
   },
-  async createInvitation(payload: {
-    workspaceName: string;
-    workspaceSlug: string;
-    name: string;
-    email: string;
-    teamId: string;
-    accessRoleId: string;
-    permissions?: string[];
-  }) {
+  async createInvitation(payload: { name: string; email: string; roleId: string }) {
     const { data } = await client.post<Envelope<AdminTenantInvitation>>(
       "/team-management/invitations",
       payload,
     );
     return data.data;
   },
-  async updateInvitation(
-    id: string,
-    payload: Partial<{
-      teamId: string;
-      accessRoleId: string;
-      permissions: string[];
-    }>,
-  ) {
-    const { data } = await client.patch<Envelope<AdminTenantInvitation>>(
-      `/team-management/invitations/${id}`,
-      payload,
-    );
-    return data.data;
+  async updateInvitation() {
+    throw new Error("Admin invitation roles are assigned before invitation delivery.");
   },
   async resendInvitation(id: string) {
     const { data } = await client.post<Envelope<AdminTenantInvitation>>(
@@ -618,7 +603,7 @@ export const adminApi = {
     confirmPassword: string,
   ) {
     const { data } = await client.post<
-      Envelope<{ accepted: boolean; tenantId: string }>
+      Envelope<{ accepted: boolean; adminUserId: string }>
     >("/team-management/invitations/accept", {
       token,
       password,

@@ -34,6 +34,8 @@ import ReportsPage from "./features/reports/pages/ReportsPage";
 import TicketsListPage from "./features/tickets/pages/TicketsListPage";
 import TicketDetailsPage from "./features/tickets/pages/TicketDetailsPage";
 import TenantTicketDetailsPage from "./features/tickets/pages/TenantTicketDetailsPage";
+import TenantTicketsDashboardPage from "./features/tickets/pages/TenantTicketsDashboardPage";
+import MyProfilePage from "./features/profile/pages/MyProfilePage";
 import AccessRoute from "./shared/auth/AccessRoute";
 import {
   AdminGuard,
@@ -48,6 +50,7 @@ import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
 import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
 
 import AdminTicketsListPage from "./features/admin/pages/AdminTicketsListPage";
+import AdminTicketsDashboardPage from "./features/admin/pages/AdminTicketsDashboardPage";
 import {
   SubscriptionLayout,
   SubscriptionList,
@@ -103,6 +106,7 @@ function App() {
             </Route>
             <Route path="team" element={<AdminTeamManagement />} />
             <Route path="tickets" element={<AdminTicketsListPage />} />
+            <Route path="tickets/dashboard" element={<AdminTicketsDashboardPage />} />
             <Route
               path="tickets/:ticketId"
               element={<TicketDetailsPage adminMode />}
@@ -231,6 +235,8 @@ function App() {
           <Route path="subscriptions" element={<PlansPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="tickets" element={<TicketsListPage />} />
+          <Route path="tickets/dashboard" element={<TenantTicketsDashboardPage />} />
+          <Route path="profile" element={<MyProfilePage />} />
           <Route
             path="tickets/:ticketId"
             element={<TenantTicketDetailsPage />}

@@ -16,6 +16,7 @@ import {
   CreditCard,
   ChartNoAxesCombined,
   Ticket,
+  UserRound,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -35,6 +36,7 @@ const navItems = [
     path: "/partner/tickets",
     permissions: [],
   },
+  { icon: UserRound, label: "My profile", path: "/partner/profile", permissions: [] },
   {
     icon: Book,
     label: "Courses",

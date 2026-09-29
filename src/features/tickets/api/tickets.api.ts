@@ -36,31 +36,6 @@ export interface TicketAttachment {
   mimeType: string;
   sizeBytes: number;
 }
-export interface TicketDashboard {
-  total: number;
-  statuses: Record<string, number>;
-  priorities: Record<string, number>;
-  recentTickets: TicketRecord[];
-  daily: Array<{ _id: string; total: number; resolved: number }>;
-  categories: Array<{ _id: string; total: number; open: number }>;
-  metrics: {
-    open: number;
-    pendingResponse: number;
-    resolvedThisWeek: number;
-    escalated: number;
-    averageFirstResponseMinutes: number | null;
-  };
-  recentActivity: Array<{
-    _id: string;
-    ticketId: string;
-    authorType: "tenant" | "admin" | "system";
-    body: string;
-    createdAt: string;
-    ticketNumber: string;
-    ticketTitle: string;
-    ticketStatus: TicketStatus;
-  }>;
-}
 export interface TicketRecord {
   id: string;
   _id?: string;
@@ -69,13 +44,21 @@ export interface TicketRecord {
   raisedByUserId: string;
   title: string;
   description: string;
+  referenceUrl?: string | null;
+  tags?: string[];
   module: TicketModule;
   category: TicketCategory;
   issueType: string;
+  relatedEntityType?: string | null;
+  relatedEntityId?: string | null;
+  attachments?: TicketAttachment[];
   priority: TicketPriority;
   status: TicketStatus;
   assignedAdminUserId: string | null;
+  assignedAdminName?: string | null;
   assignedAt: string | null;
+  firstResponseDueAt?: string | null;
+  resolutionDueAt?: string | null;
   resolvedAt: string | null;
   closedAt: string | null;
   resolutionNote: string | null;
@@ -99,6 +82,18 @@ export interface TicketMessage {
   body: string;
   isInternal: boolean;
   createdAt: string;
+}
+export interface TenantTicketDashboard {
+  total: number;
+  statuses: Partial<Record<TicketStatus, number>>;
+  priorities: Partial<Record<TicketPriority, number>>;
+  metrics: {
+    active: number;
+    waitingForYou: number;
+    inProgress: number;
+    resolved: number;
+  };
+  recentTickets: TicketRecord[];
 }
 export interface Pagination {
   page: number;
@@ -131,9 +126,13 @@ const paged = <T extends { _id?: unknown; id?: string }>(
 
 export const ticketsApi = {
   async dashboard() {
-    const { data } =
-      await api.get<Envelope<TicketDashboard>>("/tickets/dashboard");
-    return data.data;
+    const { data } = await api.get<Envelope<TenantTicketDashboard>>(
+      "/tickets/dashboard",
+    );
+    return {
+      ...data.data,
+      recentTickets: data.data.recentTickets.map(asId),
+    };
   },
   async list(params: Record<string, unknown>) {
     const { data } = await api.get<Envelope<TicketRecord[]>>("/tickets", {
@@ -158,6 +157,7 @@ export const ticketsApi = {
     issueType: string;
     priority: TicketPriority;
     relatedEntityType?: string;
+    referenceUrl?: string;
     attachments?: TicketAttachment[];
   }) {
     const { data } = await api.post<Envelope<TicketRecord>>(
@@ -180,7 +180,18 @@ export const ticketsApi = {
   },
   async update(
     id: string,
-    payload: Partial<Pick<TicketRecord, "title" | "description" | "priority">>,
+    payload: Partial<
+      Pick<TicketRecord, "title" | "description" | "priority" | "tags">
+      | Pick<
+          TicketRecord,
+          | "module"
+          | "category"
+          | "issueType"
+          | "relatedEntityType"
+          | "referenceUrl"
+          | "attachments"
+        >
+    >,
   ) {
     const { data } = await api.patch<Envelope<TicketRecord>>(
       `/tickets/${encodeURIComponent(id)}`,
