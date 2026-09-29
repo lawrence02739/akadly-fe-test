@@ -48,6 +48,7 @@ import AdminTenants, {
 import AdminLayout from "./features/admin/AdminLayout";
 import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
 import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
+import AdminOrganizationDocumentSettings from "./features/admin/pages/AdminOrganizationDocumentSettings";
 
 import AdminTicketsListPage from "./features/admin/pages/AdminTicketsListPage";
 import AdminTicketsDashboardPage from "./features/admin/pages/AdminTicketsDashboardPage";
@@ -105,8 +106,15 @@ function App() {
               <Route path=":id/edit" element={<SubscriptionForm edit />} />
             </Route>
             <Route path="team" element={<AdminTeamManagement />} />
+            <Route
+              path="settings/organization-documents"
+              element={<AdminOrganizationDocumentSettings />}
+            />
             <Route path="tickets" element={<AdminTicketsListPage />} />
-            <Route path="tickets/dashboard" element={<AdminTicketsDashboardPage />} />
+            <Route
+              path="tickets/dashboard"
+              element={<AdminTicketsDashboardPage />}
+            />
             <Route
               path="tickets/:ticketId"
               element={<TicketDetailsPage adminMode />}
@@ -235,7 +243,10 @@ function App() {
           <Route path="subscriptions" element={<PlansPage />} />
           <Route path="payments" element={<PaymentsPage />} />
           <Route path="tickets" element={<TicketsListPage />} />
-          <Route path="tickets/dashboard" element={<TenantTicketsDashboardPage />} />
+          <Route
+            path="tickets/dashboard"
+            element={<TenantTicketsDashboardPage />}
+          />
           <Route path="profile" element={<MyProfilePage />} />
           <Route
             path="tickets/:ticketId"
