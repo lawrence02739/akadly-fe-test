@@ -432,7 +432,7 @@ export default function TenantTicketDetailsPage() {
             </div>
           )}
         </div>
-        {ticket.status !== "closed" && (
+        {!resolved && (
           <div className="border-t border-slate-100 bg-white p-5 sm:p-6">
             <label
               htmlFor="tenant-ticket-reply"
@@ -479,6 +479,11 @@ export default function TenantTicketDetailsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+        {resolved && (
+          <div className="border-t border-slate-100 bg-white p-5 text-sm text-slate-600 sm:p-6">
+            This ticket is resolved. Select <strong>Reopen issue</strong> above if you need to send a new message to support.
           </div>
         )}
       </section>
