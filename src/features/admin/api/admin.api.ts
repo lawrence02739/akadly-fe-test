@@ -157,7 +157,7 @@ export interface TicketMessage {
 }
 export interface TenantQuery { page: number; pageSize: number; search?: string; status?: string; sortBy?: string; sortOrder?: string }
 export interface PaymentProof { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number; uploadedAt?: string }
-export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[] }
+export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId?: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[] }
 export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[]; settings?: Record<string, unknown> }
 export interface AdminSubscription {
   id: string;

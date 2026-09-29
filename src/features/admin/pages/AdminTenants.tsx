@@ -235,12 +235,11 @@ function CreateTenant({
         <label className="block text-sm font-medium">
           Subscription plan
           <select
-            required
             value={form.planId}
             onChange={(e) => setForm({ ...form, planId: e.target.value })}
             className={inputClass}
           >
-            <option value="">Select an active plan</option>
+            <option value="">Free plan (automatic)</option>
             {plans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.name} Ã¢â‚¬â€{" "}
@@ -252,6 +251,7 @@ function CreateTenant({
               </option>
             ))}
           </select>
+          <p className="mt-1 text-xs text-slate-500">Choose a paid plan only when required. Otherwise the tenant receives the Free plan automatically.</p>
         </label>
         <div className="grid sm:grid-cols-3 gap-4">
           <label className="block text-sm font-medium">
