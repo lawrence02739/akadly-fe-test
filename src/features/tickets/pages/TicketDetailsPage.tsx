@@ -8,7 +8,7 @@ import {
   Send,
   X,
 } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -95,6 +95,7 @@ export default function TicketDetailsPage({
   const [dialog, setDialog] = useState<Dialog>(null);
   const [reply, setReply] = useState("");
   const [files, setFiles] = useState<File[]>([]);
+  const attachmentInputRef = useRef<HTMLInputElement>(null);
   const [replySent, setReplySent] = useState(false);
   const [internal, setInternal] = useState(false);
   const [resolution, setResolution] = useState("");
@@ -310,22 +311,27 @@ export default function TicketDetailsPage({
                   }
                 />
                 <div className="mt-2 flex flex-wrap gap-2">
-                  <label className="cursor-pointer rounded border px-2 py-1 text-xs text-[#0C5A69]">
+                  <input
+                    ref={attachmentInputRef}
+                    type="file"
+                    multiple
+                    className="sr-only"
+                    accept="image/png,image/jpeg,application/pdf,.doc,.docx,text/plain"
+                    onChange={(event) => {
+                      const selected = Array.from(event.target.files ?? []);
+                      const valid = selected.filter((file) => file.size <= 10 * 1024 * 1024);
+                      if (valid.length !== selected.length) toast.error("Each file must be 10 MB or smaller");
+                      setFiles((current) => [...current, ...valid].slice(0, 5));
+                      event.currentTarget.value = "";
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => attachmentInputRef.current?.click()}
+                    className="rounded border border-[#0C5A69] px-2 py-1 text-xs font-semibold text-[#0C5A69] hover:bg-teal-50"
+                  >
                     Attach files
-                    <input
-                      type="file"
-                      multiple
-                      className="sr-only"
-                      accept="image/png,image/jpeg,application/pdf,.doc,.docx,text/plain"
-                      onChange={(e) =>
-                        setFiles(
-                          Array.from(e.target.files ?? [])
-                            .filter((file) => file.size <= 10 * 1024 * 1024)
-                            .slice(0, 5),
-                        )
-                      }
-                    />
-                  </label>
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
@@ -340,11 +346,7 @@ export default function TicketDetailsPage({
                     Save draft
                   </button>
                 </div>
-                {files.length ? (
-                  <p className="mt-2 text-xs text-slate-500">
-                    {files.map((file) => file.name).join(", ")}
-                  </p>
-                ) : null}
+                {files.length ? <div className="mt-2 flex flex-wrap gap-2">{files.map((file, index) => <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{file.name}<button type="button" onClick={() => setFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="font-bold text-red-700">Remove</button></span>)}</div> : null}
                 {replySent ? (
                   <div className="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
                     Reply sent successfully. The ticket conversation and tenant
