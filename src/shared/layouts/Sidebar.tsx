@@ -17,6 +17,8 @@ import {
   ChartNoAxesCombined,
   Ticket,
   UserRound,
+  GraduationCap,
+  Truck,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -37,6 +39,18 @@ const navItems = [
     permissions: [],
   },
   { icon: UserRound, label: "My profile", path: "/partner/profile", permissions: [] },
+  {
+    icon: GraduationCap,
+    label: "Students",
+    path: "/partner/students",
+    permissions: ["student:read", "student:manage"],
+  },
+  {
+    icon: Truck,
+    label: "Courier Partners",
+    path: "/partner/courier-partners",
+    permissions: ["courier:read", "courier:manage"],
+  },
   {
     icon: Book,
     label: "Courses",

@@ -171,21 +171,21 @@ export default function CreateOrderPage() {
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-2">Height</label>
                     <div className="relative">
-                      <input type="number" className="w-full px-4 py-2 border border-slate-200 rounded-lg pr-12 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500" value={form.height} onChange={(e) => set('height', e.target.value)} />
+                      <input type="number" className="w-full px-4 py-2 border border-slate-200 rounded-lg pr-12 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500" value={form.height} onChange={(e) => set('height', e.target.valueAsNumber)} />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-900">cm</span>
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-2">Width</label>
                     <div className="relative">
-                      <input type="number" className="w-full px-4 py-2 border border-slate-200 rounded-lg pr-12 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500" value={form.width} onChange={(e) => set('width', e.target.value)} />
+                      <input type="number" className="w-full px-4 py-2 border border-slate-200 rounded-lg pr-12 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500" value={form.width} onChange={(e) => set('width', e.target.valueAsNumber)} />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-900">cm</span>
                     </div>
                   </div>
                   <div>
                     <label className="block text-xs font-bold text-slate-700 mb-2">Breadth</label>
                     <div className="relative">
-                      <input type="number" className="w-full px-4 py-2 border border-slate-200 rounded-lg pr-12 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500" value={form.breadth} onChange={(e) => set('breadth', e.target.value)} />
+                      <input type="number" className="w-full px-4 py-2 border border-slate-200 rounded-lg pr-12 text-sm text-slate-900 font-medium focus:outline-none focus:ring-2 focus:ring-primary-500" value={form.breadth} onChange={(e) => set('breadth', e.target.valueAsNumber)} />
                       <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-bold text-slate-900">cm</span>
                     </div>
                   </div>
