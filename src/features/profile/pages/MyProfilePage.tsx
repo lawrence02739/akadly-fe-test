@@ -1,4 +1,4 @@
-import { Building2, Camera, Mail, Save, UserRound } from "lucide-react";
+import { Building2, Camera, Mail, Save, Upload, UserRound } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
@@ -10,8 +10,6 @@ type Details = {
   firstName: string;
   lastName: string;
   phone: string;
-  jobTitle: string;
-  department: string;
   location: string;
   bio: string;
   dateOfBirth: string;
@@ -22,20 +20,48 @@ const profileFields = (value: Partial<Details>): Partial<Details> => ({
   firstName: value.firstName,
   lastName: value.lastName,
   phone: value.phone,
-  jobTitle: value.jobTitle,
-  department: value.department,
   location: value.location,
   bio: value.bio,
   dateOfBirth: value.dateOfBirth,
   gender: value.gender,
 });
 
+type ComplianceDocument = {
+  documentTypeCode: string;
+  fileName: string | null;
+  fileUrl: string | null;
+  status: string;
+  rejectionReason: string | null;
+};
+type Compliance = {
+  organizationType: {
+    code: string;
+    name: string;
+    requiredDocuments: {
+      documentTypeCode: string;
+      isMandatory: boolean;
+      order: number;
+    }[];
+  };
+  gstin: string | null;
+  pincode: string | null;
+  documents: ComplianceDocument[];
+};
+type ConfigType = {
+  type: string;
+  name: string;
+  docs: Array<{
+    code: string;
+    name: string;
+    enabled: boolean;
+    required: boolean;
+    fileType: "PDF" | "PNG" | "JPG";
+  }>;
+};
 const empty: Details = {
   firstName: "",
   lastName: "",
   phone: "",
-  jobTitle: "",
-  department: "",
   location: "",
   bio: "",
   dateOfBirth: "",
@@ -47,18 +73,20 @@ export default function MyProfilePage() {
   const dispatch = useDispatch();
   const storageKey = `tenant-profile-${user?.id ?? "anonymous"}`;
   const [details, setDetails] = useState<Details>(empty);
-  const [panCardNumber, setPanCardNumber] = useState("");
   const [profilePicturePreview, setProfilePicturePreview] = useState<
     string | null
   >(null);
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
   const [saving, setSaving] = useState(false);
+  const [compliance, setCompliance] = useState<Compliance | null>(null);
+  const [complianceSaving, setComplianceSaving] = useState(false);
+  const [organizationTypes, setOrganizationTypes] = useState<ConfigType[]>([]);
   useEffect(() => {
     const [firstName = "", ...rest] = (user?.name ?? "").trim().split(/\s+/);
     const saved = localStorage.getItem(storageKey);
     setDetails(
       saved
-        ? { ...empty, ...JSON.parse(saved) }
+        ? { ...empty, ...profileFields(JSON.parse(saved) as Partial<Details>) }
         : { ...empty, firstName, lastName: rest.join(" ") },
     );
     let active = true;
@@ -75,6 +103,18 @@ export default function MyProfilePage() {
           setProfilePicturePreview(payload.profile.profilePictureUrl);
       })
       .catch(() => undefined);
+    void api
+      .get("/auth/me/organization-compliance")
+      .then((response) => {
+        if (active) setCompliance(response.data?.data ?? response.data);
+      })
+      .catch(() => undefined);
+    void api
+      .get("/auth/me/organization-document-config")
+      .then((response) => {
+        if (active) setOrganizationTypes(response.data?.data ?? response.data);
+      })
+      .catch(() => undefined);
     return () => {
       active = false;
     };
@@ -84,22 +124,52 @@ export default function MyProfilePage() {
     setSaving(true);
     const name = `${details.firstName} ${details.lastName}`.trim();
     try {
-      const body = new FormData();
-      Object.entries(details).forEach(([key, value]) => {
-        if (value) body.append(key, value);
-      });
-      if (panCardNumber) body.append("panCardNumber", panCardNumber);
-      if (profilePicture) body.append("profilePicture", profilePicture);
-      const response = await api.patch("/auth/me/profile", body, {
-        // The shared client defaults to JSON. This endpoint accepts a Multer
-        // file field, so it must receive the FormData body as multipart.
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      const body: Record<string, string> = {};
+      const allowedProfileFields: Array<keyof Details> = [
+        "firstName",
+        "lastName",
+        "phone",
+        "location",
+        "bio",
+        "dateOfBirth",
+        "gender",
+      ];
+      for (const key of allowedProfileFields) {
+        const value = details[key];
+        if (value) body[key] = value;
+      }
+      if (profilePicture) {
+        const { data } = await api.post("/auth/me/profile-picture/presign", {
+          fileName: profilePicture.name,
+          contentType: profilePicture.type,
+          sizeBytes: profilePicture.size,
+        });
+        const upload = data?.data ?? data;
+        const uploadResponse = await fetch(upload.uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": profilePicture.type },
+          body: profilePicture,
+        });
+        if (!uploadResponse.ok)
+          throw new Error("Profile picture could not be uploaded to storage");
+        body.profilePictureKey = upload.fileKey;
+      }
+      const response = await api.patch("/auth/me/profile", body);
+      if (compliance) {
+        const complianceResponse = await api.patch(
+          "/auth/me/organization-compliance",
+          {
+            organizationTypeCode: compliance.organizationType.code,
+            gstin: compliance.gstin || undefined,
+            pincode: compliance.pincode || undefined,
+          },
+        );
+        setCompliance(complianceResponse.data?.data ?? complianceResponse.data);
+      }
       const saved = response.data?.data ?? response.data;
-      const next = { ...details, ...profileFields(saved) } as Details;
+      const next = { ...empty, ...details, ...profileFields(saved) } as Details;
       localStorage.setItem(storageKey, JSON.stringify(next));
       setDetails(next);
-      setPanCardNumber("");
       if (saved.profilePictureUrl)
         setProfilePicturePreview(saved.profilePictureUrl);
       if (user && name) dispatch(setAuth({ user: { ...user, name } }));
@@ -111,6 +181,61 @@ export default function MyProfilePage() {
       toast.error(message);
     } finally {
       setSaving(false);
+    }
+  };
+  const uploadOrganizationDocument = async (
+    documentTypeCode: string,
+    file: File,
+  ) => {
+    setComplianceSaving(true);
+    try {
+      // The user may select a new organization type and upload before pressing
+      // the page-level Save changes button. Persist that selection first so the
+      // backend validates against the same global configuration shown in the UI.
+      const complianceResponse = await api.patch(
+        "/auth/me/organization-compliance",
+        {
+          organizationTypeCode: compliance?.organizationType.code,
+          gstin: compliance?.gstin || undefined,
+          pincode: compliance?.pincode || undefined,
+        },
+      );
+      const syncedCompliance =
+        complianceResponse.data?.data ?? complianceResponse.data;
+      setCompliance(syncedCompliance);
+      const presignResponse = await api.post(
+        "/auth/me/organization-documents/presign",
+        {
+          documentTypeCode,
+          fileName: file.name,
+          contentType: file.type,
+          sizeBytes: file.size,
+        },
+      );
+      const upload = presignResponse.data?.data ?? presignResponse.data;
+      const put = await fetch(upload.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+      if (!put.ok) throw new Error("Upload failed");
+      const submitResponse = await api.post("/auth/me/organization-documents", {
+        documentTypeCode,
+        fileName: upload.fileName,
+        fileKey: upload.fileKey,
+        fileUrl: upload.fileUrl,
+        mimeType: upload.mimeType,
+        sizeBytes: upload.sizeBytes,
+      });
+      setCompliance(submitResponse.data?.data ?? submitResponse.data);
+      toast.success("Document submitted for admin review.");
+    } catch (error) {
+      toast.error(
+        (error as { response?: { data?: { message?: string } } })?.response
+          ?.data?.message ?? "Document could not be uploaded.",
+      );
+    } finally {
+      setComplianceSaving(false);
     }
   };
   if (!user) return null;
@@ -129,6 +254,7 @@ export default function MyProfilePage() {
         or invitation are prefilled. Add anything missing and save.
       </section>
       <form
+        id="my-profile-form"
         onSubmit={save}
         className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6"
       >
@@ -240,38 +366,6 @@ export default function MyProfilePage() {
               <option value="prefer_not_to_say">Prefer not to say</option>
             </select>
           </Field>
-          <Field label="PAN card number">
-            <input
-              maxLength={10}
-              value={panCardNumber}
-              onChange={(e) => setPanCardNumber(e.target.value.toUpperCase())}
-              placeholder="ABCDE1234F"
-            />
-            <p className="mt-1 text-xs text-slate-500">
-              This needs encrypted server storage and is not saved in browser
-              storage.
-            </p>
-          </Field>
-          <Field label="Job title">
-            <input
-              maxLength={100}
-              value={details.jobTitle}
-              onChange={(e) =>
-                setDetails({ ...details, jobTitle: e.target.value })
-              }
-              placeholder="e.g. Program manager"
-            />
-          </Field>
-          <Field label="Department">
-            <input
-              maxLength={100}
-              value={details.department}
-              onChange={(e) =>
-                setDetails({ ...details, department: e.target.value })
-              }
-              placeholder="e.g. Academic operations"
-            />
-          </Field>
           <Field label="Location" full>
             <input
               maxLength={160}
@@ -292,26 +386,172 @@ export default function MyProfilePage() {
             />
           </Field>
         </div>
-        <div className="mt-6 flex justify-end">
-          <button
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-lg bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
-          >
-            <Save size={16} /> {saving ? "Saving..." : "Save personal details"}
-          </button>
-        </div>
       </form>
       <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
         <div className="flex items-center gap-3">
           <Building2 className="text-[#0C5A69]" size={20} />
           <div>
-            <h2 className="font-bold">Workspace account</h2>
+            <h2 className="font-bold">Organization verification</h2>
             <p className="text-sm text-slate-500">
-              Your tenant access is managed by the platform administrator.
+              Submit your organization details and documents for platform
+              review.
             </p>
           </div>
         </div>
+        {compliance && (
+          <div className="mt-5 space-y-4">
+            <div className="grid gap-4 sm:grid-cols-3">
+              <Field label="Organization type">
+                <select
+                  value={compliance.organizationType.code}
+                  onChange={(e) => {
+                    const selected = organizationTypes.find(
+                      (type) => type.type === e.target.value,
+                    );
+                    if (!selected) return;
+                    setCompliance({
+                      ...compliance,
+                      organizationType: {
+                        code: selected.type,
+                        name: selected.name,
+                        requiredDocuments: selected.docs
+                          .filter((doc) => doc.enabled)
+                          .map((doc, index) => ({
+                            documentTypeCode: doc.code,
+                            isMandatory: doc.required,
+                            order: index + 1,
+                          })),
+                      },
+                      documents: [],
+                    });
+                  }}
+                >
+                  {organizationTypes.map((type) => (
+                    <option key={type.type} value={type.type}>
+                      {type.name}
+                    </option>
+                  ))}
+                </select>
+              </Field>
+              <Field label="GSTIN">
+                <input
+                  value={compliance.gstin ?? ""}
+                  maxLength={15}
+                  onChange={(e) =>
+                    setCompliance({
+                      ...compliance,
+                      gstin: e.target.value.toUpperCase(),
+                    })
+                  }
+                />
+              </Field>
+              <Field label="Pincode">
+                <input
+                  value={compliance.pincode ?? ""}
+                  maxLength={12}
+                  onChange={(e) =>
+                    setCompliance({ ...compliance, pincode: e.target.value })
+                  }
+                />
+              </Field>
+            </div>
+
+            <div className="border-t pt-4">
+              <h3 className="font-semibold">Required documents</h3>
+              <div className="mt-3 space-y-3">
+                {compliance.organizationType.requiredDocuments.map(
+                  (required) => {
+                    const configuredDocument = organizationTypes
+                      .find(
+                        (type) =>
+                          type.type === compliance.organizationType.code,
+                      )
+                      ?.docs.find(
+                        (doc) => doc.code === required.documentTypeCode,
+                      );
+                    const fileType = configuredDocument?.fileType ?? "PDF";
+                    const accept =
+                      fileType === "PDF"
+                        ? "application/pdf"
+                        : fileType === "PNG"
+                          ? "image/png"
+                          : "image/jpeg";
+                    const document = compliance.documents.find(
+                      (item) =>
+                        item.documentTypeCode === required.documentTypeCode,
+                    );
+                    return (
+                      <div
+                        key={required.documentTypeCode}
+                        className="rounded-lg border border-slate-200 p-3 text-sm"
+                      >
+                        <div className="flex flex-wrap items-center justify-between gap-2">
+                          <div>
+                            <strong>
+                              {required.documentTypeCode.replaceAll("_", " ")}
+                            </strong>
+                            <span className="ml-2 rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-600">
+                              {fileType}
+                            </span>
+                            {required.isMandatory && (
+                              <span className="ml-2 text-xs text-red-600">
+                                Required
+                              </span>
+                            )}
+                            <p className="mt-1 text-slate-500">
+                              {document?.status ?? "PENDING"}
+                              {document?.rejectionReason
+                                ? `: ${document.rejectionReason}`
+                                : ""}
+                            </p>
+                          </div>
+                          {document?.fileUrl && (
+                            <a
+                              className="text-[#0C5A69] underline"
+                              href={document.fileUrl}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              Open file
+                            </a>
+                          )}
+                        </div>
+                        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 rounded border px-3 py-2 font-semibold text-[#0C5A69]">
+                          <Upload size={15} /> Upload {fileType}
+                          <input
+                            className="hidden"
+                            type="file"
+                            accept={accept}
+                            disabled={complianceSaving}
+                            onChange={(event) => {
+                              const file = event.target.files?.[0];
+                              if (file)
+                                void uploadOrganizationDocument(
+                                  required.documentTypeCode,
+                                  file,
+                                );
+                            }}
+                          />
+                        </label>
+                      </div>
+                    );
+                  },
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </section>
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          form="my-profile-form"
+          disabled={saving}
+          className="inline-flex items-center gap-2 rounded-lg bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        >
+          <Save size={16} /> {saving ? "Saving..." : "Save changes"}
+        </button>
+      </div>
     </main>
   );
 }

@@ -126,9 +126,8 @@ const paged = <T extends { _id?: unknown; id?: string }>(
 
 export const ticketsApi = {
   async dashboard() {
-    const { data } = await api.get<Envelope<TenantTicketDashboard>>(
-      "/tickets/dashboard",
-    );
+    const { data } =
+      await api.get<Envelope<TenantTicketDashboard>>("/tickets/dashboard");
     return {
       ...data.data,
       recentTickets: data.data.recentTickets.map(asId),
@@ -167,21 +166,32 @@ export const ticketsApi = {
     return asId(data.data);
   },
   async presignAttachment(file: File) {
-    const formData = new FormData();
-    formData.append("file", file);
-    const { data } = await api.post<Envelope<TicketAttachment>>(
-      "/tickets/uploads",
-      formData,
-      {
-        headers: { "Content-Type": "multipart/form-data" },
-      },
-    );
-    return data.data;
+    const { data } = await api.post<
+      Envelope<{ uploadUrl: string; fileUrl: string; fileKey: string }>
+    >("/tickets/uploads/presign", {
+      fileName: file.name,
+      contentType: file.type,
+      sizeBytes: file.size,
+    });
+    const upload = data.data;
+    const response = await fetch(upload.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error("File could not be uploaded to storage");
+    return {
+      fileName: file.name,
+      fileUrl: upload.fileUrl,
+      fileKey: upload.fileKey,
+      mimeType: file.type,
+      sizeBytes: file.size,
+    } as TicketAttachment;
   },
   async update(
     id: string,
     payload: Partial<
-      Pick<TicketRecord, "title" | "description" | "priority" | "tags">
+      | Pick<TicketRecord, "title" | "description" | "priority" | "tags">
       | Pick<
           TicketRecord,
           | "module"
