@@ -6,6 +6,7 @@ import {
   RotateCcw,
   Send,
   ShieldCheck,
+  Star,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import toast from "react-hot-toast";
@@ -15,12 +16,14 @@ import {
   ticketsApi,
   type TicketMessage,
   type TicketRecord,
+  type TenantPlanContext,
 } from "../api/tickets.api";
 
 const titleCase = (value: string) => value.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 function activityLabel(activity: TicketRecord["activityHistory"][number]) {
   if (activity.type === "priority_changed") return `Support changed priority from ${titleCase(activity.previousValue || "not set")} to ${titleCase(activity.newValue || "not set")}`;
   if (activity.type === "category_changed") return `Support updated ${activity.message?.toLowerCase().includes("issue type") ? "issue type" : "category"} from ${titleCase(activity.previousValue || "not set")} to ${titleCase(activity.newValue || "not set")}`;
+  if (activity.type === "rating_submitted") return activity.message || `You rated the support experience ${activity.newValue || ""}/5`;
   return activity.message || titleCase(activity.type);
 }
 function slaState(due?: string | null) {
@@ -37,12 +40,20 @@ function TenantSla({ label, due }: { label: string; due?: string | null }) {
   const state = slaState(due);
   return <div className="rounded-lg border border-slate-100 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm font-semibold text-slate-700">{label}</p><span className={`rounded-full px-2 py-0.5 text-xs font-bold ${state.className}`}>{state.label}</span></div><p className="mt-1 text-xs text-slate-500">{due ? `Due ${new Date(due).toLocaleString()}` : "Support has not set a deadline yet."}</p></div>;
 }
+function TenantPlanCard({ context }: { context?: TenantPlanContext }) {
+  if (!context) return null;
+  const plan = context.plan;
+  const limit = (value: number | null) => value === null ? "Unlimited" : String(value);
+  return <section className="rounded-xl border border-teal-200 bg-teal-50 p-5 shadow-sm"><div className="flex flex-wrap items-start justify-between gap-2"><div><h2 className="font-bold text-slate-900">Workspace plan and usage</h2><p className="mt-1 text-sm text-slate-600">Support uses this live account context while handling your request.</p></div><span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold capitalize text-slate-700">{context.paymentStatus ?? "payment unknown"}</span></div>{plan ? <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4"><PlanValue label="Plan" value={plan.name} /><PlanValue label="Users" value={`${context.usage.users} / ${limit(plan.limits.users)}`} /><PlanValue label="Courses" value={`${context.usage.courses} / ${limit(plan.limits.courses)}`} /><PlanValue label="Students" value={`Limit: ${limit(plan.limits.students)}`} /><PlanValue label="Content storage" value={`Limit: ${limit(plan.limits.contentBytes)}`} /></div> : <p className="mt-3 text-sm text-slate-600">No plan is assigned to this workspace yet.</p>}</section>;
+}
+function PlanValue({ label, value }: { label: string; value: string }) { return <div className="rounded-lg border border-teal-100 bg-white p-3"><p className="text-xs text-slate-500">{label}</p><p className="mt-1 text-sm font-bold text-slate-800">{value}</p></div>; }
 
 export default function TenantTicketDetailsPage() {
   const { ticketId = "" } = useParams();
   const [ticket, setTicket] = useState<TicketRecord | null>(null);
   const [messages, setMessages] = useState<TicketMessage[]>([]);
   const [reply, setReply] = useState("");
+  const [replyFiles, setReplyFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -80,8 +91,10 @@ export default function TenantTicketDetailsPage() {
     if (!reply.trim() || !ticket) return;
     setSaving(true);
     try {
-      await ticketsApi.reply(ticket.id, reply);
+      const attachments = await Promise.all(replyFiles.map((file) => ticketsApi.presignAttachment(file)));
+      await ticketsApi.reply(ticket.id, reply, attachments);
       setReply("");
+      setReplyFiles([]);
       await load();
       toast.success("Reply sent to support");
     } catch (e) {
@@ -253,6 +266,7 @@ export default function TenantTicketDetailsPage() {
         <div><h2 className="font-bold">Support status</h2><dl className="mt-4 space-y-3 text-sm"><SupportRow label="Current status" value={ticket.status.replaceAll("_", " ")} /><SupportRow label="Assigned support" value={supportName} /><SupportRow label="Priority" value={ticket.priority} /></dl></div>
         <div><h2 className="font-bold">Service deadlines</h2><div className="mt-4 space-y-3"><TenantSla label="First response" due={ticket.firstResponseDueAt} /><TenantSla label="Resolution" due={ticket.resolutionDueAt} /></div></div>
       </section>
+      <TenantPlanCard context={ticket.tenantPlan} />
       <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
         <h2 className="font-bold">Ticket progress</h2>
         <div className="mt-4 space-y-3 border-l border-slate-200 pl-4">
@@ -283,11 +297,15 @@ export default function TenantTicketDetailsPage() {
           >
             <RotateCcw size={15} /> Reopen issue
           </button>
-          {ticket.status === "closed" &&
+          {resolved &&
             (ticket.satisfactionRating ? (
-              <p className="mt-4 text-sm font-semibold text-emerald-900">
-                Thanks for your {ticket.satisfactionRating}/5 support rating.
-              </p>
+              <div className="mt-4 rounded-lg border border-emerald-200 bg-white p-3 text-emerald-900">
+                <div className="flex items-center gap-1" aria-label={`${ticket.satisfactionRating} out of 5 stars`}>
+                  {[1, 2, 3, 4, 5].map((value) => <Star key={value} size={18} className={value <= ticket.satisfactionRating! ? "fill-amber-400 text-amber-400" : "text-slate-300"} />)}
+                </div>
+                <p className="mt-2 text-sm font-semibold">Thanks for your {ticket.satisfactionRating}/5 support rating.</p>
+                {ticket.satisfactionComment && <p className="mt-1 text-sm text-emerald-800">“{ticket.satisfactionComment}”</p>}
+              </div>
             ) : (
               <div className="mt-5 border-t border-emerald-200 pt-4">
                 <p className="text-sm font-bold text-emerald-900">
@@ -304,8 +322,9 @@ export default function TenantTicketDetailsPage() {
                           ? "text-xl text-amber-500"
                           : "text-xl text-slate-300"
                       }
+                      aria-label={`Rate ${value} out of 5 stars`}
                     >
-                      ?
+                      <Star size={23} fill={value <= rating ? "currentColor" : "none"} />
                     </button>
                   ))}
                 </div>
@@ -388,6 +407,15 @@ export default function TenantTicketDetailsPage() {
                     >
                       <p className="whitespace-pre-wrap">{message.body}</p>
                     </div>
+                    {message.attachments?.length ? (
+                      <div className={mine ? "mt-2 flex flex-wrap justify-end gap-2" : "mt-2 flex flex-wrap gap-2"}>
+                        {message.attachments.map((attachment, index) => (
+                          <a key={`${attachment.fileUrl}-${index}`} href={attachment.fileUrl} target="_blank" rel="noreferrer" className="rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-[#0C5A69] hover:bg-teal-50">
+                            {attachment.fileName}
+                          </a>
+                        ))}
+                      </div>
+                    ) : null}
                   </div>
                 </article>
               );
@@ -404,7 +432,7 @@ export default function TenantTicketDetailsPage() {
             </div>
           )}
         </div>
-        {ticket.status !== "closed" && (
+        {!resolved && (
           <div className="border-t border-slate-100 bg-white p-5 sm:p-6">
             <label
               htmlFor="tenant-ticket-reply"
@@ -423,6 +451,13 @@ export default function TenantTicketDetailsPage() {
               className="mt-3 min-h-28 w-full rounded-xl border border-slate-200 p-3 text-sm outline-none transition focus:border-[#0C5A69] focus:ring-2 focus:ring-teal-100"
               placeholder="Describe the update, question, or information that can help support..."
             />
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <label className="cursor-pointer rounded-lg border border-slate-300 px-3 py-2 text-xs font-semibold text-[#0C5A69] hover:bg-teal-50">
+                Attach files
+                <input type="file" multiple className="sr-only" accept="image/png,image/jpeg,application/pdf,.doc,.docx,text/plain" onChange={(event) => { const selected = Array.from(event.target.files ?? []); const valid = selected.filter((file) => file.size <= 10 * 1024 * 1024); if (valid.length !== selected.length) toast.error("Each file must be 10 MB or smaller"); setReplyFiles((current) => [...current, ...valid].slice(0, 5)); event.currentTarget.value = ""; }} />
+              </label>
+              {replyFiles.map((file, index) => <span key={`${file.name}-${index}`} className="inline-flex items-center gap-2 rounded bg-slate-100 px-2 py-1 text-xs text-slate-700">{file.name}<button type="button" onClick={() => setReplyFiles((current) => current.filter((_, itemIndex) => itemIndex !== index))} className="font-bold text-red-700">Remove</button></span>)}
+            </div>
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <span className="text-xs text-slate-400">
                 {reply.length}/4000
@@ -444,6 +479,11 @@ export default function TenantTicketDetailsPage() {
                 </button>
               </div>
             </div>
+          </div>
+        )}
+        {resolved && (
+          <div className="border-t border-slate-100 bg-white p-5 text-sm text-slate-600 sm:p-6">
+            This ticket is resolved. Select <strong>Reopen issue</strong> above if you need to send a new message to support.
           </div>
         )}
       </section>

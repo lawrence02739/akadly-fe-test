@@ -11,6 +11,9 @@ import AccessControlTab from '../components/editor/AccessControlTab';
 
 type TabId = 'details' | 'pricing' | 'landing' | 'advanced' | 'access';
 
+const requestError = (error: unknown) =>
+  (error as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to save course';
+
 export default function CourseEditor() {
   const navigate = useNavigate();
   const { courseId } = useParams();
@@ -45,7 +48,7 @@ export default function CourseEditor() {
         setShowSuccessModal(true);
       }
     } catch (e) {
-      toast.error('Failed to save course');
+      toast.error(requestError(e));
     }
   };
 

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { X, Image as ImageIcon, ChevronLeft, Sparkles, Undo2, Redo2, Bold, Italic, Underline, Strikethrough, PaintBucket, Type } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/api/axios';
+import toast from 'react-hot-toast';
 
 export default function CreateCourse() {
   const navigate = useNavigate();
@@ -32,7 +33,7 @@ export default function CreateCourse() {
       });
       navigate('/partner/courses');
     } catch (err) {
-      console.error('Failed to create course', err);
+      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create course');
     }
   };
 

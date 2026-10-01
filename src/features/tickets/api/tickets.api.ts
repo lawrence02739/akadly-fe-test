@@ -33,8 +33,22 @@ export interface TicketActivity {
 export interface TicketAttachment {
   fileName: string;
   fileUrl: string;
+  fileKey?: string;
   mimeType: string;
   sizeBytes: number;
+}
+export interface TenantPlanContext {
+  tenantName: string | null;
+  tenantStatus: string | null;
+  paymentStatus: string | null;
+  plan: {
+    name: string;
+    code: string | null;
+    interval: "monthly" | "yearly" | null;
+    allowedModules: string[];
+    limits: { users: number | null; students: number | null; courses: number | null; contentBytes: number | null };
+  } | null;
+  usage: { users: number; courses: number; students: null; contentBytes: null };
 }
 export interface TicketRecord {
   id: string;
@@ -65,6 +79,7 @@ export interface TicketRecord {
   resolutionEmailStatus: "pending" | "sent" | "failed";
   resolutionEmailSentAt: string | null;
   resolutionEmailError: string | null;
+  tenantPlan?: TenantPlanContext;
   satisfactionRating?: number | null;
   satisfactionComment?: string | null;
   satisfactionSubmittedAt?: string | null;
@@ -81,6 +96,7 @@ export interface TicketMessage {
   messageType: "reply" | "internal_note" | "system";
   body: string;
   isInternal: boolean;
+  attachments?: TicketAttachment[];
   createdAt: string;
 }
 export interface TenantTicketDashboard {
@@ -126,12 +142,17 @@ const paged = <T extends { _id?: unknown; id?: string }>(
 
 export const ticketsApi = {
   async dashboard() {
-    const { data } =
-      await api.get<Envelope<TenantTicketDashboard>>("/tickets/dashboard");
+    const { data } = await api.get<Envelope<TenantTicketDashboard>>(
+      "/tickets/dashboard",
+    );
     return {
       ...data.data,
       recentTickets: data.data.recentTickets.map(asId),
     };
+  },
+  async context() {
+    const { data } = await api.get<Envelope<TenantPlanContext>>("/tickets/context");
+    return data.data;
   },
   async list(params: Record<string, unknown>) {
     const { data } = await api.get<Envelope<TicketRecord[]>>("/tickets", {
@@ -166,13 +187,10 @@ export const ticketsApi = {
     return asId(data.data);
   },
   async presignAttachment(file: File) {
-    const { data } = await api.post<
-      Envelope<{ uploadUrl: string; fileUrl: string; fileKey: string }>
-    >("/tickets/uploads/presign", {
-      fileName: file.name,
-      contentType: file.type,
-      sizeBytes: file.size,
-    });
+    const { data } = await api.post<Envelope<{ uploadUrl: string; fileUrl: string; fileKey: string }>>(
+      "/tickets/uploads/presign",
+      { fileName: file.name, contentType: file.type, sizeBytes: file.size },
+    );
     const upload = data.data;
     const response = await fetch(upload.uploadUrl, {
       method: "PUT",
@@ -180,18 +198,12 @@ export const ticketsApi = {
       body: file,
     });
     if (!response.ok) throw new Error("File could not be uploaded to storage");
-    return {
-      fileName: file.name,
-      fileUrl: upload.fileUrl,
-      fileKey: upload.fileKey,
-      mimeType: file.type,
-      sizeBytes: file.size,
-    } as TicketAttachment;
+    return { fileName: file.name, fileUrl: upload.fileUrl, fileKey: upload.fileKey, mimeType: file.type, sizeBytes: file.size };
   },
   async update(
     id: string,
     payload: Partial<
-      | Pick<TicketRecord, "title" | "description" | "priority" | "tags">
+      Pick<TicketRecord, "title" | "description" | "priority" | "tags">
       | Pick<
           TicketRecord,
           | "module"
@@ -235,10 +247,10 @@ export const ticketsApi = {
     );
     return paged(data, params);
   },
-  async reply(id: string, body: string) {
+  async reply(id: string, body: string, attachments?: TicketAttachment[]) {
     const { data } = await api.post<Envelope<TicketMessage>>(
       `/tickets/${encodeURIComponent(id)}/messages`,
-      { body },
+      { body, attachments },
     );
     return asId(data.data);
   },
