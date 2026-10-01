@@ -97,6 +97,9 @@ function CreateTenant({
     paymentStatus: "due",
   });
   const [plans, setPlans] = useState<AdminSubscription[]>([]);
+  const [selectedPlan, setSelectedPlan] = useState<AdminSubscription | null>(null);
+  const [planLoading, setPlanLoading] = useState(false);
+  const [planError, setPlanError] = useState("");
   const [paymentProofFiles, setPaymentProofFiles] = useState<File[]>([]);
   const [error, setError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -112,6 +115,21 @@ function CreateTenant({
       .then(({ items }) => setPlans(items))
       .catch((cause) => setError(adminError(cause)));
   }, []);
+  useEffect(() => {
+    let active = true;
+    if (!form.planId) {
+      setSelectedPlan(null);
+      setPlanError("");
+      return () => { active = false; };
+    }
+    setPlanLoading(true);
+    setPlanError("");
+    adminApi.subscription(form.planId)
+      .then((plan) => { if (active) setSelectedPlan(plan); })
+      .catch((cause) => { if (active) { setSelectedPlan(null); setPlanError(adminError(cause)); } })
+      .finally(() => { if (active) setPlanLoading(false); });
+    return () => { active = false; };
+  }, [form.planId]);
   const submit = async (event: FormEvent) => {
     event.preventDefault();
     setError("");
@@ -244,6 +262,30 @@ function CreateTenant({
             Choose a paid plan only when required. Otherwise the tenant receives
             the Free plan automatically.
           </p>
+          {planLoading && <p className="mt-3 text-sm text-slate-500">Loading selected plan details...</p>}
+          {planError && <p className="mt-3 text-sm text-rose-600">{planError}</p>}
+          {selectedPlan && (
+            <section className="mt-3 rounded-xl border border-teal-100 bg-teal-50/50 p-4" aria-live="polite">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <div>
+                  <p className="font-semibold text-slate-900">{selectedPlan.name}</p>
+                  <p className="mt-0.5 text-xs text-slate-600">{selectedPlan.description || "Subscription plan details"}</p>
+                </div>
+                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-[#0C5A69] ring-1 ring-teal-100">
+                  {new Intl.NumberFormat("en-IN", { style: "currency", currency: selectedPlan.currency }).format(selectedPlan.price)} / {selectedPlan.interval === "monthly" ? "month" : "year"}
+                </span>
+              </div>
+              <div className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                <PlanLimit label="Users" value={selectedPlan.userLimit} />
+                <PlanLimit label="Students" value={selectedPlan.studentLimit} />
+                <PlanLimit label="Courses" value={selectedPlan.courseLimit} />
+                <PlanLimit label="Storage" value={formatBytes(selectedPlan.contentLimit)} />
+              </div>
+              {selectedPlan.allowedModules.length > 0 && (
+                <div className="mt-3"><p className="text-xs font-semibold text-slate-600">Included modules</p><div className="mt-1.5 flex flex-wrap gap-1.5">{selectedPlan.allowedModules.map((module) => <span key={module} className="rounded bg-white px-2 py-1 text-xs text-slate-600 ring-1 ring-teal-100">{module}</span>)}</div></div>
+              )}
+            </section>
+          )}
         </label>
         <div className="grid sm:grid-cols-3 gap-4">
           <label className="block text-sm font-medium">
@@ -1101,4 +1143,14 @@ export function AdminTenantDetails() {
       </main>
     </div>
   );
+}
+
+function PlanLimit({ label, value }: { label: string; value: number | string | null }) {
+  const display = value === null ? "Unlimited" : value;
+  return <div className="rounded-lg bg-white p-2.5 ring-1 ring-teal-100"><span className="block text-slate-500">{label}</span><strong className="mt-0.5 block text-sm text-slate-900">{display}</strong></div>;
+}
+function formatBytes(value: number | null) {
+  if (value === null) return "Unlimited";
+  if (value < 1024 * 1024 * 1024) return `${Math.round(value / (1024 * 1024))} MB`;
+  return `${(value / (1024 * 1024 * 1024)).toFixed(1)} GB`;
 }
