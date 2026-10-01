@@ -36,24 +36,18 @@ const date = (value?: string) =>
 
 type OwnerProfileDetails = {
   phone: string;
-  jobTitle: string;
-  department: string;
   location: string;
   bio: string;
   dateOfBirth: string;
   gender: "" | "female" | "male" | "non_binary" | "prefer_not_to_say";
-  panCardNumber: string;
   profilePictureName: string;
 };
 const emptyOwnerProfile: OwnerProfileDetails = {
   phone: "",
-  jobTitle: "",
-  department: "",
   location: "",
   bio: "",
   dateOfBirth: "",
   gender: "",
-  panCardNumber: "",
   profilePictureName: "",
 };
 
@@ -66,9 +60,6 @@ const savedOwnerProfile = (
   const profile = value as Record<string, unknown>;
   return {
     phone: typeof profile.phone === "string" ? profile.phone : "",
-    jobTitle: typeof profile.jobTitle === "string" ? profile.jobTitle : "",
-    department:
-      typeof profile.department === "string" ? profile.department : "",
     location: typeof profile.location === "string" ? profile.location : "",
     bio: typeof profile.bio === "string" ? profile.bio : "",
     dateOfBirth:
@@ -80,8 +71,6 @@ const savedOwnerProfile = (
       profile.gender === "prefer_not_to_say"
         ? profile.gender
         : "",
-    panCardNumber:
-      typeof profile.panCardNumber === "string" ? profile.panCardNumber : "",
     profilePictureName:
       typeof profile.profilePictureName === "string"
         ? profile.profilePictureName
@@ -235,12 +224,11 @@ function CreateTenant({
         <label className="block text-sm font-medium">
           Subscription plan
           <select
-            required
             value={form.planId}
             onChange={(e) => setForm({ ...form, planId: e.target.value })}
             className={inputClass}
           >
-            <option value="">Select an active plan</option>
+            <option value="">Free plan (automatic)</option>
             {plans.map((plan) => (
               <option key={plan.id} value={plan.id}>
                 {plan.name} Ã¢â‚¬â€{" "}
@@ -252,6 +240,10 @@ function CreateTenant({
               </option>
             ))}
           </select>
+          <p className="mt-1 text-xs text-slate-500">
+            Choose a paid plan only when required. Otherwise the tenant receives
+            the Free plan automatically.
+          </p>
         </label>
         <div className="grid sm:grid-cols-3 gap-4">
           <label className="block text-sm font-medium">
@@ -681,11 +673,8 @@ export function AdminTenantDetails() {
     setSaving(true);
     setError("");
     try {
-      const {
-        panCardNumber: _panCardNumber,
-        profilePictureName: _profilePictureName,
-        ...safeProfile
-      } = ownerProfile;
+      const { profilePictureName: _profilePictureName, ...safeProfile } =
+        ownerProfile;
       const settings = {
         ...(tenant.settings ?? {}),
         profileCompletion: safeProfile,
@@ -921,25 +910,6 @@ export function AdminTenantDetails() {
                     </select>
                   </label>
                   <label className="text-sm font-medium">
-                    PAN card number
-                    <input
-                      maxLength={10}
-                      value={ownerProfile.panCardNumber}
-                      onChange={(event) =>
-                        setOwnerProfile({
-                          ...ownerProfile,
-                          panCardNumber: event.target.value.toUpperCase(),
-                        })
-                      }
-                      placeholder="ABCDE1234F"
-                      className={inputClass}
-                    />
-                    <span className="mt-1 block text-xs font-normal text-slate-500">
-                      Visible in UI now; secure encrypted storage will be added
-                      with the profile API.
-                    </span>
-                  </label>
-                  <label className="text-sm font-medium">
                     Profile picture
                     <input
                       type="file"
@@ -958,36 +928,6 @@ export function AdminTenantDetails() {
                         Selected: {ownerProfile.profilePictureName}
                       </span>
                     )}
-                  </label>
-                  <label className="text-sm font-medium">
-                    Job title
-                    <input
-                      maxLength={100}
-                      value={ownerProfile.jobTitle}
-                      onChange={(event) =>
-                        setOwnerProfile({
-                          ...ownerProfile,
-                          jobTitle: event.target.value,
-                        })
-                      }
-                      placeholder="e.g. Program manager"
-                      className={inputClass}
-                    />
-                  </label>
-                  <label className="text-sm font-medium">
-                    Department
-                    <input
-                      maxLength={100}
-                      value={ownerProfile.department}
-                      onChange={(event) =>
-                        setOwnerProfile({
-                          ...ownerProfile,
-                          department: event.target.value,
-                        })
-                      }
-                      placeholder="e.g. Academic operations"
-                      className={inputClass}
-                    />
                   </label>
                   <label className="text-sm font-medium">
                     Location

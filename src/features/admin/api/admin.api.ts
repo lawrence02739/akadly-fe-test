@@ -19,9 +19,31 @@ export interface AdminTenant {
   planId: string | null;
   billingDate: string | null;
   dueDate: string | null;
-  paymentStatus: 'due' | 'paid' | 'unpaid';
+  paymentStatus: "due" | "paid" | "unpaid";
   paymentProofs: PaymentProof[];
-  ownerInvitationStatus: 'pending' | 'accepted' | 'revoked';
+  organizationCompliance: {
+    organizationType: {
+      code: string;
+      name: string;
+      version: number;
+      requiredDocuments: {
+        documentTypeCode: string;
+        isMandatory: boolean;
+        order: number;
+      }[];
+    };
+    gstin: string | null;
+    pincode: string | null;
+    documents: {
+      documentTypeCode: string;
+      fileName: string | null;
+      fileUrl: string | null;
+      status: string;
+      rejectionReason: string | null;
+      submittedAt: string | null;
+    }[];
+  };
+  ownerInvitationStatus: "pending" | "accepted" | "revoked";
   owner: { name: string; email: string };
   ownerUserId: string | null;
   settings: Record<string, unknown>;
@@ -29,9 +51,52 @@ export interface AdminTenant {
   updatedAt: string;
 }
 
-interface Tokens { accessToken: string; refreshToken: string; expiresIn: number }
-interface Envelope<T> { data: T; message: string; meta?: { pagination?: Pagination } }
-export interface Pagination { page: number; pageSize: number; total: number; totalPages: number; hasNext: boolean; hasPrev: boolean }
+export type TenantDocumentConfig = {
+  type: string;
+  name: string;
+  enabled: boolean;
+  docs: Array<{
+    code: string;
+    name: string;
+    enabled: boolean;
+    required: boolean;
+    fileType: "PDF" | "PNG" | "JPG";
+  }>;
+};
+interface Tokens {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+}
+interface Envelope<T> {
+  data: T;
+  message: string;
+  meta?: { pagination?: Pagination };
+}
+export interface Pagination {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrev: boolean;
+}
+
+export interface AdminFeatureRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: "submitted" | "under_review" | "planned" | "in_progress" | "released" | "declined";
+  plannedRelease: string | null;
+  adminNote: string | null;
+  upvoteCount: number;
+  commentCount: number;
+  comments: Array<{ id: string; body: string; authorType: "tenant" | "admin"; createdAt: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminTicket {
   id: string;
   _id?: string;
@@ -97,6 +162,29 @@ export interface AdminTicket {
     courseLanguage: string | null;
     cohort: string | null;
   };
+  tenantPlan?: {
+    tenantName: string | null;
+    tenantStatus: string | null;
+    paymentStatus: string | null;
+    plan: {
+      name: string;
+      code: string | null;
+      interval: "monthly" | "yearly" | null;
+      allowedModules: string[];
+      limits: {
+        users: number | null;
+        students: number | null;
+        courses: number | null;
+        contentBytes: number | null;
+      };
+    } | null;
+    usage: {
+      users: number;
+      courses: number;
+      students: null;
+      contentBytes: null;
+    };
+  };
   relatedTickets?: Array<{
     _id: string;
     ticketNumber: string;
@@ -115,7 +203,23 @@ export interface AdminTicketDashboard {
   daily: Array<{ _id: string; total: number; resolved: number }>;
   categories: Array<{ _id: string; total: number; open: number }>;
   myQueue: AdminTicket[];
-  metrics: { open: number; active: number; pendingResponse: number; resolvedThisWeek: number; escalated: number; unassigned: number; assignedToMe: number; overdue: number; averageFirstResponseMinutes: number | null };
+  metrics: {
+    open: number;
+    active: number;
+    pendingResponse: number;
+    resolvedThisWeek: number;
+    escalated: number;
+    unassigned: number;
+    assignedToMe: number;
+    overdue: number;
+    averageFirstResponseMinutes: number | null;
+    satisfaction: {
+      resolvedTickets: number;
+      ratedTickets: number;
+      averageRating: number | null;
+      distribution: Record<1 | 2 | 3 | 4 | 5, number>;
+    };
+  };
 }
 export interface TicketAssignee {
   id: string;
@@ -127,6 +231,7 @@ export interface TicketAssignee {
 export interface TicketAttachment {
   fileName: string;
   fileUrl: string;
+  fileKey?: string;
   mimeType: string;
   sizeBytes: number;
 }
@@ -142,19 +247,53 @@ export interface TicketMessage {
   attachments?: TicketAttachment[];
   createdAt: string;
 }
-export interface TenantQuery { page: number; pageSize: number; search?: string; status?: string; sortBy?: string; sortOrder?: string }
-export interface PaymentProof { fileName: string; fileUrl: string; mimeType: string; sizeBytes: number; uploadedAt?: string }
-export interface TenantPayload { fullName: string; email: string; organizationName: string; organizationAddress: string; description?: string; planId: string; billingDate: string; dueDate: string; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[] }
-export interface TenantUpdate { name?: string; ownerName?: string; plan?: string; planId?: string | null; billingDate?: string | null; dueDate?: string | null; paymentStatus?: 'due' | 'paid' | 'unpaid'; paymentProofs?: PaymentProof[]; settings?: Record<string, unknown> }
+export interface TenantQuery {
+  page: number;
+  pageSize: number;
+  search?: string;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: string;
+}
+export interface PaymentProof {
+  fileName: string;
+  fileUrl: string;
+  mimeType: string;
+  sizeBytes: number;
+  uploadedAt?: string;
+}
+export interface TenantPayload {
+  fullName: string;
+  email: string;
+  organizationName: string;
+  organizationAddress: string;
+  description?: string;
+  planId?: string;
+  billingDate: string;
+  dueDate: string;
+  paymentStatus?: "due" | "paid" | "unpaid";
+  paymentProofs?: PaymentProof[];
+}
+export interface TenantUpdate {
+  name?: string;
+  ownerName?: string;
+  plan?: string;
+  planId?: string | null;
+  billingDate?: string | null;
+  dueDate?: string | null;
+  paymentStatus?: "due" | "paid" | "unpaid";
+  paymentProofs?: PaymentProof[];
+  settings?: Record<string, unknown>;
+}
 export interface AdminSubscription {
   id: string;
   name: string;
   code: string;
   description: string;
   price: number;
-  currency: 'INR' | 'USD';
-  interval: 'monthly' | 'yearly';
-  status: 'active' | 'inactive';
+  currency: "INR" | "USD";
+  interval: "monthly" | "yearly";
+  status: "active" | "inactive";
   isPopular: boolean;
   allowedModules: string[];
   userLimit: number | null;
@@ -324,6 +463,48 @@ client.interceptors.response.use(undefined, async (error) => {
 });
 
 export const adminApi = {
+  async featureRequests(params: Record<string, string | undefined> = {}) {
+    const { data } = await client.get<Envelope<AdminFeatureRequest[]>>("/feature-requests", { params });
+    return data.data;
+  },
+  async featureRequest(id: string) {
+    const { data } = await client.get<Envelope<AdminFeatureRequest>>(`/feature-requests/${encodeURIComponent(id)}`);
+    return data.data;
+  },
+  async updateFeatureRequest(id: string, payload: Partial<Pick<AdminFeatureRequest, "status" | "category" | "plannedRelease" | "adminNote">> & { notifyAudience?: boolean }) {
+    const { data } = await client.patch<Envelope<AdminFeatureRequest>>(`/feature-requests/${encodeURIComponent(id)}`, payload);
+    return data.data;
+  },
+  async addFeatureRequestComment(id: string, body: string) {
+    const { data } = await client.post<Envelope<AdminFeatureRequest>>(`/feature-requests/${encodeURIComponent(id)}/comments`, { body });
+    return data.data;
+  },
+  async featureRequestCategories() {
+    const { data } = await client.get<Envelope<Array<{ id: string; slug: string; name: string; color: string; enabled: boolean; order: number }>>>("/feature-requests/categories");
+    return data.data;
+  },
+  async featureRequestCategoryStats() {
+    const { data } = await client.get<Envelope<Array<{ id: string; slug: string; name: string; color: string; enabled: boolean; order: number; count: number }>>>("/feature-requests/category-stats");
+    return data.data;
+  },
+  async createFeatureRequestCategory(payload: { name: string; slug: string; color?: string; order?: number }) {
+    const { data } = await client.post<Envelope<unknown>>("/feature-requests/categories", payload);
+    return data.data;
+  },
+  async updateFeatureRequestCategory(id: string, payload: { name?: string; color?: string; enabled?: boolean; order?: number }) {
+    const { data } = await client.patch<Envelope<unknown>>(`/feature-requests/categories/${id}`, payload);
+    return data.data;
+  },
+  async deleteFeatureRequestCategory(id: string) { await client.delete(`/feature-requests/categories/${id}`); },
+  async mergeFeatureRequest(id: string, targetId: string) {
+    const { data } = await client.post<Envelope<AdminFeatureRequest>>(`/feature-requests/${id}/merge`, { targetId });
+    return data.data;
+  },
+  async featureRequestDemand(id: string) {
+    const { data } = await client.get<Envelope<{ totalWorkspaces: number; workspaces: Array<{ id: string; name: string }> }>>(`/feature-requests/${id}/demand`);
+    return data.data;
+  },
+  async deleteFeatureRequest(id: string, reason?: string) { await client.delete(`/feature-requests/${id}`, { data: { reason } }); },
   async login(email: string, password: string) {
     const { data } = await client.post<Envelope<Tokens>>("/auth/login", {
       email,
@@ -336,7 +517,8 @@ export const adminApi = {
     return data.data;
   },
   async ticketDashboard() {
-    const { data } = await client.get<Envelope<AdminTicketDashboard>>("/tickets/dashboard");
+    const { data } =
+      await client.get<Envelope<AdminTicketDashboard>>("/tickets/dashboard");
     return data.data;
   },
   async logout() {
@@ -369,6 +551,18 @@ export const adminApi = {
     );
     return data.data;
   },
+  async tenantDocumentConfig() {
+    const { data } = await client.get<
+      Envelope<{ configs: TenantDocumentConfig[] }>
+    >("/tenants/document-config");
+    return data.data.configs;
+  },
+  async saveTenantDocumentConfig(configs: TenantDocumentConfig[]) {
+    const { data } = await client.patch<
+      Envelope<{ configs: TenantDocumentConfig[] }>
+    >("/tenants/document-config", { configs });
+    return data.data.configs;
+  },
   async createTenant(payload: TenantPayload) {
     const { data } = await client.post<Envelope<AdminTenant>>(
       "/tenants",
@@ -377,14 +571,48 @@ export const adminApi = {
     return data.data;
   },
   async uploadTenantPaymentProof(file: File): Promise<PaymentProof> {
-    const form = new FormData(); form.append('file', file);
-    const { data } = await client.post<Envelope<PaymentProof>>('/tenants/payment-proofs/uploads', form, { headers: { 'Content-Type': 'multipart/form-data' } });
-    return data.data;
+    const { data } = await client.post<
+      Envelope<PaymentProof & { uploadUrl: string }>
+    >("/tenants/payment-proofs/presign", {
+      fileName: file.name,
+      contentType: file.type,
+      sizeBytes: file.size,
+    });
+    const upload = data.data;
+    const response = await fetch(upload.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok)
+      throw new Error("Payment proof could not be uploaded to storage");
+    return {
+      fileName: upload.fileName,
+      fileUrl: upload.fileUrl,
+      mimeType: upload.mimeType,
+      sizeBytes: upload.sizeBytes,
+    };
   },
   async updateTenant(id: string, payload: TenantUpdate) {
     const { data } = await client.patch<Envelope<AdminTenant>>(
       `/tenants/${encodeURIComponent(id)}`,
       payload,
+    );
+    return data.data;
+  },
+  async reviewOrganizationDocument(
+    id: string,
+    documentTypeCode: string,
+    status: "APPROVED" | "REJECTED",
+    rejectionReason?: string,
+  ) {
+    const { data } = await client.patch<Envelope<AdminTenant>>(
+      "/tenants/" +
+        encodeURIComponent(id) +
+        "/organization-documents/" +
+        encodeURIComponent(documentTypeCode) +
+        "/review",
+      { status, rejectionReason },
     );
     return data.data;
   },
@@ -553,7 +781,10 @@ export const adminApi = {
   },
   async updateTeamMember(
     id: string,
-    payload: Partial<{ roleId: string; status: "active" | "suspended" | "disabled" }>,
+    payload: Partial<{
+      roleId: string;
+      status: "active" | "suspended" | "disabled";
+    }>,
   ) {
     const { data } = await client.patch<Envelope<AdminTeamMember>>(
       `/team-management/members/${id}`,
@@ -571,7 +802,11 @@ export const adminApi = {
     );
     return pageResult(data, params);
   },
-  async createInvitation(payload: { name: string; email: string; roleId: string }) {
+  async createInvitation(payload: {
+    name: string;
+    email: string;
+    roleId: string;
+  }) {
     const { data } = await client.post<Envelope<AdminTenantInvitation>>(
       "/team-management/invitations",
       payload,
@@ -579,7 +814,9 @@ export const adminApi = {
     return data.data;
   },
   async updateInvitation() {
-    throw new Error("Admin invitation roles are assigned before invitation delivery.");
+    throw new Error(
+      "Admin invitation roles are assigned before invitation delivery.",
+    );
   },
   async resendInvitation(id: string) {
     const { data } = await client.post<Envelope<AdminTenantInvitation>>(
@@ -710,14 +947,27 @@ export const adminApi = {
     return pageResult(data, params);
   },
   async uploadTicketAttachment(file: File) {
-    const form = new FormData();
-    form.append("file", file);
-    const { data } = await client.post<Envelope<TicketAttachment>>(
-      "/tickets/uploads",
-      form,
-      { headers: { "Content-Type": "multipart/form-data" } },
-    );
-    return data.data;
+    const { data } = await client.post<
+      Envelope<{ uploadUrl: string; fileUrl: string; fileKey: string }>
+    >("/tickets/uploads/presign", {
+      fileName: file.name,
+      contentType: file.type,
+      sizeBytes: file.size,
+    });
+    const upload = data.data;
+    const response = await fetch(upload.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!response.ok) throw new Error("File could not be uploaded to storage");
+    return {
+      fileName: file.name,
+      fileUrl: upload.fileUrl,
+      fileKey: upload.fileKey,
+      mimeType: file.type,
+      sizeBytes: file.size,
+    };
   },
   async addTicketMessage(
     id: string,
