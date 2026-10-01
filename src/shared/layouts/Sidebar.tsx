@@ -16,6 +16,7 @@ import {
   CreditCard,
   ChartNoAxesCombined,
   Ticket,
+  Lightbulb,
   UserRound,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
@@ -36,6 +37,7 @@ const navItems = [
     path: "/partner/tickets",
     permissions: [],
   },
+  { icon: Lightbulb, label: "Feature requests", path: "/partner/feature-requests", permissions: [] },
   { icon: UserRound, label: "My profile", path: "/partner/profile", permissions: [] },
   {
     icon: Book,
