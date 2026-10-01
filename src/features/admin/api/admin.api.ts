@@ -81,6 +81,22 @@ export interface Pagination {
   hasNext: boolean;
   hasPrev: boolean;
 }
+
+export interface AdminFeatureRequest {
+  id: string;
+  title: string;
+  description: string;
+  category: string;
+  status: "submitted" | "under_review" | "planned" | "in_progress" | "released" | "declined";
+  plannedRelease: string | null;
+  adminNote: string | null;
+  upvoteCount: number;
+  commentCount: number;
+  comments: Array<{ id: string; body: string; authorType: "tenant" | "admin"; createdAt: string }>;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface AdminTicket {
   id: string;
   _id?: string;
@@ -447,6 +463,48 @@ client.interceptors.response.use(undefined, async (error) => {
 });
 
 export const adminApi = {
+  async featureRequests(params: Record<string, string | undefined> = {}) {
+    const { data } = await client.get<Envelope<AdminFeatureRequest[]>>("/feature-requests", { params });
+    return data.data;
+  },
+  async featureRequest(id: string) {
+    const { data } = await client.get<Envelope<AdminFeatureRequest>>(`/feature-requests/${encodeURIComponent(id)}`);
+    return data.data;
+  },
+  async updateFeatureRequest(id: string, payload: Partial<Pick<AdminFeatureRequest, "status" | "category" | "plannedRelease" | "adminNote">> & { notifyAudience?: boolean }) {
+    const { data } = await client.patch<Envelope<AdminFeatureRequest>>(`/feature-requests/${encodeURIComponent(id)}`, payload);
+    return data.data;
+  },
+  async addFeatureRequestComment(id: string, body: string) {
+    const { data } = await client.post<Envelope<AdminFeatureRequest>>(`/feature-requests/${encodeURIComponent(id)}/comments`, { body });
+    return data.data;
+  },
+  async featureRequestCategories() {
+    const { data } = await client.get<Envelope<Array<{ id: string; slug: string; name: string; color: string; enabled: boolean; order: number }>>>("/feature-requests/categories");
+    return data.data;
+  },
+  async featureRequestCategoryStats() {
+    const { data } = await client.get<Envelope<Array<{ id: string; slug: string; name: string; color: string; enabled: boolean; order: number; count: number }>>>("/feature-requests/category-stats");
+    return data.data;
+  },
+  async createFeatureRequestCategory(payload: { name: string; slug: string; color?: string; order?: number }) {
+    const { data } = await client.post<Envelope<unknown>>("/feature-requests/categories", payload);
+    return data.data;
+  },
+  async updateFeatureRequestCategory(id: string, payload: { name?: string; color?: string; enabled?: boolean; order?: number }) {
+    const { data } = await client.patch<Envelope<unknown>>(`/feature-requests/categories/${id}`, payload);
+    return data.data;
+  },
+  async deleteFeatureRequestCategory(id: string) { await client.delete(`/feature-requests/categories/${id}`); },
+  async mergeFeatureRequest(id: string, targetId: string) {
+    const { data } = await client.post<Envelope<AdminFeatureRequest>>(`/feature-requests/${id}/merge`, { targetId });
+    return data.data;
+  },
+  async featureRequestDemand(id: string) {
+    const { data } = await client.get<Envelope<{ totalWorkspaces: number; workspaces: Array<{ id: string; name: string }> }>>(`/feature-requests/${id}/demand`);
+    return data.data;
+  },
+  async deleteFeatureRequest(id: string, reason?: string) { await client.delete(`/feature-requests/${id}`, { data: { reason } }); },
   async login(email: string, password: string) {
     const { data } = await client.post<Envelope<Tokens>>("/auth/login", {
       email,

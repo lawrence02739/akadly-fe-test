@@ -4,6 +4,7 @@ import {
   Building2,
   BarChart3,
   CreditCard,
+  Lightbulb,
   LogOut,
   Menu,
   Settings,
@@ -18,6 +19,12 @@ const links = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/tickets", label: "Tickets", icon: Ticket },
+  { to: "/admin/feature-requests", label: "Feature Requests", icon: Lightbulb },
+  {
+    to: "/admin/settings/feature-request-categories",
+    label: "Feature request settings",
+    icon: Settings,
+  },
   {
     to: "/admin/tickets/dashboard",
     label: "Ticket Dashboard",

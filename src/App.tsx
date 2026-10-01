@@ -49,6 +49,11 @@ import AdminLayout from "./features/admin/AdminLayout";
 import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
 import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
 import AdminOrganizationDocumentSettings from "./features/admin/pages/AdminOrganizationDocumentSettings";
+import AdminFeatureRequestsPage from "./features/admin/pages/AdminFeatureRequestsPage";
+import AdminFeatureRequestSettingsPage from "./features/admin/pages/AdminFeatureRequestSettingsPage";
+import FeatureRequestsPage from "./features/feature-requests/FeatureRequestsPage";
+import FeatureRequestDetailPage from "./features/feature-requests/FeatureRequestDetailPage";
+import FeatureRequestCreatePage from "./features/feature-requests/FeatureRequestCreatePage";
 
 import AdminTicketsListPage from "./features/admin/pages/AdminTicketsListPage";
 import AdminTicketsDashboardPage from "./features/admin/pages/AdminTicketsDashboardPage";
@@ -110,6 +115,8 @@ function App() {
               path="settings/organization-documents"
               element={<AdminOrganizationDocumentSettings />}
             />
+            <Route path="feature-requests" element={<AdminFeatureRequestsPage />} />
+            <Route path="settings/feature-request-categories" element={<AdminFeatureRequestSettingsPage />} />
             <Route path="tickets" element={<AdminTicketsListPage />} />
             <Route
               path="tickets/dashboard"
@@ -247,6 +254,9 @@ function App() {
             path="tickets/dashboard"
             element={<TenantTicketsDashboardPage />}
           />
+          <Route path="feature-requests" element={<FeatureRequestsPage />} />
+          <Route path="feature-requests/new" element={<FeatureRequestCreatePage />} />
+          <Route path="feature-requests/:id" element={<FeatureRequestDetailPage />} />
           <Route path="profile" element={<MyProfilePage />} />
           <Route
             path="tickets/:ticketId"
