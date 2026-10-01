@@ -20,6 +20,11 @@ import BookInventoryDashboard from "./features/book-inventory/pages/BookInventor
 import ManageOrdersPage from "./features/order-management/pages/ManageOrdersPage";
 import CreateOrderPage from "./features/order-management/pages/CreateOrderPage";
 import OrderDetailsPage from "./features/order-management/pages/OrderDetailsPage";
+import StudentsPage from "./features/students/pages/StudentsPage";
+import StudentFormPage from "./features/students/pages/StudentFormPage";
+import CourierPartnersPage from "./features/courier-partners/pages/CourierPartnersPage";
+import CourierPartnerFormPage from "./features/courier-partners/pages/CourierPartnerFormPage";
+import StudentPortal from "./features/student-portal/StudentPortal";
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -223,6 +228,56 @@ function App() {
               </AccessRoute>
             }
           />
+          {/* Students */}
+          <Route
+            path="students"
+            element={
+              <AccessRoute anyOf={["student:read", "student:manage"]}>
+                <StudentsPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="students/new"
+            element={
+              <AccessRoute anyOf={["student:manage"]}>
+                <StudentFormPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="students/:id/edit"
+            element={
+              <AccessRoute anyOf={["student:manage"]}>
+                <StudentFormPage />
+              </AccessRoute>
+            }
+          />
+          {/* Courier Partners */}
+          <Route
+            path="courier-partners"
+            element={
+              <AccessRoute anyOf={["courier:read", "courier:manage"]}>
+                <CourierPartnersPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="courier-partners/new"
+            element={
+              <AccessRoute anyOf={["courier:manage"]}>
+                <CourierPartnerFormPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="courier-partners/:id/edit"
+            element={
+              <AccessRoute anyOf={["courier:manage"]}>
+                <CourierPartnerFormPage />
+              </AccessRoute>
+            }
+          />
           <Route
             path="courses/:courseId/edit"
             element={
@@ -359,6 +414,9 @@ function App() {
         {/* Redirect Root to Login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
         <Route path="/f/:id" element={<PublicFormPage />} />
+
+        {/* ── Student Portal ─────────────────────────────────────────────── */}
+        <Route path="/student/*" element={<StudentPortal />} />
       </Routes>
     </Router>
   );
