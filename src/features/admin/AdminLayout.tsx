@@ -5,6 +5,7 @@ import {
   BarChart3,
   CreditCard,
   Lightbulb,
+  MessageSquareText,
   LogOut,
   Menu,
   Settings,
@@ -19,6 +20,8 @@ const links = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
   { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
   { to: "/admin/tickets", label: "Tickets", icon: Ticket },
+  { to: "/admin/reviews", label: "Reviews", icon: MessageSquareText },
+  { to: "/admin/reviews/dashboard", label: "Reviews Dashboard", icon: BarChart3 },
   { to: "/admin/feature-requests", label: "Feature Requests", icon: Lightbulb },
   {
     to: "/admin/settings/feature-request-categories",

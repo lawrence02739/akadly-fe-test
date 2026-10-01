@@ -57,6 +57,9 @@ import FeatureRequestCreatePage from "./features/feature-requests/FeatureRequest
 
 import AdminTicketsListPage from "./features/admin/pages/AdminTicketsListPage";
 import AdminTicketsDashboardPage from "./features/admin/pages/AdminTicketsDashboardPage";
+import AdminReviewsDashboardPage from "./features/admin/pages/reviews/AdminReviewsDashboardPage";
+import AdminReviewsListPage from "./features/admin/pages/reviews/AdminReviewsListPage";
+import AdminReviewDetailsPage from "./features/admin/pages/reviews/AdminReviewDetailsPage";
 import {
   SubscriptionLayout,
   SubscriptionList,
@@ -117,6 +120,9 @@ function App() {
             />
             <Route path="feature-requests" element={<AdminFeatureRequestsPage />} />
             <Route path="settings/feature-request-categories" element={<AdminFeatureRequestSettingsPage />} />
+            <Route path="reviews" element={<AdminReviewsListPage />} />
+            <Route path="reviews/dashboard" element={<AdminReviewsDashboardPage />} />
+            <Route path="reviews/:reviewId" element={<AdminReviewDetailsPage />} />
             <Route path="tickets" element={<AdminTicketsListPage />} />
             <Route
               path="tickets/dashboard"
