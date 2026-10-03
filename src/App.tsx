@@ -25,6 +25,7 @@ import StudentFormPage from "./features/students/pages/StudentFormPage";
 import CourierPartnersPage from "./features/courier-partners/pages/CourierPartnersPage";
 import CourierPartnerFormPage from "./features/courier-partners/pages/CourierPartnerFormPage";
 import StudentPortal from "./features/student-portal/StudentPortal";
+import ReturnsIssuesPage from "./features/returns-issues/pages/ReturnsIssuesPage";
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -275,6 +276,15 @@ function App() {
             element={
               <AccessRoute anyOf={["courier:manage"]}>
                 <CourierPartnerFormPage />
+              </AccessRoute>
+            }
+          />
+          {/* Returns & Issues */}
+          <Route
+            path="returns-issues"
+            element={
+              <AccessRoute anyOf={["return:read", "return:manage"]}>
+                <ReturnsIssuesPage />
               </AccessRoute>
             }
           />

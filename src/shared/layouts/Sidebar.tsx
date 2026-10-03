@@ -20,6 +20,7 @@ import {
   UserRound,
   GraduationCap,
   Truck,
+  RotateCcw,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -76,6 +77,12 @@ const navItems = [
     label: "Orders",
     path: "/partner/orders",
     permissions: ["order:read", "order:manage"],
+  },
+  {
+    icon: RotateCcw,
+    label: "Returns & Issues",
+    path: "/partner/returns-issues",
+    permissions: ["return:read", "return:manage"],
   },
   {
     icon: Users,
