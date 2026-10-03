@@ -61,6 +61,12 @@ const navItems = [
     permissions: ["course:read", "course:manage"],
   },
   {
+    icon: Users,
+    label: "Batches & Cohorts",
+    path: "/partner/batches",
+    permissions: ["course:read", "course:manage"],
+  },
+  {
     icon: FileText,
     label: "Forms",
     path: "/partner/forms",
