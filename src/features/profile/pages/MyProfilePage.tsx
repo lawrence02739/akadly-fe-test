@@ -47,6 +47,30 @@ type Compliance = {
   pincode: string | null;
   documents: ComplianceDocument[];
 };
+type GstinDetails = {
+  gstin: string;
+  details: Record<string, unknown>;
+  profileComplete: boolean;
+  lookedUpAt: string;
+  cached: boolean;
+};
+
+const gstLabel = (key: string) =>
+  key.replaceAll("_", " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+
+function GstDetailValue({ value }: { value: unknown }) {
+  if (Array.isArray(value)) {
+    return <div className="space-y-2">{value.map((item, index) =>
+      <div key={index} className="rounded border border-slate-200 p-2">
+        <GstDetailValue value={item} />
+      </div>)}</div>;
+  }
+  if (value && typeof value === "object") {
+    return <div className="grid gap-2 sm:grid-cols-2">{Object.entries(value).filter(([, item]) => item !== null && item !== "" && (!Array.isArray(item) || item.length > 0)).map(([key, item]) =>
+      <div key={key}><span className="text-xs text-slate-500">{gstLabel(key)}</span><GstDetailValue value={item} /></div>)}</div>;
+  }
+  return <span className="break-words text-sm font-medium text-slate-900">{String(value)}</span>;
+}
 type ConfigType = {
   type: string;
   name: string;
@@ -81,6 +105,25 @@ export default function MyProfilePage() {
   const [compliance, setCompliance] = useState<Compliance | null>(null);
   const [complianceSaving, setComplianceSaving] = useState(false);
   const [organizationTypes, setOrganizationTypes] = useState<ConfigType[]>([]);
+  const [gstinDetails, setGstinDetails] = useState<GstinDetails | null>(null);
+  const [gstinLookupError, setGstinLookupError] = useState("");
+  const [gstinLookupLoading, setGstinLookupLoading] = useState(false);
+  const [savedGstin, setSavedGstin] = useState<string | null>(null);
+  const lookupGstin = async () => {
+    setGstinLookupLoading(true);
+    setGstinLookupError("");
+    try {
+      const response = await api.post("/auth/me/organization-gstin-lookup");
+      setGstinDetails(response.data?.data ?? response.data);
+    } catch (error) {
+      setGstinLookupError(
+        (error as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+          "GST details could not be fetched. You can retry later.",
+      );
+    } finally {
+      setGstinLookupLoading(false);
+    }
+  };
   useEffect(() => {
     const [firstName = "", ...rest] = (user?.name ?? "").trim().split(/\s+/);
     const saved = localStorage.getItem(storageKey);
@@ -106,7 +149,11 @@ export default function MyProfilePage() {
     void api
       .get("/auth/me/organization-compliance")
       .then((response) => {
-        if (active) setCompliance(response.data?.data ?? response.data);
+        if (active) {
+          const loaded = (response.data?.data ?? response.data) as Compliance;
+          setCompliance(loaded);
+          setSavedGstin(loaded.gstin);
+        }
       })
       .catch(() => undefined);
     void api
@@ -115,6 +162,9 @@ export default function MyProfilePage() {
         if (active) setOrganizationTypes(response.data?.data ?? response.data);
       })
       .catch(() => undefined);
+    void api.get("/auth/me/organization-gstin-details").then((response) => {
+      if (active) setGstinDetails(response.data?.data ?? response.data);
+    }).catch(() => undefined);
     return () => {
       active = false;
     };
@@ -164,7 +214,14 @@ export default function MyProfilePage() {
             pincode: compliance.pincode || undefined,
           },
         );
-        setCompliance(complianceResponse.data?.data ?? complianceResponse.data);
+        const savedCompliance = (complianceResponse.data?.data ?? complianceResponse.data) as Compliance;
+        setCompliance(savedCompliance);
+        setSavedGstin(savedCompliance.gstin);
+        if (compliance.gstin && compliance.gstin.length === 15) {
+          await lookupGstin();
+        } else {
+          setGstinDetails(null);
+        }
       }
       const saved = response.data?.data ?? response.data;
       const next = { ...empty, ...details, ...profileFields(saved) } as Details;
@@ -437,12 +494,14 @@ export default function MyProfilePage() {
                 <input
                   value={compliance.gstin ?? ""}
                   maxLength={15}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    setGstinDetails(null);
+                    setGstinLookupError("");
                     setCompliance({
                       ...compliance,
                       gstin: e.target.value.toUpperCase(),
-                    })
-                  }
+                    });
+                  }}
                 />
               </Field>
               <Field label="Pincode">
@@ -454,6 +513,32 @@ export default function MyProfilePage() {
                   }
                 />
               </Field>
+            </div>
+
+            <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-semibold text-slate-900">GST registration details</h3>
+                  <p className="mt-1 text-xs text-slate-500">Available registration details appear after saving a valid GSTIN. Documents still need to be uploaded separately.</p>
+                </div>
+                <button type="button" disabled={gstinLookupLoading || !compliance.gstin || compliance.gstin !== savedGstin || compliance.gstin.length !== 15} onClick={() => void lookupGstin()} className="rounded-lg border border-[#0C5A69] px-3 py-2 text-xs font-semibold text-[#0C5A69] disabled:opacity-50">
+                  {gstinLookupLoading ? "Checking..." : "Fetch GST details"}
+                </button>
+              </div>
+              {gstinLookupError && <p role="alert" className="mt-3 text-sm text-amber-700">{gstinLookupError}</p>}
+              {gstinDetails && gstinDetails.gstin === compliance.gstin && (
+                <div className="mt-4">
+                  <p className="mb-3 text-xs text-slate-500">Fetched {new Date(gstinDetails.lookedUpAt).toLocaleString()} {gstinDetails.profileComplete ? "· Full profile available" : "· Provider returned partial details"}</p>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    {Object.entries(gstinDetails.details).filter(([, value]) => value !== null && value !== "" && (!Array.isArray(value) || value.length > 0)).map(([key, value]) => (
+                      <div key={key} className="rounded-lg border border-slate-200 bg-white p-3">
+                        <p className="mb-1 text-xs text-slate-500">{gstLabel(key)}</p>
+                        <GstDetailValue value={value} />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
 
             <div className="border-t pt-4">
