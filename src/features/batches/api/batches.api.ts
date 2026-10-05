@@ -90,6 +90,7 @@ export type BatchContent = {
   title: string;
   type: "lesson" | "resource" | "template";
   url?: string;
+  courseNodeId?: string;
   createdAt: string;
 };
 export type BatchAnnouncement = {
@@ -152,14 +153,16 @@ export const batchApi = {
     unwrap<BatchStudent[]>(api.delete(`/batches/${id}/waitlist/${studentId}`)),
   content: (id: string) =>
     listAllBatchResources<BatchContent>(`/batches/${id}/content`),
+  linkableContent: (id: string) =>
+    unwrap<Array<{ id: string; title: string; type: string }>>(api.get(`/batches/${id}/linkable-content`)),
   addContent: (
     id: string,
-    payload: Pick<BatchContent, "title" | "type" | "url">,
+    payload: Pick<BatchContent, "title" | "type" | "url" | "courseNodeId">,
   ) => unwrap<BatchContent[]>(api.post(`/batches/${id}/content`, payload)),
   updateContent: (
     id: string,
     contentId: string,
-    payload: Partial<Pick<BatchContent, "title" | "type" | "url">>,
+    payload: Partial<Pick<BatchContent, "title" | "type" | "url" | "courseNodeId">>,
   ) =>
     unwrap<BatchContent[]>(
       api.patch(`/batches/${id}/content/${contentId}`, payload),

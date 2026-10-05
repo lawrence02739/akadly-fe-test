@@ -37,11 +37,21 @@ export default function BatchManagePage({
   const [title, setTitle] = useState("");
   const [url, setUrl] = useState("");
   const [type, setType] = useState<BatchContent["type"]>("resource");
+  const [courseNodes, setCourseNodes] = useState<Array<{ id: string; title: string; type: string }>>([]);
+  const [courseNodeId, setCourseNodeId] = useState("");
+  const [editingContentId, setEditingContentId] = useState("");
   const [message, setMessage] = useState("");
   const [audience, setAudience] =
     useState<BatchAnnouncement["audience"]>("all_students");
   const [scheduledFor, setScheduledFor] = useState("");
+  const [editingAnnouncementId, setEditingAnnouncementId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const refreshDestinations = useCallback(async () => {
     setRefreshingDestinations(true);
@@ -72,6 +82,11 @@ export default function BatchManagePage({
     ]);
     setBatch(details);
     setStudents(roster);
+    setSelected((current) =>
+      current.filter((studentId) =>
+        roster.some((student) => student.studentId === studentId),
+      ),
+    );
     setContent(linked);
     setAnnouncements(posts);
     await refreshDestinations();
@@ -80,6 +95,13 @@ export default function BatchManagePage({
   useEffect(() => {
     void reload().catch(() => toast.error("Could not load cohort management."));
   }, [reload]);
+
+  useEffect(() => {
+    if (!batch?.id) return;
+    void batchApi.linkableContent(id)
+      .then(setCourseNodes)
+      .catch(() => toast.error("Could not load course content."));
+  }, [batch?.id, id]);
 
   useEffect(() => {
     const refreshOnFocus = () => void refreshDestinations();
@@ -91,14 +113,16 @@ export default function BatchManagePage({
     setBusy(true);
     try {
       await action();
-      await reload();
       toast.success(success);
+      try {
+        await reload();
+      } catch {
+        toast.error("Saved, but the latest list could not load. Refresh to see it.");
+      }
       return true;
     } catch (error) {
-      toast.error(
-        (error as { response?: { data?: { message?: string } } })?.response
-          ?.data?.message || "Action failed.",
-      );
+      const message = (error as { response?: { data?: { message?: string | string[] } } })?.response?.data?.message;
+      toast.error(Array.isArray(message) ? message.join(". ") : message || "Action failed.");
       return false;
     } finally {
       setBusy(false);
@@ -108,13 +132,9 @@ export default function BatchManagePage({
   const destination = destinations.find((item) => item.id === destinationId);
   const eligibleDestinations = destinations.filter(
     (item) =>
-      item.courseId === batch?.courseId &&
       item.status !== "cancelled" &&
       item.status !== "completed" &&
       item.capacity > item.enrolledCount,
-  );
-  const otherCourseBatches = destinations.filter(
-    (item) => item.courseId !== batch?.courseId,
   );
   const available = destination
     ? destination.capacity - destination.enrolledCount
@@ -122,7 +142,6 @@ export default function BatchManagePage({
   const canTransfer =
     selected.length > 0 &&
     destination !== undefined &&
-    destination?.courseId === batch?.courseId &&
     destination.status !== "cancelled" &&
     destination.status !== "completed" &&
     available >= selected.length;
@@ -197,19 +216,21 @@ export default function BatchManagePage({
                 </div>
                 <form
                   className="mt-4 grid gap-2 sm:grid-cols-[1fr_145px]"
-                  onSubmit={(event) => {
+                  onSubmit={async (event) => {
                     event.preventDefault();
-                    void run(
+                    const saved = await run(
                       () =>
-                        batchApi.addContent(id, {
+                        (editingContentId ? batchApi.updateContent(id, editingContentId, {
+                          title, type, url: courseNodeId ? "" : url, courseNodeId,
+                        }) : batchApi.addContent(id, {
                           title,
                           type,
-                          url: url || undefined,
-                        }),
-                      "Content linked.",
+                          url: courseNodeId ? undefined : url || undefined,
+                          courseNodeId: courseNodeId || undefined,
+                        })),
+                      editingContentId ? "Content updated." : "Content linked.",
                     );
-                    setTitle("");
-                    setUrl("");
+                    if (saved) { setTitle(""); setUrl(""); setCourseNodeId(""); setEditingContentId(""); }
                   }}
                 >
                   <input
@@ -230,10 +251,26 @@ export default function BatchManagePage({
                     <option value="resource">Resource</option>
                     <option value="template">Template</option>
                   </select>
+                  <select
+                    value={courseNodeId}
+                    onChange={(event) => {
+                      const selectedNode = courseNodes.find((node) => node.id === event.target.value);
+                      setCourseNodeId(event.target.value);
+                      if (selectedNode) { setTitle(selectedNode.title); setUrl(""); setType("lesson"); }
+                    }}
+                    className="rounded-lg border border-slate-200 px-3 py-2 text-sm sm:col-span-2"
+                    aria-label="Existing course content"
+                  >
+                    <option value="">External URL</option>
+                    {courseNodes.map((node) => <option key={node.id} value={node.id}>{node.title} ({node.type})</option>)}
+                  </select>
                   <input
                     value={url}
                     onChange={(event) => setUrl(event.target.value)}
-                    placeholder="Resource URL (optional)"
+                    placeholder="HTTPS resource URL"
+                    disabled={Boolean(courseNodeId)}
+                    required={!courseNodeId}
+                    type="url"
                     className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
                   />
                   <button
@@ -241,8 +278,9 @@ export default function BatchManagePage({
                     className="rounded-lg bg-[#0C5A69] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                   >
                     <Link2 size={14} className="mr-1 inline" />
-                    Link content
+                    {editingContentId ? "Save content" : "Link content"}
                   </button>
+                  {editingContentId && <button type="button" className={button} onClick={() => { setEditingContentId(""); setTitle(""); setUrl(""); setCourseNodeId(""); }}>Cancel edit</button>}
                 </form>
                 <div className="mt-4 space-y-2">
                   {content.length ? (
@@ -259,10 +297,11 @@ export default function BatchManagePage({
                             </span>
                           </p>
                           <p className="mt-1 truncate text-xs text-slate-500">
-                            {item.url || "No link provided"}
+                            {item.courseNodeId ? "Course content" : item.url}
                           </p>
                         </div>
-                        {item._id && (
+                        {item._id && (<div className="flex items-center gap-2">
+                          <button type="button" disabled={busy} onClick={() => { setEditingContentId(item._id!); setTitle(item.title); setType(item.type); setUrl(item.url ?? ""); setCourseNodeId(item.courseNodeId ?? ""); }} className="text-xs font-semibold text-[#0C5A69]">Edit</button>
                           <button
                             aria-label={`Remove ${item.title}`}
                             disabled={busy}
@@ -276,7 +315,7 @@ export default function BatchManagePage({
                           >
                             <Trash2 size={15} />
                           </button>
-                        )}
+                        </div>)}
                       </div>
                     ))
                   ) : (
@@ -311,7 +350,8 @@ export default function BatchManagePage({
                               : "Posted"}
                           </p>
                         </div>
-                        {item._id && (
+                        {item._id && item.scheduledFor && new Date(item.scheduledFor).getTime() > now && (<div className="flex items-center gap-2">
+                          <button type="button" disabled={busy} className="text-xs font-semibold text-[#0C5A69]" onClick={() => { setEditingAnnouncementId(item._id!); setMessage(item.message); setAudience(item.audience); const date = new Date(item.scheduledFor!); setScheduledFor(new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16)); }}>Edit</button>
                           <button
                             aria-label="Remove announcement"
                             disabled={busy}
@@ -326,7 +366,7 @@ export default function BatchManagePage({
                           >
                             <Trash2 size={15} />
                           </button>
-                        )}
+                        </div>)}
                       </div>
                     ))
                   ) : (
@@ -345,18 +385,20 @@ export default function BatchManagePage({
             </p>
             <form
               className="mt-3"
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
-                void run(
+                const saved = await run(
                   () =>
-                    batchApi.addAnnouncement(id, {
+                    (editingAnnouncementId ? batchApi.updateAnnouncement(id, editingAnnouncementId, {
+                      message, audience, scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
+                    }) : batchApi.addAnnouncement(id, {
                       message,
                       audience,
-                      scheduledFor: scheduledFor || undefined,
-                    }),
-                  "Announcement saved.",
+                      scheduledFor: scheduledFor ? new Date(scheduledFor).toISOString() : undefined,
+                    })),
+                  editingAnnouncementId ? "Announcement updated." : "Announcement saved.",
                 );
-                setMessage("");
+                if (saved) { setMessage(""); setScheduledFor(""); setEditingAnnouncementId(""); }
               }}
             >
               <textarea
@@ -391,8 +433,9 @@ export default function BatchManagePage({
                   className="rounded-lg bg-[#0C5A69] px-4 py-2 text-xs font-semibold text-white disabled:opacity-50"
                 >
                   <Send size={13} className="mr-1 inline" />
-                  Schedule
+                  {editingAnnouncementId ? "Save changes" : scheduledFor ? "Schedule" : "Post now"}
                 </button>
+                {editingAnnouncementId && <button type="button" className={button} onClick={() => { setEditingAnnouncementId(""); setMessage(""); setScheduledFor(""); }}>Cancel edit</button>}
               </div>
             </form>
           </section>
@@ -402,7 +445,8 @@ export default function BatchManagePage({
             <div>
               <h2 className="text-lg font-bold">Transfer students</h2>
               <p className="mt-1 text-xs text-slate-500">
-                Move selected students to another batch in the same course.
+                Move selected students to another batch, including a different
+                course.
               </p>
             </div>
             <button
@@ -428,6 +472,23 @@ export default function BatchManagePage({
                   {selected.length} selected
                 </span>
               </p>
+              {students.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelected(
+                      selected.length === students.length
+                        ? []
+                        : students.map((student) => student.studentId),
+                    )
+                  }
+                  className="mt-2 text-xs font-semibold text-[#0C5A69] underline"
+                >
+                  {selected.length === students.length
+                    ? "Clear selection"
+                    : "Select all students"}
+                </button>
+              )}
               <div className="mt-2 max-h-52 space-y-1 overflow-auto">
                 {students.map((student) => (
                   <label
@@ -464,8 +525,7 @@ export default function BatchManagePage({
               </div>
               <div className="mt-4 flex items-center justify-between gap-2 text-xs font-semibold">
                 <span>
-                  Destination batch for {batch.courseTitle} * (
-                  {eligibleDestinations.length} available)
+                  Destination batch * ({eligibleDestinations.length} available)
                 </span>
                 <button
                   type="button"
@@ -476,7 +536,11 @@ export default function BatchManagePage({
                   {refreshingDestinations ? "Refreshing…" : "Refresh batches"}
                 </button>
               </div>
-              <div className="mt-2 space-y-2" role="group" aria-label="Destination batch">
+              <div
+                className="mt-2 space-y-2"
+                role="group"
+                aria-label="Destination batch"
+              >
                 {eligibleDestinations.map((item) => (
                   <button
                     key={item.id}
@@ -489,7 +553,9 @@ export default function BatchManagePage({
                         : "border-slate-200 hover:border-[#0C5A69] hover:bg-slate-50"
                     }`}
                   >
-                    <span className="font-semibold">{item.name}</span>
+                    <span className="font-semibold">
+                      {item.name} · {item.courseTitle}
+                    </span>
                     <span>{item.capacity - item.enrolledCount} seats open</span>
                   </button>
                 ))}
@@ -508,28 +574,9 @@ export default function BatchManagePage({
               )}
               {!destinationError && eligibleDestinations.length === 0 && (
                 <p className="mt-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-800">
-                  No available destination for {batch.courseTitle}. Create
-                  another active batch for this course with open seats to
-                  transfer students.
+                  No active destination batch has open seats. Create another
+                  batch or increase capacity to transfer students.
                 </p>
-              )}
-              {otherCourseBatches.length > 0 && (
-                <div className="mt-3 rounded-lg border border-slate-200 p-3 text-xs text-slate-600">
-                  <p className="font-semibold text-slate-800">
-                    Other course batches
-                  </p>
-                  <p className="mt-1">
-                    These cannot be selected because transfer keeps the student
-                    in the same course.
-                  </p>
-                  <ul className="mt-2 space-y-1">
-                    {otherCourseBatches.map((item) => (
-                      <li key={item.id}>
-                        {item.name} · {item.courseTitle}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
               )}
               {destination && (
                 <div
@@ -554,7 +601,15 @@ export default function BatchManagePage({
               )}
               {destination && selected.length > available && (
                 <p className="mt-2 text-xs text-amber-800">
-                  Select no more than {available} student{available === 1 ? "" : "s"} for this batch.
+                  Select no more than {available} student
+                  {available === 1 ? "" : "s"} for this batch.
+                </p>
+              )}
+              {destination && destination.courseId !== batch.courseId && (
+                <p className="mt-2 rounded-lg bg-amber-50 p-3 text-xs text-amber-900">
+                  This transfer changes the selected students' assigned course
+                  from {batch.courseTitle} to {destination.courseTitle}. Their
+                  existing payment records stay unchanged.
                 </p>
               )}
               <p className="mt-3 text-xs text-slate-500">
@@ -571,7 +626,14 @@ export default function BatchManagePage({
                 </button>
                 <button
                   disabled={!canTransfer || busy}
-                  onClick={() =>
+                  onClick={() => {
+                    if (
+                      destination?.courseId !== batch.courseId &&
+                      !window.confirm(
+                        `Move ${selected.length} student(s) from ${batch.courseTitle} to ${destination?.courseTitle}? Their assigned course will change; payment records will stay unchanged.`,
+                      )
+                    )
+                      return;
                     void run(
                       () =>
                         batchApi.transfer(id, {
@@ -584,8 +646,8 @@ export default function BatchManagePage({
                       setSelected([]);
                       setDestinationId("");
                       setShowTransfer(false);
-                    })
-                  }
+                    });
+                  }}
                   className="flex-1 rounded-lg bg-[#0C5A69] px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
                 >
                   Confirm transfer
