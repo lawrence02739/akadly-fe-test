@@ -80,356 +80,498 @@ import {
   Settings,
   Sparkles,
 } from "lucide-react";
+import { PortalProvider, usePortal } from "./shared/portal/PortalProvider";
+import {
+  PortalLoading,
+  PortalNotFound,
+  PortalUnavailable,
+  PortalError,
+} from "./shared/portal/PortalScreens";
+
+
+function PortalRoutes() {
+  const portal = usePortal();
+
+  if (portal.status === 'loading') return <PortalLoading />;
+  if (portal.status === 'notfound') return <PortalNotFound />;
+  if (portal.status === 'unavailable') return <PortalUnavailable />;
+  if (portal.status === 'error') return <PortalError retry={portal.retry} />;
+
+  const isAdmin = portal.kind === 'admin';
+  const isTenant = portal.kind === 'tenant';
+  const isRoot = portal.kind === 'root';
+
+  return (
+    <Routes>
+      {/* ── ADMIN PORTAL ─────────────────────────────────────────────── */}
+      {isAdmin && (
+        <>
+          <Route
+            path="/admin/team/invitations/accept"
+            element={<AdminTeamInvitationAccept />}
+          />
+          <Route
+            path="/admin/login"
+            element={
+              <AdminSessionProvider>
+                <AdminLogin />
+              </AdminSessionProvider>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminSessionProvider>
+                <AdminGuard />
+              </AdminSessionProvider>
+            }
+          >
+            <Route element={<AdminLayout />}>
+              <Route index element={<Navigate to="tenants" replace />} />
+              <Route path="tenants" element={<AdminTenants />} />
+              <Route path="tenants/:id" element={<AdminTenantDetails />} />
+              <Route path="subscriptions" element={<SubscriptionLayout />}>
+                <Route index element={<SubscriptionList />} />
+                <Route path="new" element={<SubscriptionForm />} />
+                <Route path=":id" element={<SubscriptionDetail />} />
+                <Route path=":id/edit" element={<SubscriptionForm edit />} />
+              </Route>
+              <Route path="team" element={<AdminTeamManagement />} />
+              <Route
+                path="settings/organization-documents"
+                element={<AdminOrganizationDocumentSettings />}
+              />
+              <Route path="feature-requests" element={<AdminFeatureRequestsPage />} />
+              <Route path="settings/feature-request-categories" element={<AdminFeatureRequestSettingsPage />} />
+              <Route path="tickets" element={<AdminTicketsListPage />} />
+              <Route
+                path="tickets/dashboard"
+                element={<AdminTicketsDashboardPage />}
+              />
+              <Route
+                path="tickets/:ticketId"
+                element={<TicketDetailsPage adminMode />}
+              />
+            </Route>
+          </Route>
+          <Route path="*" element={<Navigate to="/admin" replace />} />
+        </>
+      )}
+
+      {/* ── TENANT PORTAL (partner + student) ───────────────────────── */}
+      {isTenant && (
+        <>
+          {/* Public tenant routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/accept-invite" element={<AcceptInvitation />} />
+          <Route path="/f/:id" element={<PublicFormPage />} />
+
+          {/* Partner protected routes */}
+          <Route path="/partner" element={<DashboardLayout />}>
+            <Route
+              path="home"
+              element={
+                <AccessRoute anyOf={["dashboard:read"]}>
+                  <WorkspacePage
+                    title="Home"
+                    description="Your workspace overview and recent activity."
+                    icon={Home}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courses"
+              element={
+                <AccessRoute anyOf={["course:read", "course:manage"]}>
+                  <CoursesDashboard />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courses/create"
+              element={
+                <AccessRoute anyOf={["course:manage"]}>
+                  <CourseEditor />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="forms"
+              element={
+                <AccessRoute anyOf={["form:read", "form:manage"]}>
+                  <FormsDashboard />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="forms/create"
+              element={
+                <AccessRoute anyOf={["form:manage"]}>
+                  <FormBuilderLayout />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="forms/:formId/edit"
+              element={
+                <AccessRoute anyOf={["form:read", "form:manage"]}>
+                  <FormBuilderLayout />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="books"
+              element={
+                <AccessRoute anyOf={["book:read", "book:manage"]}>
+                  <BookInventoryDashboard />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="orders"
+              element={
+                <AccessRoute anyOf={["order:read", "order:manage"]}>
+                  <ManageOrdersPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="orders/new"
+              element={
+                <AccessRoute anyOf={["order:manage"]}>
+                  <CreateOrderPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="orders/:id"
+              element={
+                <AccessRoute anyOf={["order:read", "order:manage"]}>
+                  <OrderDetailsPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="students"
+              element={
+                <AccessRoute anyOf={["student:read", "student:manage"]}>
+                  <StudentsPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="students/new"
+              element={
+                <AccessRoute anyOf={["student:manage"]}>
+                  <StudentFormPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="students/:id/edit"
+              element={
+                <AccessRoute anyOf={["student:manage"]}>
+                  <StudentFormPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courier-partners"
+              element={
+                <AccessRoute anyOf={["courier:read", "courier:manage"]}>
+                  <CourierPartnersPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courier-partners/new"
+              element={
+                <AccessRoute anyOf={["courier:manage"]}>
+                  <CourierPartnerFormPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courier-partners/:id/edit"
+              element={
+                <AccessRoute anyOf={["courier:manage"]}>
+                  <CourierPartnerFormPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="returns-issues"
+              element={
+                <AccessRoute anyOf={["return:read", "return:manage"]}>
+                  <ReturnsIssuesPage />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courses/:courseId/edit"
+              element={
+                <AccessRoute anyOf={["course:manage"]}>
+                  <CourseEditor />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="courses/:courseId/structure"
+              element={
+                <AccessRoute anyOf={["curriculum:read", "curriculum:manage"]}>
+                  <CourseStructureBuilder />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="users"
+              element={
+                <AccessRoute anyOf={["member:read"]}>
+                  <TeamAccessPage />
+                </AccessRoute>
+              }
+            />
+            <Route path="subscriptions" element={<PlansPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
+            <Route path="tickets" element={<TicketsListPage />} />
+            <Route
+              path="tickets/dashboard"
+              element={<TenantTicketsDashboardPage />}
+            />
+            <Route path="feature-requests" element={<FeatureRequestsPage />} />
+            <Route path="feature-requests/new" element={<FeatureRequestCreatePage />} />
+            <Route path="feature-requests/:id" element={<FeatureRequestDetailPage />} />
+            <Route path="profile" element={<MyProfilePage />} />
+            <Route
+              path="tickets/:ticketId"
+              element={<TenantTicketDetailsPage />}
+            />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="quiz-studio" element={<QuizStudioPage />} />
+            <Route path="test-studio" element={<TestStudioPage />} />
+            <Route path="question-bank" element={<QuestionBankPage />} />
+            <Route
+              path="tasks"
+              element={
+                <AccessRoute anyOf={["task:read", "task:manage"]}>
+                  <WorkspacePage
+                    title="Tasks"
+                    description="Track assignments and work that needs attention."
+                    icon={ClipboardList}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="calendar"
+              element={
+                <AccessRoute anyOf={["calendar:read", "calendar:manage"]}>
+                  <WorkspacePage
+                    title="Calendar"
+                    description="View classes, deadlines, and upcoming events."
+                    icon={Calendar}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="analytics"
+              element={
+                <AccessRoute anyOf={["analytics:read"]}>
+                  <WorkspacePage
+                    title="Analytics"
+                    description="Review course performance and learner engagement."
+                    icon={BarChart2}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="messages"
+              element={
+                <AccessRoute
+                  anyOf={["message:read", "message:send", "message:manage"]}
+                >
+                  <WorkspacePage
+                    title="Messages"
+                    description="Read and manage workspace conversations."
+                    icon={MessageSquare}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="search"
+              element={
+                <AccessRoute anyOf={["search:use"]}>
+                  <WorkspacePage
+                    title="Search"
+                    description="Search across your workspace, courses, and users."
+                    icon={Search}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="ai-assistant"
+              element={
+                <AccessRoute anyOf={["ai:use", "ai:manage"]}>
+                  <WorkspacePage
+                    title="AI Assistant"
+                    description="Create and refine learning content with AI."
+                    icon={Sparkles}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route
+              path="settings"
+              element={
+                <AccessRoute anyOf={["settings:read", "settings:manage"]}>
+                  <WorkspacePage
+                    title="Settings"
+                    description="Configure your workspace and account preferences."
+                    icon={Settings}
+                  />
+                </AccessRoute>
+              }
+            />
+            <Route index element={<Navigate to="home" replace />} />
+            <Route path="*" element={<Navigate to="home" replace />} />
+          </Route>
+
+          {/* Student portal */}
+          <Route path="/student/*" element={<StudentPortal />} />
+
+          {/* Root redirect */}
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </>
+      )}
+
+      {/* ── ROOT PORTAL (same as tenant — dev / main-site entry) ─────── */}
+      {isRoot && (
+        <>
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/verify-email" element={<VerifyEmail />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
+          <Route path="/accept-invite" element={<AcceptInvitation />} />
+          <Route path="/f/:id" element={<PublicFormPage />} />
+          <Route path="/student/*" element={<StudentPortal />} />
+          {/* Admin is also reachable from root in dev */}
+          <Route
+            path="/admin/team/invitations/accept"
+            element={<AdminTeamInvitationAccept />}
+          />
+          <Route
+            path="/admin/login"
+            element={
+              <AdminSessionProvider>
+                <AdminLogin />
+              </AdminSessionProvider>
+            }
+          />
+          <Route
+            path="/admin"
+            element={
+              <AdminSessionProvider>
+                <AdminGuard />
+              </AdminSessionProvider>
+            }
+          >
+            <Route element={<AdminLayout />}>
+              <Route index element={<Navigate to="tenants" replace />} />
+              <Route path="tenants" element={<AdminTenants />} />
+              <Route path="tenants/:id" element={<AdminTenantDetails />} />
+              <Route path="subscriptions" element={<SubscriptionLayout />}>
+                <Route index element={<SubscriptionList />} />
+                <Route path="new" element={<SubscriptionForm />} />
+                <Route path=":id" element={<SubscriptionDetail />} />
+                <Route path=":id/edit" element={<SubscriptionForm edit />} />
+              </Route>
+              <Route path="team" element={<AdminTeamManagement />} />
+              <Route
+                path="settings/organization-documents"
+                element={<AdminOrganizationDocumentSettings />}
+              />
+              <Route path="feature-requests" element={<AdminFeatureRequestsPage />} />
+              <Route path="settings/feature-request-categories" element={<AdminFeatureRequestSettingsPage />} />
+              <Route path="tickets" element={<AdminTicketsListPage />} />
+              <Route path="tickets/dashboard" element={<AdminTicketsDashboardPage />} />
+              <Route path="tickets/:ticketId" element={<TicketDetailsPage adminMode />} />
+            </Route>
+          </Route>
+          {/* Partner dashboard */}
+          <Route path="/partner" element={<DashboardLayout />}>
+            <Route index element={<Navigate to="home" replace />} />
+            <Route path="home" element={<AccessRoute anyOf={["dashboard:read"]}><WorkspacePage title="Home" description="Your workspace overview and recent activity." icon={Home} /></AccessRoute>} />
+            <Route path="courses" element={<AccessRoute anyOf={["course:read", "course:manage"]}><CoursesDashboard /></AccessRoute>} />
+            <Route path="courses/create" element={<AccessRoute anyOf={["course:manage"]}><CourseEditor /></AccessRoute>} />
+            <Route path="courses/:courseId/edit" element={<AccessRoute anyOf={["course:manage"]}><CourseEditor /></AccessRoute>} />
+            <Route path="courses/:courseId/structure" element={<AccessRoute anyOf={["curriculum:read", "curriculum:manage"]}><CourseStructureBuilder /></AccessRoute>} />
+            <Route path="forms" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormsDashboard /></AccessRoute>} />
+            <Route path="forms/create" element={<AccessRoute anyOf={["form:manage"]}><FormBuilderLayout /></AccessRoute>} />
+            <Route path="forms/:formId/edit" element={<AccessRoute anyOf={["form:read", "form:manage"]}><FormBuilderLayout /></AccessRoute>} />
+            <Route path="books" element={<AccessRoute anyOf={["book:read", "book:manage"]}><BookInventoryDashboard /></AccessRoute>} />
+            <Route path="orders" element={<AccessRoute anyOf={["order:read", "order:manage"]}><ManageOrdersPage /></AccessRoute>} />
+            <Route path="orders/new" element={<AccessRoute anyOf={["order:manage"]}><CreateOrderPage /></AccessRoute>} />
+            <Route path="orders/:id" element={<AccessRoute anyOf={["order:read", "order:manage"]}><OrderDetailsPage /></AccessRoute>} />
+            <Route path="students" element={<AccessRoute anyOf={["student:read", "student:manage"]}><StudentsPage /></AccessRoute>} />
+            <Route path="students/new" element={<AccessRoute anyOf={["student:manage"]}><StudentFormPage /></AccessRoute>} />
+            <Route path="students/:id/edit" element={<AccessRoute anyOf={["student:manage"]}><StudentFormPage /></AccessRoute>} />
+            <Route path="courier-partners" element={<AccessRoute anyOf={["courier:read", "courier:manage"]}><CourierPartnersPage /></AccessRoute>} />
+            <Route path="courier-partners/new" element={<AccessRoute anyOf={["courier:manage"]}><CourierPartnerFormPage /></AccessRoute>} />
+            <Route path="courier-partners/:id/edit" element={<AccessRoute anyOf={["courier:manage"]}><CourierPartnerFormPage /></AccessRoute>} />
+            <Route path="returns-issues" element={<AccessRoute anyOf={["return:read", "return:manage"]}><ReturnsIssuesPage /></AccessRoute>} />
+            <Route path="users" element={<AccessRoute anyOf={["member:read"]}><TeamAccessPage /></AccessRoute>} />
+            <Route path="subscriptions" element={<PlansPage />} />
+            <Route path="payments" element={<PaymentsPage />} />
+            <Route path="tickets" element={<TicketsListPage />} />
+            <Route path="tickets/dashboard" element={<TenantTicketsDashboardPage />} />
+            <Route path="tickets/:ticketId" element={<TenantTicketDetailsPage />} />
+            <Route path="feature-requests" element={<FeatureRequestsPage />} />
+            <Route path="feature-requests/new" element={<FeatureRequestCreatePage />} />
+            <Route path="feature-requests/:id" element={<FeatureRequestDetailPage />} />
+            <Route path="profile" element={<MyProfilePage />} />
+            <Route path="reports" element={<ReportsPage />} />
+            <Route path="quiz-studio" element={<QuizStudioPage />} />
+            <Route path="test-studio" element={<TestStudioPage />} />
+            <Route path="question-bank" element={<QuestionBankPage />} />
+            <Route path="tasks" element={<AccessRoute anyOf={["task:read", "task:manage"]}><WorkspacePage title="Tasks" description="Track assignments and work that needs attention." icon={ClipboardList} /></AccessRoute>} />
+            <Route path="calendar" element={<AccessRoute anyOf={["calendar:read", "calendar:manage"]}><WorkspacePage title="Calendar" description="View classes, deadlines, and upcoming events." icon={Calendar} /></AccessRoute>} />
+            <Route path="analytics" element={<AccessRoute anyOf={["analytics:read"]}><WorkspacePage title="Analytics" description="Review course performance and learner engagement." icon={BarChart2} /></AccessRoute>} />
+            <Route path="messages" element={<AccessRoute anyOf={["message:read", "message:send", "message:manage"]}><WorkspacePage title="Messages" description="Read and manage workspace conversations." icon={MessageSquare} /></AccessRoute>} />
+            <Route path="search" element={<AccessRoute anyOf={["search:use"]}><WorkspacePage title="Search" description="Search across your workspace, courses, and users." icon={Search} /></AccessRoute>} />
+            <Route path="ai-assistant" element={<AccessRoute anyOf={["ai:use", "ai:manage"]}><WorkspacePage title="AI Assistant" description="Create and refine learning content with AI." icon={Sparkles} /></AccessRoute>} />
+            <Route path="settings" element={<AccessRoute anyOf={["settings:read", "settings:manage"]}><WorkspacePage title="Settings" description="Configure your workspace and account preferences." icon={Settings} /></AccessRoute>} />
+            <Route path="*" element={<Navigate to="home" replace />} />
+          </Route>
+          <Route path="/" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/login" replace />} />
+        </>
+      )}
+
+    </Routes>
+  );
+}
 
 function App() {
   return (
     <Router>
       <Toaster position="top-right" />
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/verify-email" element={<VerifyEmail />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/accept-invite" element={<AcceptInvitation />} />
-        <Route
-          path="/admin/team/invitations/accept"
-          element={<AdminTeamInvitationAccept />}
-        />
-        <Route
-          path="/admin"
-          element={
-            <AdminSessionProvider>
-              <AdminGuard />
-            </AdminSessionProvider>
-          }
-        >
-          <Route element={<AdminLayout />}>
-            <Route index element={<Navigate to="tenants" replace />} />
-            <Route path="tenants" element={<AdminTenants />} />
-            <Route path="tenants/:id" element={<AdminTenantDetails />} />
-            <Route path="subscriptions" element={<SubscriptionLayout />}>
-              <Route index element={<SubscriptionList />} />
-              <Route path="new" element={<SubscriptionForm />} />
-              <Route path=":id" element={<SubscriptionDetail />} />
-              <Route path=":id/edit" element={<SubscriptionForm edit />} />
-            </Route>
-            <Route path="team" element={<AdminTeamManagement />} />
-            <Route
-              path="settings/organization-documents"
-              element={<AdminOrganizationDocumentSettings />}
-            />
-            <Route path="feature-requests" element={<AdminFeatureRequestsPage />} />
-            <Route path="settings/feature-request-categories" element={<AdminFeatureRequestSettingsPage />} />
-            <Route path="tickets" element={<AdminTicketsListPage />} />
-            <Route
-              path="tickets/dashboard"
-              element={<AdminTicketsDashboardPage />}
-            />
-            <Route
-              path="tickets/:ticketId"
-              element={<TicketDetailsPage adminMode />}
-            />
-          </Route>
-        </Route>
-        <Route
-          path="/admin/login"
-          element={
-            <AdminSessionProvider>
-              <AdminLogin />
-            </AdminSessionProvider>
-          }
-        />
-
-        {/* Protected Routes (Static for now) */}
-        <Route path="/partner" element={<DashboardLayout />}>
-          <Route
-            path="home"
-            element={
-              <AccessRoute anyOf={["dashboard:read"]}>
-                <WorkspacePage
-                  title="Home"
-                  description="Your workspace overview and recent activity."
-                  icon={Home}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="courses"
-            element={
-              <AccessRoute anyOf={["course:read", "course:manage"]}>
-                <CoursesDashboard />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="courses/create"
-            element={
-              <AccessRoute anyOf={["course:manage"]}>
-                <CourseEditor />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="forms"
-            element={
-              <AccessRoute anyOf={["form:read", "form:manage"]}>
-                <FormsDashboard />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="forms/create"
-            element={
-              <AccessRoute anyOf={["form:manage"]}>
-                <FormBuilderLayout />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="forms/:formId/edit"
-            element={
-              <AccessRoute anyOf={["form:read", "form:manage"]}>
-                <FormBuilderLayout />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="books"
-            element={
-              <AccessRoute anyOf={["book:read", "book:manage"]}>
-                <BookInventoryDashboard />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="orders"
-            element={
-              <AccessRoute anyOf={["order:read", "order:manage"]}>
-                <ManageOrdersPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="orders/new"
-            element={
-              <AccessRoute anyOf={["order:manage"]}>
-                <CreateOrderPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="orders/:id"
-            element={
-              <AccessRoute anyOf={["order:read", "order:manage"]}>
-                <OrderDetailsPage />
-              </AccessRoute>
-            }
-          />
-          {/* Students */}
-          <Route
-            path="students"
-            element={
-              <AccessRoute anyOf={["student:read", "student:manage"]}>
-                <StudentsPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="students/new"
-            element={
-              <AccessRoute anyOf={["student:manage"]}>
-                <StudentFormPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="students/:id/edit"
-            element={
-              <AccessRoute anyOf={["student:manage"]}>
-                <StudentFormPage />
-              </AccessRoute>
-            }
-          />
-          {/* Courier Partners */}
-          <Route
-            path="courier-partners"
-            element={
-              <AccessRoute anyOf={["courier:read", "courier:manage"]}>
-                <CourierPartnersPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="courier-partners/new"
-            element={
-              <AccessRoute anyOf={["courier:manage"]}>
-                <CourierPartnerFormPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="courier-partners/:id/edit"
-            element={
-              <AccessRoute anyOf={["courier:manage"]}>
-                <CourierPartnerFormPage />
-              </AccessRoute>
-            }
-          />
-          {/* Returns & Issues */}
-          <Route
-            path="returns-issues"
-            element={
-              <AccessRoute anyOf={["return:read", "return:manage"]}>
-                <ReturnsIssuesPage />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="courses/:courseId/edit"
-            element={
-              <AccessRoute anyOf={["course:manage"]}>
-                <CourseEditor />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="courses/:courseId/structure"
-            element={
-              <AccessRoute anyOf={["curriculum:read", "curriculum:manage"]}>
-                <CourseStructureBuilder />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="users"
-            element={
-              <AccessRoute anyOf={["member:read"]}>
-                <TeamAccessPage />
-              </AccessRoute>
-            }
-          />
-          <Route path="subscriptions" element={<PlansPage />} />
-          <Route path="payments" element={<PaymentsPage />} />
-          <Route path="tickets" element={<TicketsListPage />} />
-          <Route
-            path="tickets/dashboard"
-            element={<TenantTicketsDashboardPage />}
-          />
-          <Route path="feature-requests" element={<FeatureRequestsPage />} />
-          <Route path="feature-requests/new" element={<FeatureRequestCreatePage />} />
-          <Route path="feature-requests/:id" element={<FeatureRequestDetailPage />} />
-          <Route path="profile" element={<MyProfilePage />} />
-          <Route
-            path="tickets/:ticketId"
-            element={<TenantTicketDetailsPage />}
-          />
-          <Route path="reports" element={<ReportsPage />} />
-          <Route path="quiz-studio" element={<QuizStudioPage />} />
-          <Route path="test-studio" element={<TestStudioPage />} />
-          <Route path="question-bank" element={<QuestionBankPage />} />
-          <Route
-            path="tasks"
-            element={
-              <AccessRoute anyOf={["task:read", "task:manage"]}>
-                <WorkspacePage
-                  title="Tasks"
-                  description="Track assignments and work that needs attention."
-                  icon={ClipboardList}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="calendar"
-            element={
-              <AccessRoute anyOf={["calendar:read", "calendar:manage"]}>
-                <WorkspacePage
-                  title="Calendar"
-                  description="View classes, deadlines, and upcoming events."
-                  icon={Calendar}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="analytics"
-            element={
-              <AccessRoute anyOf={["analytics:read"]}>
-                <WorkspacePage
-                  title="Analytics"
-                  description="Review course performance and learner engagement."
-                  icon={BarChart2}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="messages"
-            element={
-              <AccessRoute
-                anyOf={["message:read", "message:send", "message:manage"]}
-              >
-                <WorkspacePage
-                  title="Messages"
-                  description="Read and manage workspace conversations."
-                  icon={MessageSquare}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="search"
-            element={
-              <AccessRoute anyOf={["search:use"]}>
-                <WorkspacePage
-                  title="Search"
-                  description="Search across your workspace, courses, and users."
-                  icon={Search}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="ai-assistant"
-            element={
-              <AccessRoute anyOf={["ai:use", "ai:manage"]}>
-                <WorkspacePage
-                  title="AI Assistant"
-                  description="Create and refine learning content with AI."
-                  icon={Sparkles}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route
-            path="settings"
-            element={
-              <AccessRoute anyOf={["settings:read", "settings:manage"]}>
-                <WorkspacePage
-                  title="Settings"
-                  description="Configure your workspace and account preferences."
-                  icon={Settings}
-                />
-              </AccessRoute>
-            }
-          />
-          <Route index element={<Navigate to="home" replace />} />
-          <Route path="*" element={<Navigate to="home" replace />} />
-        </Route>
-
-        {/* Redirect Root to Login */}
-        <Route path="/" element={<Navigate to="/login" replace />} />
-        <Route path="/f/:id" element={<PublicFormPage />} />
-
-        {/* ── Student Portal ─────────────────────────────────────────────── */}
-        <Route path="/student/*" element={<StudentPortal />} />
-      </Routes>
+      <PortalProvider>
+        <PortalRoutes />
+      </PortalProvider>
     </Router>
   );
 }
 
 export default App;
+

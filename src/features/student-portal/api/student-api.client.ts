@@ -1,11 +1,8 @@
 import axios from 'axios';
-
-const STUDENT_API_BASE =
-  (import.meta as { env?: { VITE_API_BASE_URL?: string } }).env
-    ?.VITE_API_BASE_URL ?? 'http://localhost:3000/api';
+import { API_BASE_URL } from '../../../shared/api/config';
 
 export const studentApi = axios.create({
-  baseURL: STUDENT_API_BASE,
+  baseURL: API_BASE_URL,
   withCredentials: true,
   headers: { 'Content-Type': 'application/json' },
 });
@@ -24,3 +21,4 @@ studentApi.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+

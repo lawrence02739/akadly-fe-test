@@ -24,3 +24,53 @@
     background: #94a3b8; /* slate-400 */
   }
 }
+
+/* Portal status screens */
+.portal-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #f8fafc;
+}
+.portal-screen__box {
+  text-align: center;
+  padding: 2.5rem 2rem;
+  background: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 4px 24px rgba(0,0,0,.08);
+  max-width: 420px;
+  width: 90%;
+}
+.portal-screen__box h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: .75rem;
+}
+.portal-screen__box p {
+  color: #64748b;
+  font-size: 0.95rem;
+}
+.portal-screen__retry {
+  margin-top: 1.25rem;
+  padding: .5rem 1.25rem;
+  background: #6366f1;
+  color: #fff;
+  border: none;
+  border-radius: .5rem;
+  cursor: pointer;
+  font-size: .875rem;
+  font-weight: 500;
+}
+.portal-screen__retry:hover { background: #4f46e5; }
+.portal-screen__spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top-color: #6366f1;
+  border-radius: 50%;
+  animation: portal-spin .8s linear infinite;
+}
+@keyframes portal-spin { to { transform: rotate(360deg); } }
+
