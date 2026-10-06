@@ -10,6 +10,15 @@ export interface AdminProfile {
   roleIds: string[];
 }
 
+export interface AdminAcademyAdmin {
+  userId: string;
+  name: string;
+  email: string;
+  roleIds: string[];
+  status: "active" | "invited" | "suspended" | "disabled";
+  joinedAt: string;
+}
+
 export interface AdminTenant {
   id: string;
   name: string;
@@ -17,12 +26,15 @@ export interface AdminTenant {
   status: "active" | "suspended" | "archived";
   plan: string;
   planId: string | null;
+  /** Optional until tenant subscription details are added to the admin API. */
+  subscription?: AdminSubscription | null;
   billingDate: string | null;
   dueDate: string | null;
   paymentStatus: "due" | "paid" | "unpaid";
   paymentProofs: PaymentProof[];
   organizationCompliance: {
-    organizationType: {
+    organizationTypeCode?: string;
+    organizationType?: {
       code: string;
       name: string;
       version: number;
@@ -46,6 +58,26 @@ export interface AdminTenant {
   ownerInvitationStatus: "pending" | "accepted" | "revoked";
   owner: { name: string; email: string };
   ownerUserId: string | null;
+  members: Array<{
+    userId: string;
+    type: "owner" | "user";
+    status: "active" | "pending" | "invited" | "suspended" | "disabled";
+    joinedAt: string;
+  }>;
+  usage?: {
+    members: number;
+    courses: number;
+    students: number | null;
+    contentBytes: number | null;
+  };
+  teamMembers?: Array<{
+    userId: string;
+    name: string;
+    email: string;
+    roleIds: string[];
+    status: "active" | "invited" | "suspended" | "disabled";
+    joinedAt: string;
+  }>;
   settings: Record<string, unknown>;
   createdAt: string;
   updatedAt: string;
@@ -565,6 +597,10 @@ export const adminApi = {
     const { data } = await client.get<Envelope<AdminTenant>>(
       `/tenants/${encodeURIComponent(id)}`,
     );
+    return data.data;
+  },
+  async academyAdmins(id: string) {
+    const { data } = await client.get<Envelope<{ items: AdminAcademyAdmin[]; total: number }>>(`/tenants/${encodeURIComponent(id)}/academy-admins`);
     return data.data;
   },
   async tenantDocumentConfig() {

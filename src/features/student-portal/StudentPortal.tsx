@@ -22,6 +22,7 @@ import { useRazorpay } from "../payments/hooks/useRazorpay";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import RaiseIssuePage from "./pages/RaiseIssuePage";
 import MyIssuesPage from "./pages/MyIssuesPage";
+import MyBatchUpdatesPage from "./pages/MyBatchUpdatesPage";
 
 const studentQueryClient = new QueryClient();
 
@@ -514,6 +515,7 @@ function StudentDashboard({ children }: { children?: React.ReactNode }) {
             </p>
 
             <SidebarLink to="/student/dashboard" icon={BookOpen} label="Dashboard" exact />
+            <SidebarLink to="/student/cohorts" icon={BookOpen} label="My cohorts" />
             <SidebarLink to="/student/orders" icon={Package} label="My Orders" />
             <SidebarLink to="/student/issues" icon={AlertCircle} label="My Issues" />
 
@@ -705,6 +707,7 @@ export default function StudentPortal() {
               </StudentProtectedRoute>
             }
           />
+          <Route path="cohorts" element={<StudentProtectedRoute><StudentDashboard><MyBatchUpdatesPage /></StudentDashboard></StudentProtectedRoute>} />
           {/* New: Orders */}
           <Route
             path="orders"
