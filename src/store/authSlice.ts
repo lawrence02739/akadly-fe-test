@@ -7,7 +7,7 @@ export interface AuthUser {
   isOwner?: boolean;
   roles?: string[];
   permissions?: string[];
-  paymentStatus?: "due" | "paid" | "unpaid";
+  paymentStatus?: 'not_required' | 'pending' | 'paid' | 'failed' | 'overdue' | 'refunded';
   dueDate?: string | null;
   isReadOnly?: boolean;
 }

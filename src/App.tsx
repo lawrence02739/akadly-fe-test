@@ -70,6 +70,7 @@ import {
   SubscriptionDetail,
   SubscriptionForm,
 } from "./features/admin/pages/AdminSubscriptions";
+import AdminAddons from "./features/admin/pages/AdminAddons";
 import PlansPage from "./features/subscriptions/pages/PlansPage";
 import {
   BarChart2,
@@ -117,6 +118,7 @@ function App() {
               <Route path=":id" element={<SubscriptionDetail />} />
               <Route path=":id/edit" element={<SubscriptionForm edit />} />
             </Route>
+            <Route path="addons" element={<AdminAddons />} />
             <Route path="team" element={<AdminTeamManagement />} />
             <Route
               path="settings/organization-documents"

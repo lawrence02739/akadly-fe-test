@@ -495,6 +495,22 @@ client.interceptors.response.use(undefined, async (error) => {
 });
 
 export const adminApi = {
+  async fetchAddons() {
+    const { data } = await client.get<any>("/addons");
+    return data;
+  },
+  async createAddon(payload: any) {
+    const { data } = await client.post<any>("/addons", payload);
+    return data;
+  },
+  async updateAddon(id: string, payload: any) {
+    const { data } = await client.patch<any>(`/addons/${id}`, payload);
+    return data;
+  },
+  async deleteAddon(id: string) {
+    const { data } = await client.delete<any>(`/addons/${id}`);
+    return data;
+  },
   async featureRequests(params: Record<string, string | undefined> = {}) {
     const { data } = await client.get<Envelope<AdminFeatureRequest[]>>("/feature-requests", { params });
     return data.data;

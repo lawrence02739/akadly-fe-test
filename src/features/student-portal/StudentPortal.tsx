@@ -18,6 +18,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import axios from "axios";
 import { GraduationCap, BookOpen, LogOut, Eye, EyeOff, Loader2, Package, AlertCircle } from "lucide-react";
 import toast from "react-hot-toast";
+import { useRazorpay } from "../payments/hooks/useRazorpay";
 import MyOrdersPage from "./pages/MyOrdersPage";
 import RaiseIssuePage from "./pages/RaiseIssuePage";
 import MyIssuesPage from "./pages/MyIssuesPage";
@@ -377,12 +378,69 @@ function StudentDashboard({ children }: { children?: React.ReactNode }) {
   const navigate = useNavigate();
   const [profile, setProfile] = useState<any>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const isRazorpayLoaded = useRazorpay();
 
-  useEffect(() => {
+  const fetchProfile = () => {
     studentApi.get("/student/me")
       .then(({ data }) => setProfile(data.data ?? data))
       .catch(() => { /* backend not yet ready — show basic info */ });
+  };
+
+  useEffect(() => {
+    fetchProfile();
   }, []);
+
+  const handleCheckout = async (dueAmount: number) => {
+    if (!isRazorpayLoaded) {
+      toast.error('Payment system is not ready yet');
+      return;
+    }
+    try {
+      setCheckoutLoading(true);
+      const checkoutRes = await studentApi.post('/student/billing/checkout', { amount: dueAmount });
+      const { orderId, amount, currency, keyId } = checkoutRes.data.data || checkoutRes.data;
+
+      const options = {
+        key: keyId,
+        amount,
+        currency,
+        name: "Akadly",
+        description: "Student Course Payment",
+        order_id: orderId,
+        handler: async function (response: any) {
+          try {
+            await studentApi.post('/student/billing/verify', {
+              razorpay_order_id: response.razorpay_order_id,
+              razorpay_payment_id: response.razorpay_payment_id,
+              razorpay_signature: response.razorpay_signature
+            });
+            toast.success('Payment successful!');
+            fetchProfile();
+          } catch (e) {
+            toast.error('Payment verification failed');
+          }
+        },
+        prefill: {
+          name: profile?.fullName ?? student?.name,
+          email: student?.email,
+        },
+        theme: {
+          color: "#0C5A69"
+        }
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on('payment.failed', function (_response: any){
+        toast.error('Payment failed. Please try again.');
+      });
+      rzp.open();
+    } catch (e: any) {
+      toast.error(e.response?.data?.message || 'Checkout initiation failed');
+    } finally {
+      setCheckoutLoading(false);
+    }
+  };
 
   const handleLogout = async () => {
     await logout();
@@ -562,7 +620,19 @@ function StudentDashboard({ children }: { children?: React.ReactNode }) {
                 {/* Payment Summary */}
                 {profile?.payment && (
                   <div className="bg-white rounded-2xl border border-slate-200 p-6">
-                    <h2 className="text-lg font-semibold text-slate-900 mb-4">Payment Schedule</h2>
+                    <div className="flex items-center justify-between mb-4">
+                      <h2 className="text-lg font-semibold text-slate-900">Payment Schedule</h2>
+                      {profile.payment.dueAmount > 0 && (
+                        <button
+                          onClick={() => handleCheckout(profile.payment.dueAmount)}
+                          disabled={checkoutLoading}
+                          className="px-4 py-2 bg-[#0C5A69] text-white text-sm font-medium rounded-lg hover:bg-[#084855] disabled:opacity-50 transition-colors flex items-center gap-2"
+                        >
+                          {checkoutLoading && <Loader2 className="w-4 h-4 animate-spin" />}
+                          Pay Due Amount (₹{profile.payment.dueAmount.toLocaleString()})
+                        </button>
+                      )}
+                    </div>
                     <div className="grid grid-cols-3 gap-4 mb-6">
                       {[
                         { label: "Total Fee", value: `₹${profile.payment.totalAmount?.toLocaleString()}` },
