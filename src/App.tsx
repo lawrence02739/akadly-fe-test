@@ -8,6 +8,7 @@ import { Toaster } from "react-hot-toast";
 import Login from "./features/auth/pages/Login";
 import DashboardLayout from "./shared/layouts/DashboardLayout";
 import CoursesDashboard from "./features/courses/pages/CoursesDashboard";
+import BatchesDashboard from "./features/batches/pages/BatchesDashboard";
 import CourseEditor from "./features/courses/pages/CourseEditor";
 import CourseStructureBuilder from "./features/courses/pages/CourseStructureBuilder";
 import QuizStudioPage from "./features/quizzes/pages/QuizStudioPage";
@@ -170,6 +171,14 @@ function App() {
             element={
               <AccessRoute anyOf={["course:manage"]}>
                 <CourseEditor />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="batches"
+            element={
+              <AccessRoute anyOf={["course:read", "course:manage"]}>
+                <BatchesDashboard />
               </AccessRoute>
             }
           />
