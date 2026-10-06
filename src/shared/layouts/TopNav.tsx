@@ -1,5 +1,5 @@
-import { Search, Sparkles, Bell, Calendar, LogOut } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Search, Sparkles, Bell, Calendar, LogOut, CreditCard } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import type { RootState } from '../../store';
 import { logout as logoutAction } from '../../store/authSlice';
@@ -47,6 +47,9 @@ export default function TopNav() {
         </button>
 
         <div className="flex items-center gap-4 text-slate-400">
+          <Link to="/partner/payments" className="hover:text-slate-600 transition-colors" title="Billing & Payments">
+            <CreditCard className="w-5 h-5" strokeWidth={2.5} />
+          </Link>
           <button className="hover:text-slate-600 transition-colors">
             <Bell className="w-5 h-5" strokeWidth={2.5} />
           </button>

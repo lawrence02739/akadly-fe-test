@@ -106,12 +106,12 @@ export default function CoursesDashboard() {
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
         <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
           <option value="">Category</option>
-          {categories?.map((c: any) => <option key={c.id} value={c.name}>{c.name}</option>)}
+          {categories?.map((c: any) => <option key={c._id} value={c.name}>{c.name}</option>)}
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
         <select value={selectedTag} onChange={e => setSelectedTag(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer max-w-[120px]">
           <option value="">Tags</option>
-          {tagsList?.map((t: any) => <option key={t.id} value={t.name}>{t.name}</option>)}
+          {tagsList?.map((t: any) => <option key={t._id} value={t.name}>{t.name}</option>)}
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
         <select value={selectedLanguage} onChange={e => setSelectedLanguage(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
