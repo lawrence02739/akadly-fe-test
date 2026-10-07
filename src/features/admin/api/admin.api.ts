@@ -332,6 +332,7 @@ export interface AdminSubscription {
   studentLimit: number | null;
   contentLimit: number | null;
   courseLimit: number | null;
+  aiTokenLimit: number | null;
   createdAt: string;
   updatedAt: string;
 }
