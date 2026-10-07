@@ -25,6 +25,7 @@ import {
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store";
+import { moduleForPartnerPath, useWorkspaceModules } from "../auth/WorkspaceModulesContext";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/partner/home", permissions: [] },
@@ -159,14 +160,16 @@ const navItems = [
 ];
 
 export default function Sidebar() {
+  const modules = useWorkspaceModules();
   const user = useSelector((state: RootState) => state.auth.user);
   const granted = new Set(user?.permissions ?? []);
   const visibleItems = navItems.filter(
     (item) =>
-      user?.isOwner ||
-      !item.permissions ||
-      item.permissions.length === 0 ||
-      item.permissions.some((permission) => granted.has(permission)),
+      (!modules || !moduleForPartnerPath(item.path) || modules.includes(moduleForPartnerPath(item.path)!)) &&
+      (user?.isOwner ||
+        !item.permissions ||
+        item.permissions.length === 0 ||
+        item.permissions.some((permission) => granted.has(permission))),
   );
   return (
     <aside className="order-2 flex h-16 w-full shrink-0 items-center border-t border-slate-200 bg-sidebar px-3 py-2 md:order-none md:h-full md:w-20 md:flex-col md:border-r md:border-t-0 md:px-0 md:py-6">
@@ -197,7 +200,7 @@ export default function Sidebar() {
 
       {/* Bottom Actions */}
       <div className="mt-auto hidden flex-col items-center gap-6 md:flex">
-        {(user?.isOwner || granted.has("search:use")) && (
+        {modules?.includes('search') && (user?.isOwner || granted.has("search:use")) && (
           <NavLink
             to="/partner/search"
             title="Search"
@@ -211,7 +214,7 @@ export default function Sidebar() {
             <Search className="w-5 h-5" strokeWidth={2.5} />
           </NavLink>
         )}
-        {(user?.isOwner ||
+        {modules?.includes('ai') && (user?.isOwner ||
           granted.has("ai:use") ||
           granted.has("ai:manage")) && (
             <NavLink
@@ -227,7 +230,7 @@ export default function Sidebar() {
               <Sparkles className="w-5 h-5" strokeWidth={2.5} />
             </NavLink>
           )}
-        {(user?.isOwner ||
+        {modules?.includes('settings') && (user?.isOwner ||
           granted.has("settings:read") ||
           granted.has("settings:manage")) && (
             <NavLink

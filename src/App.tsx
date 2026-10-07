@@ -55,6 +55,7 @@ import AdminTenants, {
   AdminTenantDetails,
 } from "./features/admin/pages/AdminTenants";
 import AdminLayout from "./features/admin/AdminLayout";
+import AdminTenantConfigurationPage from "./features/admin/pages/AdminTenantConfigurationPage";
 import AdminTeamManagement from "./features/admin/pages/AdminTeamManagement";
 import AdminTeamInvitationAccept from "./features/admin/pages/AdminTeamInvitationAccept";
 import AdminOrganizationDocumentSettings from "./features/admin/pages/AdminOrganizationDocumentSettings";
@@ -127,6 +128,7 @@ function App() {
               element={<AdminOrganizationDocumentSettings />}
             />
             <Route path="feature-requests" element={<AdminFeatureRequestsPage />} />
+            <Route path="tenant-configuration" element={<AdminTenantConfigurationPage />} />
             <Route path="settings/feature-request-categories" element={<AdminFeatureRequestSettingsPage />} />
             <Route path="tickets" element={<AdminTicketsListPage />} />
             <Route

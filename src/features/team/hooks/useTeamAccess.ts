@@ -8,6 +8,7 @@ const keys = {
   members: (q: MembersQuery) => ["team-access", "members", q] as const,
   invitations: (q: InvitationsQuery) => ["team-access", "invitations", q] as const,
   roles: ["team-access", "roles"] as const,
+  archivedRoles: ["team-access", "archived-roles"] as const,
   permissions: ["team-access", "permissions"] as const,
 };
 
@@ -34,6 +35,10 @@ export function useRoles() {
     queryKey: keys.roles,
     queryFn: teamApi.roles,
   });
+}
+
+export function useArchivedRoles(enabled = true) {
+  return useQuery({ queryKey: keys.archivedRoles, queryFn: teamApi.archivedRoles, enabled });
 }
 
 export function usePermissionsCatalog() {
@@ -76,6 +81,9 @@ export function useTeamMutations() {
       mutationFn: teamApi.deleteRole,
       onSuccess: invalidate,
     }),
+
+    restoreArchivedRoles: useMutation({ mutationFn: teamApi.restoreArchivedRoles, onSuccess: invalidate }),
+    deleteArchivedRoles: useMutation({ mutationFn: teamApi.deleteArchivedRoles, onSuccess: invalidate }),
 
     updateMember: useMutation({
       mutationFn: ({

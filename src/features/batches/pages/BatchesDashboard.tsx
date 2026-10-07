@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ArrowLeft, MoreHorizontal, Plus, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import BatchCreateForm from "../components/BatchCreateForm";
@@ -74,6 +74,10 @@ function Overview({
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("asc");
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [archiveView, setArchiveView] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [selectedArchivedIds, setSelectedArchivedIds] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   useEffect(() => {
     let mounted = true;
     const timer = window.setTimeout(
@@ -85,6 +89,7 @@ function Overview({
             pageSize: 20,
             search: search || undefined,
             status: (status || undefined) as Status | undefined,
+            view: archiveView ? "archived" : "active",
             courseId: courseId || undefined,
             sortBy: "startsAt",
             sortOrder,
@@ -108,7 +113,54 @@ function Overview({
       mounted = false;
       clearTimeout(timer);
     };
-  }, [search, status, courseId, sortOrder, page]);
+  }, [search, status, courseId, sortOrder, page, archiveView, reloadKey]);
+  const archivedAction = async (batch: BatchListItem, action: "restore" | "delete") => {
+    if (bulkDeleting) return;
+    if (action === "delete" && !window.confirm(`Permanently delete ${batch.name}? This cannot be undone.`)) return;
+    try {
+      if (action === "restore") await batchApi.restore(batch.id);
+      else await batchApi.permanentlyDelete(batch.id);
+      toast.success(action === "restore" ? "Batch restored" : "Batch permanently deleted");
+      setSelectedArchivedIds(ids => ids.filter(id => id !== batch.id));
+      if (result?.items.length === 1 && page > 1) {
+        setPage(value => value - 1);
+      } else {
+        setReloadKey(value => value + 1);
+      }
+    } catch (error) {
+      toast.error((error as { response?: { data?: { message?: string } } })?.response?.data?.message || "Could not update batch.");
+    }
+  };
+  const deletableArchived = (result?.items ?? []).filter(
+    batch => batch.enrolledCount === 0 && batch.waitlistCount === 0,
+  );
+  const selectedArchived = deletableArchived.filter(batch => selectedArchivedIds.includes(batch.id));
+  const bulkDeleteArchived = async () => {
+    if (!selectedArchived.length || bulkDeleting) return;
+    if (!window.confirm(`Permanently delete ${selectedArchived.length} archived batches? This cannot be undone.`)) return;
+    setBulkDeleting(true);
+    const deletedIds: string[] = [];
+    try {
+      for (const batch of selectedArchived) {
+        try {
+          await batchApi.permanentlyDelete(batch.id);
+          deletedIds.push(batch.id);
+        } catch {
+          // Continue so one changed batch does not prevent deletion of the others.
+        }
+      }
+      if (deletedIds.length) toast.success(`${deletedIds.length} archived batch${deletedIds.length === 1 ? "" : "es"} permanently deleted`);
+      if (deletedIds.length !== selectedArchived.length) toast.error(`${selectedArchived.length - deletedIds.length} batch${selectedArchived.length - deletedIds.length === 1 ? "" : "es"} could not be deleted. Refresh and check students or waitlist.`);
+      setSelectedArchivedIds(ids => ids.filter(id => !deletedIds.includes(id)));
+      if (deletedIds.length === result?.items.length && page > 1) {
+        setPage(value => value - 1);
+      } else {
+        setReloadKey(value => value + 1);
+      }
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
   const metrics = result?.metrics ?? {
     activeBatches: 0,
     enrolledStudents: 0,
@@ -132,7 +184,11 @@ function Overview({
           Create batch
         </button>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="flex gap-2 border-b border-slate-200 pb-2" aria-label="Batch view">
+        <button type="button" disabled={bulkDeleting} onClick={() => { if (!archiveView) return; setSelectedArchivedIds([]); setResult(null); setArchiveView(false); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold ${!archiveView ? "bg-[#0C5A69] text-white" : "text-slate-600 hover:bg-slate-100"}`}>Batches</button>
+        <button type="button" disabled={bulkDeleting} onClick={() => { if (archiveView) return; setSelectedArchivedIds([]); setResult(null); setArchiveView(true); setPage(1); }} className={`rounded-lg px-4 py-2 text-sm font-semibold ${archiveView ? "bg-[#0C5A69] text-white" : "text-slate-600 hover:bg-slate-100"}`}>Archive</button>
+      </div>
+      {!archiveView && <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         {[
           ["Active batches", metrics.activeBatches, "text-[#0C5A69]"],
           ["Students enrolled", metrics.enrolledStudents, "text-amber-600"],
@@ -149,7 +205,7 @@ function Overview({
             </p>
           </Card>
         ))}
-      </div>
+      </div>}
       <Card className="p-3">
         <div className="flex flex-col gap-2 sm:flex-row">
           <label className="relative flex-1">
@@ -159,14 +215,14 @@ function Overview({
             />
             <input
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => { setSelectedArchivedIds([]); setSearch(e.target.value); setPage(1); }}
               placeholder="Search batches or courses"
               className="w-full rounded-lg border border-slate-200 py-2 pl-9 pr-3 text-sm"
             />
           </label>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => { setSelectedArchivedIds([]); setStatus(e.target.value); setPage(1); }}
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
           >
             <option value="">All statuses</option>
@@ -178,6 +234,7 @@ function Overview({
           <select
             value={courseId}
             onChange={(e) => {
+              setSelectedArchivedIds([]);
               setCourseId(e.target.value);
               setPage(1);
             }}
@@ -191,20 +248,30 @@ function Overview({
             ))}
           </select>
           <button
-            onClick={() =>
-              setSortOrder((value) => (value === "asc" ? "desc" : "asc"))
-            }
+            onClick={() => {
+              setSelectedArchivedIds([]);
+              setSortOrder((value) => (value === "asc" ? "desc" : "asc"));
+              setPage(1);
+            }}
             className="rounded-lg border border-slate-200 px-3 py-2 text-sm"
           >
             {sortOrder === "asc" ? "Oldest first" : "Newest first"}
           </button>
         </div>
       </Card>
+      {archiveView && (
+        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+          <span className="text-slate-600">{selectedArchived.length} selected for permanent deletion. Restore batches with students or a waitlist, then transfer or remove them before deleting.</span>
+          <button type="button" disabled={!selectedArchived.length || bulkDeleting} onClick={() => void bulkDeleteArchived()} className="rounded-lg border border-rose-200 px-3 py-2 font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50">
+            {bulkDeleting ? "Deleting..." : `Delete selected (${selectedArchived.length})`}
+          </button>
+        </div>
+      )}
       {result && result.pagination.totalPages > 1 && (
         <div className="flex items-center justify-end gap-2 text-sm">
           <button
             disabled={!result.pagination.hasPrev}
-            onClick={() => setPage((value) => value - 1)}
+            onClick={() => { setSelectedArchivedIds([]); setPage((value) => value - 1); }}
             className="rounded border px-3 py-2 disabled:opacity-50"
           >
             Previous
@@ -214,7 +281,7 @@ function Overview({
           </span>
           <button
             disabled={!result.pagination.hasNext}
-            onClick={() => setPage((value) => value + 1)}
+            onClick={() => { setSelectedArchivedIds([]); setPage((value) => value + 1); }}
             className="rounded border px-3 py-2 disabled:opacity-50"
           >
             Next
@@ -226,6 +293,7 @@ function Overview({
           <table className="w-full min-w-[820px] text-left text-sm">
             <thead className="border-b bg-slate-50 text-[11px] uppercase text-slate-500">
               <tr>
+                {archiveView && <th className="px-5 py-3"><input type="checkbox" aria-label="Select all deletable batches on this page" checked={deletableArchived.length > 0 && deletableArchived.every(batch => selectedArchivedIds.includes(batch.id))} disabled={!deletableArchived.length || bulkDeleting} onChange={event => setSelectedArchivedIds(event.target.checked ? deletableArchived.map(batch => batch.id) : [])} /></th>}
                 <th className="px-5 py-3">Batch & course</th>
                 <th className="px-5 py-3">Teachers</th>
                 <th className="px-5 py-3">Dates</th>
@@ -239,7 +307,7 @@ function Overview({
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={archiveView ? 8 : 7}
                     className="px-5 py-10 text-center text-slate-500"
                   >
                     Loading batches�
@@ -249,9 +317,10 @@ function Overview({
                 result.items.map((batch) => (
                   <tr
                     key={batch.id}
-                    onClick={() => onOpen(batch.id)}
-                    className="cursor-pointer hover:bg-slate-50"
+                    onClick={() => { if (!archiveView) onOpen(batch.id); }}
+                    className={archiveView ? "hover:bg-slate-50" : "cursor-pointer hover:bg-slate-50"}
                   >
+                    {archiveView && <td className="px-5 py-4"><input type="checkbox" aria-label={`Select ${batch.name} for permanent deletion`} checked={selectedArchivedIds.includes(batch.id)} disabled={batch.enrolledCount > 0 || batch.waitlistCount > 0 || bulkDeleting} onClick={event => event.stopPropagation()} onChange={event => setSelectedArchivedIds(ids => event.target.checked ? [...ids, batch.id] : ids.filter(id => id !== batch.id))} /></td>}
                     <td className="px-5 py-4">
                       <b>{batch.name}</b>
                       <p className="mt-1 text-xs text-slate-500">
@@ -279,10 +348,14 @@ function Overview({
                     </td>
                     <td className="px-5 py-4">{batch.waitlistCount}</td>
                     <td className="px-5 py-4">
-                      <StatusBadge status={batch.status} />
+                      {archiveView ? (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-600">Archived</span>
+                      ) : (
+                        <StatusBadge status={batch.status} />
+                      )}
                     </td>
                     <td className="px-5 py-4 text-right">
-                      <button
+                      {archiveView ? <div className="flex justify-end gap-2"><button type="button" disabled={bulkDeleting} onClick={() => void archivedAction(batch, "restore")} className="rounded-md border border-slate-200 px-2 py-1 text-xs font-semibold text-[#0C5A69] disabled:opacity-50">Restore</button><button type="button" onClick={() => void archivedAction(batch, "delete")} disabled={bulkDeleting || batch.enrolledCount > 0 || batch.waitlistCount > 0} title={batch.enrolledCount > 0 || batch.waitlistCount > 0 ? "Restore this batch, then transfer or remove students before permanent deletion" : undefined} className="rounded-md border border-rose-200 px-2 py-1 text-xs font-semibold text-rose-700 disabled:cursor-not-allowed disabled:opacity-50">Delete permanently</button></div> : <button
                         type="button"
                         aria-label={`View ${batch.name}`}
                         onClick={(event) => {
@@ -292,14 +365,14 @@ function Overview({
                         className="rounded-md border border-slate-200 p-1.5 hover:bg-slate-50"
                       >
                         <MoreHorizontal size={16} />
-                      </button>
+                      </button>}
                     </td>
                   </tr>
                 ))
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={archiveView ? 8 : 7}
                     className="px-5 py-10 text-center text-slate-500"
                   >
                     No batches found.
@@ -334,7 +407,7 @@ function Detail({
   const [studentId, setStudentId] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
   const [waitlistId, setWaitlistId] = useState("");
-  const reload = () =>
+  const reload = useCallback(() =>
     Promise.all([
       batchApi.get(id),
       batchApi.students(id),
@@ -349,10 +422,10 @@ function Detail({
         setAvailableStudents(options);
         setMembers(team.data);
       })
-      .catch(() => toast.error("Could not load batch details."));
+      .catch(() => toast.error("Could not load batch details.")), [id]);
   useEffect(() => {
     reload();
-  }, [id]);
+  }, [reload]);
   const call = async (action: () => Promise<unknown>, success: string) => {
     try {
       await action();
@@ -412,26 +485,26 @@ function Detail({
             onClick={() => {
               if (
                 !window.confirm(
-                  "Delete this empty batch? This cannot be undone.",
+                  "Archive this batch? You can restore it later from Archive.",
                 )
               )
                 return;
               batchApi
-                .delete(id)
+                .archive(id)
                 .then(() => {
-                  toast.success("Batch deleted");
+                  toast.success("Batch archived");
                   onBack();
                 })
                 .catch((error) =>
                   toast.error(
                     (error as { response?: { data?: { message?: string } } })
-                      ?.response?.data?.message || "Could not delete batch.",
+                      ?.response?.data?.message || "Could not archive batch.",
                   ),
                 );
             }}
-            className="rounded-lg border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700"
+            className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-700"
           >
-            Delete batch
+            Archive batch
           </button>
         </div>
       </div>

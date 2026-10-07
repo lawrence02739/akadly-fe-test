@@ -83,6 +83,50 @@ export interface AdminTenant {
   updatedAt: string;
 }
 
+export interface AdminTenantConfiguration {
+  tenant: { id: string; name: string; slug: string; status: string; ownerName: string };
+  plan: { id: string; name: string; code: string; status: string; interval: "monthly" | "yearly"; price: number; currency: "INR" | "USD" } | null;
+  revision: number;
+  publishedAt: string | null;
+  publishedBy: string | null;
+  history: Array<{ revision: number; actorId: string; reason: string; changedAt: string; before: TenantConfigurationValues; after: TenantConfigurationValues }>;
+  values: TenantConfigurationValues;
+  allowedModules: string[];
+  effectiveModules: string[];
+  items: Array<{
+    key: string;
+    label: string;
+    group: "Plan limits" | "Plan modules" | "Workspace" | "Localization" | "Notifications" | "Security";
+    value: number | string | boolean | null;
+    planValue?: number | string | boolean | null;
+    source: "subscription_plan" | "tenant_record" | "workspace_override" | "platform_default";
+    usage?: number | null;
+  }>;
+  available: { overrides: boolean; auditHistory: boolean; studentUsage: boolean; contentUsage: boolean };
+}
+export interface TenantConfigurationValues {
+  disabledModules: string[];
+  language: string;
+  timezone: string;
+  dailyDigestEnabled: boolean;
+  digestHour: number;
+  loginAlertsEnabled: boolean;
+  sessionTimeoutMinutes: number;
+}
+export interface TenantConfigurationPreview {
+  expectedRevision: number;
+  current: TenantConfigurationValues;
+  proposed: TenantConfigurationValues;
+  effectiveModules: string[];
+  changes: Array<{ key: keyof TenantConfigurationValues; before: unknown; after: unknown }>;
+  publishable: boolean;
+}
+export interface AdminTenantConfigurationOption {
+  id: string;
+  name: string;
+  ownerName: string;
+}
+
 export type TenantDocumentConfig = {
   type: string;
   name: string;
@@ -332,6 +376,7 @@ export interface AdminSubscription {
   studentLimit: number | null;
   contentLimit: number | null;
   courseLimit: number | null;
+  aiTokenLimit: number | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -598,6 +643,33 @@ export const adminApi = {
       `/tenants/${encodeURIComponent(id)}`,
     );
     return data.data;
+  },
+  async tenantConfiguration(id: string) {
+    const { data } = await client.get<Envelope<AdminTenantConfiguration>>(
+      `/tenants/${encodeURIComponent(id)}/configuration`,
+    );
+    return data.data;
+  },
+  async previewTenantConfiguration(id: string, patch: Partial<TenantConfigurationValues>) {
+    const { data } = await client.post<Envelope<TenantConfigurationPreview>>(
+      `/tenants/${encodeURIComponent(id)}/configuration/preview`,
+      patch,
+    );
+    return data.data;
+  },
+  async publishTenantConfiguration(id: string, body: Partial<TenantConfigurationValues> & { expectedRevision: number; reason: string }) {
+    const { data } = await client.post<Envelope<AdminTenantConfiguration>>(
+      `/tenants/${encodeURIComponent(id)}/configuration/publish`,
+      body,
+    );
+    return data.data;
+  },
+  async tenantConfigurationOptions(params: Pick<TenantQuery, "page" | "pageSize" | "search">) {
+    const { data } = await client.get<Envelope<AdminTenantConfigurationOption[]>>(
+      "/tenants/configuration-options",
+      { params },
+    );
+    return pageResult(data, params);
   },
   async academyAdmins(id: string) {
     const { data } = await client.get<Envelope<{ items: AdminAcademyAdmin[]; total: number }>>(`/tenants/${encodeURIComponent(id)}/academy-admins`);
