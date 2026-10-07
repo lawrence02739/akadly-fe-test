@@ -69,6 +69,12 @@ const navItems = [
   },
   {
     icon: FileText,
+    label: "Assignments",
+    path: "/partner/assignments",
+    permissions: ["assignment:read", "assignment:manage"],
+  },
+  {
+    icon: FileText,
     label: "Forms",
     path: "/partner/forms",
     permissions: [],
