@@ -17,7 +17,7 @@ import { useAdminSession } from "./AdminSession";
 
 const links = [
   { to: "/admin/tenants", label: "Tenants", icon: Building2 },
-  { to: "/admin/subscriptions", label: "Subscriptions", icon: CreditCard },
+  { to: "/admin/subscriptions", label: "Plans", icon: CreditCard },
   { to: "/admin/addons", label: "Add-ons", icon: CreditCard },
   { to: "/admin/tickets", label: "Tickets", icon: Ticket },
   { to: "/admin/feature-requests", label: "Feature Requests", icon: Lightbulb },

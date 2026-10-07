@@ -14,6 +14,7 @@ export interface TenantPlan {
   studentLimit: number | null;
   contentLimit: number | null;
   courseLimit: number | null;
+  aiTokenLimit: number | null;
 }
 
 export const plansApi = {
