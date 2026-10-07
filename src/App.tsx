@@ -27,6 +27,8 @@ import CourierPartnersPage from "./features/courier-partners/pages/CourierPartne
 import CourierPartnerFormPage from "./features/courier-partners/pages/CourierPartnerFormPage";
 import StudentPortal from "./features/student-portal/StudentPortal";
 import ReturnsIssuesPage from "./features/returns-issues/pages/ReturnsIssuesPage";
+import AssignmentsDashboard from "./features/assignments/pages/AssignmentsDashboard";
+import AssignmentEditor from "./features/assignments/pages/AssignmentEditor";
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -181,6 +183,30 @@ function App() {
             element={
               <AccessRoute anyOf={["course:read", "course:manage"]}>
                 <BatchesDashboard />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="assignments"
+            element={
+              <AccessRoute anyOf={["assignment:read", "assignment:manage"]}>
+                <AssignmentsDashboard />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="assignments/create"
+            element={
+              <AccessRoute anyOf={["assignment:manage"]}>
+                <AssignmentEditor />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="assignments/:id/edit"
+            element={
+              <AccessRoute anyOf={["assignment:manage"]}>
+                <AssignmentEditor />
               </AccessRoute>
             }
           />
