@@ -26,6 +26,8 @@ export interface ApiRole {
   memberCount: number;
 }
 
+export type ArchivedRole = Omit<ApiRole, "memberCount"> & { archivedAt: string | null };
+
 export interface AssignedRole {
   id: string;
   name: string;
@@ -131,6 +133,15 @@ export const teamApi = {
   roles: async (): Promise<ApiRole[]> =>
     unwrap<ApiRole[]>(await api.get("/users/roles")),
 
+  archivedRoles: async (): Promise<ArchivedRole[]> =>
+    unwrap<ArchivedRole[]>(await api.get("/users/roles/archive")),
+
+  restoreArchivedRoles: async (ids: string[]): Promise<{ restored: number }> =>
+    unwrap<{ restored: number }>(await api.post("/users/roles/archive/restore", { ids })),
+
+  deleteArchivedRoles: async (ids: string[]): Promise<{ deleted: number }> =>
+    unwrap<{ deleted: number }>(await api.post("/users/roles/archive/permanent-delete", { ids })),
+
   // All available permissions catalog
   permissions: async (): Promise<PermissionItem[]> =>
     unwrap<PermissionItem[]>(await api.get("/users/roles/permissions")),
@@ -168,8 +179,8 @@ export const teamApi = {
     unwrap<ApiRole>(await api.patch(`/users/roles/${id}`, body)),
 
   // Delete a role
-  deleteRole: async (id: string): Promise<{ deleted: true }> =>
-    unwrap<{ deleted: true }>(await api.delete(`/users/roles/${id}`)),
+  deleteRole: async (id: string): Promise<{ archived: true }> =>
+    unwrap<{ archived: true }>(await api.delete(`/users/roles/${id}`)),
 
   // Update a member's role + permissions
   updateMember: async (

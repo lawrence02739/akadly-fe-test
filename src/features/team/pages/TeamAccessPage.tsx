@@ -21,6 +21,7 @@ import {
   useMembers,
   useInvitations,
   useRoles,
+  useArchivedRoles,
   usePermissionsCatalog,
   useTeamMutations,
 } from "../hooks/useTeamAccess";
@@ -51,6 +52,10 @@ export default function TeamAccessPage() {
 
   // ── Roles & Permissions (non-paginated) ──
   const rolesQ = useRoles();
+  const [roleView, setRoleView] = useState<"active" | "archived">("active");
+  const archivedRolesQ = useArchivedRoles(canManageRoles && roleView === "archived");
+  const archivedRoles = archivedRolesQ.data ?? [];
+  const [selectedArchivedRoleIds, setSelectedArchivedRoleIds] = useState<string[]>([]);
   const permissionsQ = usePermissionsCatalog();
   const roles = rolesQ.data ?? [];
   const permissions = permissionsQ.data ?? [];
@@ -184,10 +189,23 @@ export default function TeamAccessPage() {
     }
   };
   const deleteRole = async (role: ApiRole) => {
-    if (!confirm(`Delete role "${role.name}"? This cannot be undone.`)) return;
+    if (!confirm(`Archive role "${role.name}"? You can restore it later.`)) return;
     try {
       await mutations.deleteRole.mutateAsync(role.id);
-      toast.success("Role deleted.");
+      toast.success("Role archived.");
+    } catch (e) {
+      toast.error(errorText(e));
+    }
+  };
+
+  const manageArchivedRoles = async (action: "restore" | "delete") => {
+    if (!selectedArchivedRoleIds.length) return;
+    if (action === "delete" && !confirm(`Permanently delete ${selectedArchivedRoleIds.length} archived roles? This cannot be undone.`)) return;
+    try {
+      if (action === "restore") await mutations.restoreArchivedRoles.mutateAsync(selectedArchivedRoleIds);
+      else await mutations.deleteArchivedRoles.mutateAsync(selectedArchivedRoleIds);
+      toast.success(action === "restore" ? "Roles restored." : "Roles permanently deleted.");
+      setSelectedArchivedRoleIds([]);
     } catch (e) {
       toast.error(errorText(e));
     }
@@ -562,17 +580,38 @@ export default function TeamAccessPage() {
         {/* ── Roles Tab ── */}
         {tab === "roles" && (
           <div className="p-5">
-            <div className="mb-5 flex justify-end">
-              <button
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div className="flex gap-2" aria-label="Role view">
+                <button type="button" onClick={() => { setRoleView("active"); setSelectedArchivedRoleIds([]); }} className={`rounded-lg px-3 py-2 text-sm font-semibold ${roleView === "active" ? "bg-primary-800 text-white" : "border text-slate-600"}`}>Roles</button>
+                <button type="button" onClick={() => { setRoleView("archived"); setSelectedArchivedRoleIds([]); }} className={`rounded-lg px-3 py-2 text-sm font-semibold ${roleView === "archived" ? "bg-primary-800 text-white" : "border text-slate-600"}`}>Archive</button>
+              </div>
+              {roleView === "active" && <button
                 onClick={() => openRole()}
                 className="flex items-center gap-2 rounded-lg bg-primary-800 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 transition-colors"
               >
                 <Plus className="h-4 w-4" />
                 Create role
-              </button>
+              </button>}
             </div>
-            {rolesQ.isLoading && <Notice>Loading roles...</Notice>}
-            {!rolesQ.isLoading && (
+            {roleView === "archived" && (
+              <div>
+                <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                  <label className="flex items-center gap-2 text-sm text-slate-600"><input type="checkbox" aria-label="Select all archived roles" checked={archivedRoles.length > 0 && selectedArchivedRoleIds.length === archivedRoles.length} disabled={!archivedRoles.length} onChange={event => setSelectedArchivedRoleIds(event.target.checked ? archivedRoles.map(role => role.id) : [])} />Select all ({archivedRoles.length})</label>
+                  <div className="flex gap-2">
+                    <button type="button" disabled={!selectedArchivedRoleIds.length || mutations.restoreArchivedRoles.isPending || mutations.deleteArchivedRoles.isPending} onClick={() => void manageArchivedRoles("restore")} className="rounded-lg border px-3 py-2 text-sm font-semibold disabled:opacity-50">Restore selected ({selectedArchivedRoleIds.length})</button>
+                    <button type="button" disabled={!selectedArchivedRoleIds.length || mutations.restoreArchivedRoles.isPending || mutations.deleteArchivedRoles.isPending} onClick={() => void manageArchivedRoles("delete")} className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 disabled:opacity-50">Delete permanently</button>
+                  </div>
+                </div>
+                {archivedRolesQ.isLoading && <Notice>Loading archived roles...</Notice>}
+                {archivedRolesQ.isError && <Notice>Could not load archived roles.</Notice>}
+                {!archivedRolesQ.isLoading && !archivedRolesQ.isError && archivedRoles.length === 0 && <Notice>No archived roles.</Notice>}
+                <div className="grid gap-3 lg:grid-cols-2">
+                  {archivedRoles.map(role => <label key={role.id} className="flex cursor-pointer items-start gap-3 rounded-xl border p-4"><input type="checkbox" checked={selectedArchivedRoleIds.includes(role.id)} onChange={event => setSelectedArchivedRoleIds(ids => event.target.checked ? [...ids, role.id] : ids.filter(id => id !== role.id))} /><span><strong className="block text-sm">{role.name}</strong><span className="block text-xs text-slate-500">{role.description || "No description"}</span><span className="mt-1 block text-xs text-slate-400">Archived {role.archivedAt ? new Date(role.archivedAt).toLocaleDateString() : ""}</span></span></label>)}
+                </div>
+              </div>
+            )}
+            {roleView === "active" && rolesQ.isLoading && <Notice>Loading roles...</Notice>}
+            {roleView === "active" && !rolesQ.isLoading && (
               <div className="grid gap-4 lg:grid-cols-2">
                 {roles.map((role) => (
                   <div
@@ -598,7 +637,7 @@ export default function TeamAccessPage() {
                             <button
                               onClick={() => deleteRole(role)}
                               className="rounded p-1 hover:bg-rose-50 transition-colors"
-                              title="Delete role"
+                              title="Archive role"
                             >
                               <Trash2 className="h-4 w-4 text-rose-500" />
                             </button>
