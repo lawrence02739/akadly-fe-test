@@ -29,6 +29,7 @@ export type CreatedBatch = CreateBatchPayload & {
 export type BatchListItem = CreatedBatch & {
   enrolledCount: number;
   waitlistCount: number;
+  archivedAt?: string | null;
 };
 
 export type BatchListResult = {
@@ -54,6 +55,7 @@ export type BatchListQuery = {
   pageSize?: number;
   search?: string;
   status?: "upcoming" | "active" | "completed" | "cancelled";
+  view?: "active" | "archived";
   courseId?: string;
   sortBy?: "name" | "startsAt" | "createdAt";
   sortOrder?: "asc" | "desc";
@@ -133,8 +135,12 @@ export const batchApi = {
       status?: "upcoming" | "active" | "completed" | "cancelled";
     },
   ) => unwrap<BatchListItem>(api.patch(`/batches/${id}`, payload)),
-  delete: (id: string) =>
-    unwrap<{ deleted: true }>(api.delete(`/batches/${id}`)),
+  archive: (id: string) =>
+    unwrap<BatchListItem>(api.post(`/batches/${id}/archive`)),
+  restore: (id: string) =>
+    unwrap<BatchListItem>(api.post(`/batches/${id}/restore`)),
+  permanentlyDelete: (id: string) =>
+    unwrap<{ deleted: true }>(api.delete(`/batches/${id}/permanent`)),
   students: (id: string) =>
     listAllBatchResources<BatchStudent>(`/batches/${id}/students`),
   addStudents: (id: string, studentIds: string[]) =>
