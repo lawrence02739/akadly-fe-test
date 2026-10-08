@@ -28,6 +28,7 @@ import type { RootState } from "../../store";
 import { moduleForPartnerPath, useWorkspaceModules } from "../auth/WorkspaceModulesContext";
 
 const navItems = [
+  { icon: GraduationCap, label: "Instructors", path: "/partner/instructors", permissions: ["member:read"] },
   { icon: Home, label: "Home", path: "/partner/home", permissions: [] },
   {
     icon: ChartNoAxesCombined,
