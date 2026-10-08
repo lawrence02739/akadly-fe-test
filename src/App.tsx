@@ -1,3 +1,6 @@
+import InstructorsPage from './features/instructors/pages/InstructorsPage';
+import InstructorDetailsPage from './features/instructors/pages/InstructorDetailsPage';
+import AddInstructorPage from './features/instructors/pages/AddInstructorPage';
 import {
   BrowserRouter as Router,
   Routes,
@@ -180,6 +183,11 @@ function App() {
               </AccessRoute>
             }
           />
+          <Route path="instructors" element={<InstructorsPage key="active" />} />
+          <Route path="instructors/archive" element={<InstructorsPage key="archive" archived />} />
+          <Route path="instructors/new" element={<AddInstructorPage />} />
+          <Route path="instructors/:id/edit" element={<AddInstructorPage />} />
+          <Route path="instructors/:id" element={<InstructorDetailsPage />} />
           <Route
             path="batches"
             element={
