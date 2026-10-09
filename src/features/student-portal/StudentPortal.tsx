@@ -23,6 +23,9 @@ import MyOrdersPage from "./pages/MyOrdersPage";
 import RaiseIssuePage from "./pages/RaiseIssuePage";
 import MyIssuesPage from "./pages/MyIssuesPage";
 import MyBatchUpdatesPage from "./pages/MyBatchUpdatesPage";
+import { AnnouncementsFeed } from "./pages/AnnouncementsFeed";
+import { StudentQAPage } from "./pages/StudentQAPage";
+import { MessageSquare } from "lucide-react";
 
 const studentQueryClient = new QueryClient();
 
@@ -54,7 +57,7 @@ interface StudentAuthCtx {
 
 const StudentAuthContext = createContext<StudentAuthCtx | null>(null);
 
-function useStudentAuth() {
+export function useStudentAuth() {
   const ctx = useContext(StudentAuthContext);
   if (!ctx) throw new Error("useStudentAuth must be inside StudentAuthProvider");
   return ctx;
@@ -376,20 +379,11 @@ function SidebarLink({
 function StudentDashboard({ children }: { children?: React.ReactNode }) {
   const { student, logout } = useStudentAuth();
   const navigate = useNavigate();
-  const [profile, setProfile] = useState<any>(null);
+  // Using the context student profile directly instead of an extra API call
+  const profile = student as any;
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
   const isRazorpayLoaded = useRazorpay();
-
-  const fetchProfile = () => {
-    studentApi.get("/student/me")
-      .then(({ data }) => setProfile(data.data ?? data))
-      .catch(() => { /* backend not yet ready — show basic info */ });
-  };
-
-  useEffect(() => {
-    fetchProfile();
-  }, []);
 
   const handleCheckout = async (dueAmount: number) => {
     if (!isRazorpayLoaded) {
@@ -416,7 +410,8 @@ function StudentDashboard({ children }: { children?: React.ReactNode }) {
               razorpay_signature: response.razorpay_signature
             });
             toast.success('Payment successful!');
-            fetchProfile();
+            // Page will likely need a reload to refresh the student profile and ungate course access
+            window.location.reload();
           } catch (e) {
             toast.error('Payment verification failed');
           }
@@ -516,6 +511,8 @@ function StudentDashboard({ children }: { children?: React.ReactNode }) {
 
             <SidebarLink to="/student/dashboard" icon={BookOpen} label="Dashboard" exact />
             <SidebarLink to="/student/cohorts" icon={BookOpen} label="My cohorts" />
+            <SidebarLink to="/student/announcements" icon={BookOpen} label="Announcements" />
+            <SidebarLink to="/student/qa" icon={MessageSquare} label="Course Q&A" />
             <SidebarLink to="/student/orders" icon={Package} label="My Orders" />
             <SidebarLink to="/student/issues" icon={AlertCircle} label="My Issues" />
 
@@ -747,6 +744,23 @@ export default function StudentPortal() {
             element={
               <StudentProtectedRoute>
                 <StudentDashboard>{<MyIssuesPage />}</StudentDashboard>
+              </StudentProtectedRoute>
+            }
+          />
+          <Route
+            path="announcements"
+            element={
+              <StudentProtectedRoute>
+                <StudentDashboard>{<AnnouncementsFeed />}</StudentDashboard>
+              </StudentProtectedRoute>
+            }
+          />
+          {/* Q&A */}
+          <Route
+            path="qa"
+            element={
+              <StudentProtectedRoute>
+                <StudentDashboard>{<StudentQAPage />}</StudentDashboard>
               </StudentProtectedRoute>
             }
           />

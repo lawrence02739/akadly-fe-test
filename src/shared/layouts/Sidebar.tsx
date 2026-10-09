@@ -21,6 +21,8 @@ import {
   GraduationCap,
   Truck,
   RotateCcw,
+  Megaphone,
+  MessageCircle,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -144,6 +146,18 @@ const navItems = [
     label: "Analytics",
     path: "/partner/analytics",
     permissions: ["analytics:read"],
+  },
+  {
+    icon: Megaphone,
+    label: "Announcements",
+    path: "/partner/announcements",
+    permissions: [],
+  },
+  {
+    icon: MessageCircle,
+    label: "Lesson Q&A",
+    path: "/partner/qa",
+    permissions: [],
   },
   {
     icon: MessageSquare,

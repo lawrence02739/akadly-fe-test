@@ -29,6 +29,11 @@ import StudentPortal from "./features/student-portal/StudentPortal";
 import ReturnsIssuesPage from "./features/returns-issues/pages/ReturnsIssuesPage";
 import AssignmentsDashboard from "./features/assignments/pages/AssignmentsDashboard";
 import AssignmentEditor from "./features/assignments/pages/AssignmentEditor";
+import { AnnouncementsList } from "./features/announcements/pages/AnnouncementsList";
+import { AnnouncementForm } from "./features/announcements/pages/AnnouncementForm";
+import { AnnouncementView } from "./features/announcements/pages/AnnouncementView";
+import { QuestionInbox } from "./features/lesson-qa/pages/QuestionInbox";
+import { QuestionDetail } from "./features/lesson-qa/pages/QuestionDetail";
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -403,6 +408,54 @@ function App() {
                   description="Review course performance and learner engagement."
                   icon={BarChart2}
                 />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="announcements"
+            element={
+              <AccessRoute anyOf={["course:manage"]}>
+                <AnnouncementsList />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="announcements/new"
+            element={
+              <AccessRoute anyOf={["course:manage"]}>
+                <AnnouncementForm />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="announcements/:id"
+            element={
+              <AccessRoute anyOf={["course:manage"]}>
+                <AnnouncementView />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="announcements/:id/edit"
+            element={
+              <AccessRoute anyOf={["course:manage"]}>
+                <AnnouncementForm />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="qa"
+            element={
+              <AccessRoute anyOf={["course:manage"]}>
+                <QuestionInbox />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="qa/:id"
+            element={
+              <AccessRoute anyOf={["course:manage"]}>
+                <QuestionDetail />
               </AccessRoute>
             }
           />
