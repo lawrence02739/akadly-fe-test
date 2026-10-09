@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { qaApi } from '../../../api/qa';
+import { teamApi } from '../../team/api/team.api';
 import type { LessonQuestion, QuestionMessage } from '../../../types/qa';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, ExternalLink, ChevronRight, Paperclip, Clock, ShieldAlert } from 'lucide-react';
@@ -34,9 +35,11 @@ export function QuestionDetail() {
   const [messages, setMessages] = useState<QuestionMessage[]>([]);
   const [loading, setLoading] = useState(true);
   const [replyContent, setReplyContent] = useState<Descendant[]>([{ type: 'paragraph', children: [{ text: '' }] } as any]);
+  const [instructors, setInstructors] = useState<any[]>([]);
   
   useEffect(() => {
     if (id) fetchDetail(id);
+    teamApi.members({ pageSize: 100 }).then(res => setInstructors(res.data)).catch(console.error);
   }, [id]);
 
   const fetchDetail = async (qId: string) => {
@@ -90,6 +93,19 @@ export function QuestionDetail() {
       fetchDetail(id);
     } catch (e) {
       toast.error('Failed to update priority');
+    }
+  };
+
+  const handleChangeAssignee = async (userId: string) => {
+    if (!id) return;
+    try {
+      const instructor = instructors.find(i => i.id === userId);
+      const name = instructor ? instructor.name : 'Unassigned';
+      await qaApi.assignQuestion(id, userId, name);
+      toast.success('Instructor assigned');
+      fetchDetail(id);
+    } catch (e) {
+      toast.error('Failed to assign instructor');
     }
   };
 
@@ -216,8 +232,15 @@ export function QuestionDetail() {
             <div className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-gray-600 mb-1">Assigned instructor</label>
-                <select className="w-full border rounded-lg p-2 text-sm bg-white outline-none focus:border-[#0C5A69]">
-                  <option>{question.assigneeName || 'Unassigned'}</option>
+                <select 
+                  value={(question as any).assigneeUserId || ''} 
+                  onChange={e => handleChangeAssignee(e.target.value)}
+                  className="w-full border rounded-lg p-2 text-sm bg-white outline-none focus:border-[#0C5A69]"
+                >
+                  <option value="">Unassigned</option>
+                  {instructors.map(inst => (
+                    <option key={inst.id} value={inst.id}>{inst.name}</option>
+                  ))}
                 </select>
               </div>
               

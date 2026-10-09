@@ -199,17 +199,23 @@ export function StudentQAPage() {
       ) : (
         <div className="bg-white rounded-2xl shadow-sm border border-gray-200 divide-y divide-gray-100">
           {questions.map((q: any) => (
-            <div key={q.id} className="p-6 hover:bg-slate-50 transition-colors flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center shrink-0">
-                <MessageSquare className="w-5 h-5 text-blue-600" />
+            <div key={q.id} className={`p-6 hover:bg-slate-50 transition-colors flex items-start gap-4 ${q.status === 'RESOLVED' ? 'opacity-70' : ''}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${q.status === 'RESOLVED' ? 'bg-gray-100' : 'bg-blue-50'}`}>
+                <MessageSquare className={`w-5 h-5 ${q.status === 'RESOLVED' ? 'text-gray-400' : 'text-blue-600'}`} />
               </div>
               <div className="flex-1 min-w-0">
                 <div className="flex justify-between items-start mb-1">
                   <h3 className="text-base font-semibold text-gray-900 truncate pr-4">{q.title}</h3>
-                  <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap font-medium ${q.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'
-                    }`}>
-                    {q.status}
-                  </span>
+                  <div className="flex items-center gap-2 shrink-0">
+                    {q.status === 'ANSWERED' && (
+                      <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-[#0C5A69]/10 text-[#0C5A69]">
+                        Instructor Replied
+                      </span>
+                    )}
+                    <span className={`text-xs px-2 py-1 rounded-full whitespace-nowrap font-medium ${q.status === 'RESOLVED' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                      {q.status}
+                    </span>
+                  </div>
                 </div>
                 <p className="text-sm text-gray-500 truncate mb-2">
                   Lesson: {q.lessonTitle || 'General'}
