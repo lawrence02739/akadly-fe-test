@@ -1,3 +1,4 @@
+import BatchTeachersPanel from '../components/BatchTeachersPanel';
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Link2, Send, Trash2, X } from "lucide-react";
 import toast from "react-hot-toast";
@@ -157,6 +158,7 @@ export default function BatchManagePage({
 
   return (
     <main className="mx-auto max-w-7xl space-y-4 pb-8 text-slate-900">
+      <BatchTeachersPanel batchId={id} />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-bold">

@@ -3,7 +3,8 @@ import api from "../../../shared/api/axios";
 export type CreateBatchPayload = {
   name: string;
   courseId: string;
-  primaryTeacherUserId: string;
+  primaryTeacherUserId?: string;
+  teacherAssignments?: TeacherAssignment[];
   coTeacherUserId?: string;
   startsAt: string;
   endsAt: string;
@@ -205,4 +206,14 @@ export const batchApi = {
     unwrap<{ transferred: number }>(
       api.post(`/batches/${id}/transfers`, payload),
     ),
+};
+
+export type TeacherAssignment = { userId: string; teachingRole: 'instructor' | 'co_instructor' };
+export type AssignedTeacher = TeacherAssignment & { name: string; email: string; status: string };
+export const batchTeacherApi = {
+ list: async (id: string): Promise<AssignedTeacher[]> => (await api.get(`/batches/${id}/teachers`)).data.data,
+ add: async (id: string, assignment: TeacherAssignment) => (await api.post(`/batches/${id}/teachers`, assignment)).data.data,
+ role: async (id: string, assignment: TeacherAssignment) => (await api.patch(`/batches/${id}/teachers`, assignment)).data.data,
+ remove: async (id: string, userId: string) => (await api.delete(`/batches/${id}/teachers/${userId}`)).data.data,
+ move: async (id: string, assignment: TeacherAssignment, targetBatchId: string) => (await api.post(`/batches/${id}/teachers/move`, { ...assignment, targetBatchId })).data.data,
 };

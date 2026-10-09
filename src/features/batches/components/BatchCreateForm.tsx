@@ -2,8 +2,8 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { listCourses } from "../../courses/api/courses.api";
-import { teamApi, type ApiMember } from "../../team/api/team.api";
-import { createBatch } from "../api/batches.api";
+import { instructorsApi, type Instructor } from "../../instructors/api/instructors.api";
+import { type TeacherAssignment, createBatch } from "../api/batches.api";
 
 type CourseOption = { id: string; title: string; status?: string };
 type CreatedBatchView = {
@@ -55,8 +55,9 @@ export default function BatchCreateForm({
   onCancel: () => void;
   onCreated: (batch: CreatedBatchView) => void;
 }) {
+  const [assignments, setAssignments] = useState<TeacherAssignment[]>([{ userId: '', teachingRole: 'instructor' }]);
   const [courses, setCourses] = useState<CourseOption[]>([]);
-  const [teachers, setTeachers] = useState<ApiMember[]>([]);
+  const [teachers, setTeachers] = useState<Instructor[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [loadingError, setLoadingError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -81,7 +82,16 @@ export default function BatchCreateForm({
     let active = true;
     Promise.all([
       listCourses(),
-      teamApi.members({ page: 1, pageSize: 100, status: "active" }),
+      (async () => {
+        const all: Instructor[] = [];
+        let page = 1;
+        while (true) {
+          const result = await instructorsApi.list({ page, pageSize: 100, status: "active" });
+          all.push(...result.data);
+          if (!result.meta.hasNext) return all;
+          page++;
+        }
+      })(),
     ])
       .then(([courseItems, members]) => {
         if (!active) return;
@@ -90,7 +100,7 @@ export default function BatchCreateForm({
             (course: CourseOption) => course.status !== "ARCHIVED",
           ),
         );
-        setTeachers(members.data);
+        setTeachers(members);
       })
       .catch(
         () =>
@@ -106,12 +116,6 @@ export default function BatchCreateForm({
   }, []);
 
   const course = courses.find((item) => item.id === form.courseId);
-  const primaryTeacher = teachers.find(
-    (item) => item.userId === form.primaryTeacherUserId,
-  );
-  const coTeacher = teachers.find(
-    (item) => item.userId === form.coTeacherUserId,
-  );
   const setValue = <K extends keyof typeof form>(
     key: K,
     value: (typeof form)[K],
@@ -133,8 +137,7 @@ export default function BatchCreateForm({
       const created = await createBatch({
         name: form.name,
         courseId: form.courseId,
-        primaryTeacherUserId: form.primaryTeacherUserId,
-        coTeacherUserId: form.coTeacherUserId || undefined,
+        teacherAssignments: assignments,
         startsAt: form.startsAt,
         endsAt: form.endsAt,
         schedule: {
@@ -152,7 +155,7 @@ export default function BatchCreateForm({
         id: created.id,
         name: created.name,
         course: created.courseTitle,
-        teachers: [primaryTeacher?.name, coTeacher?.name]
+        teachers: assignments.map(entry => teachers.find(item => item.userId === entry.userId)?.name)
           .filter(Boolean)
           .join(" · "),
         dates: `${new Date(created.startsAt).toLocaleDateString()} – ${new Date(created.endsAt).toLocaleDateString()}`,
@@ -189,7 +192,7 @@ export default function BatchCreateForm({
         <span className="rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700">
           {form.name &&
           form.courseId &&
-          form.primaryTeacherUserId &&
+          assignments.every(entry => entry.userId) &&
           form.startsAt &&
           form.endsAt &&
           form.days.length &&
@@ -235,53 +238,16 @@ export default function BatchCreateForm({
                   ))}
                 </select>
               </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Primary teacher *
-                <select
-                  required
-                  disabled={loadingOptions}
-                  value={form.primaryTeacherUserId}
-                  onChange={(e) =>
-                    setForm((current) => ({
-                      ...current,
-                      primaryTeacherUserId: e.target.value,
-                      coTeacherUserId:
-                        e.target.value === current.coTeacherUserId
-                          ? ""
-                          : current.coTeacherUserId,
-                    }))
-                  }
-                  className={field}
-                >
-                  <option value="">
-                    {loadingOptions ? "Loading teachers…" : "Select a teacher"}
-                  </option>
-                  {teachers.map((item) => (
-                    <option key={item.id} value={item.userId}>
-                      {item.name} · {item.roleNames.join(", ") || "Team member"}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="block text-sm font-medium text-slate-700">
-                Co-teacher
-                <select
-                  disabled={loadingOptions}
-                  value={form.coTeacherUserId}
-                  onChange={(e) => setValue("coTeacherUserId", e.target.value)}
-                  className={field}
-                >
-                  <option value="">No co-teacher</option>
-                  {teachers
-                    .filter((item) => item.userId !== form.primaryTeacherUserId)
-                    .map((item) => (
-                      <option key={item.id} value={item.userId}>
-                        {item.name} ·{" "}
-                        {item.roleNames.join(", ") || "Team member"}
-                      </option>
-                    ))}
-                </select>
-              </label>
+              <div className="space-y-3 sm:col-span-2"><p className="text-sm font-semibold">Assigned teachers *</p>
+                {assignments.map((entry, index) => <div key={index} className="flex flex-wrap gap-2">
+                  <select required className={field} value={entry.userId} onChange={event => setAssignments(current => current.map((item,i) => i === index ? { ...item, userId: event.target.value } : item))}>
+                    <option value="">Select teacher</option>{teachers.filter(item => item.userId === entry.userId || !assignments.some(selected => selected.userId === item.userId)).map(item => <option key={item.userId} value={item.userId}>{item.name}</option>)}
+                  </select>
+                  <select className={field} value={entry.teachingRole} onChange={event => setAssignments(current => current.map((item,i) => i === index ? { ...item, teachingRole: event.target.value as TeacherAssignment['teachingRole'] } : item))}><option value="instructor">Instructor</option><option value="co_instructor">Co-instructor</option></select>
+                  {assignments.length > 1 && <button type="button" onClick={() => setAssignments(current => current.filter((_,i) => i !== index))}>Remove</button>}
+                </div>)}
+                <button type="button" onClick={() => setAssignments(current => [...current,{ userId: '', teachingRole: 'instructor' }])} className="text-sm font-semibold text-[#0C5A69]">+ Add teacher</button>
+              </div>
             </div>
             {loadingError && (
               <p className="mt-3 text-sm text-rose-600">{loadingError}</p>
@@ -463,7 +429,7 @@ export default function BatchCreateForm({
                 <b>Teaching team</b>
                 <br />
                 <span className="text-slate-500">
-                  {[primaryTeacher?.name, coTeacher?.name]
+                  {assignments.map(entry => teachers.find(item => item.userId === entry.userId)?.name)
                     .filter(Boolean)
                     .join(" · ") || "No teachers selected"}
                 </span>

@@ -3,6 +3,7 @@ import { ArrowLeft, MoreHorizontal, Plus, Search } from "lucide-react";
 import toast from "react-hot-toast";
 import BatchCreateForm from "../components/BatchCreateForm";
 import BatchManagePage from "./BatchManagePage";
+import BatchTeachersPanel from "../components/BatchTeachersPanel";
 import {
   batchApi,
   listBatches,
@@ -46,7 +47,7 @@ const Card = ({
 );
 
 function teacherNames(batch: BatchListItem, members: ApiMember[]) {
-  return [batch.primaryTeacherUserId, batch.coTeacherUserId]
+  return (batch.teacherAssignments?.map(entry => entry.userId) ?? [batch.primaryTeacherUserId, batch.coTeacherUserId])
     .filter(Boolean)
     .map(
       (id) =>
@@ -559,6 +560,7 @@ function Detail({
           </form>
         </Card>
       )}
+      <BatchTeachersPanel batchId={id} onChanged={reload} />
       <div className="grid gap-3 md:grid-cols-3">
         <Card>
           <p className="text-xs font-semibold text-slate-500">Course</p>
