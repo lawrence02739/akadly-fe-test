@@ -8,6 +8,9 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token');
+  const isInvitation = searchParams.get('invitation') === 'true';
+  const [existingAccount, setExistingAccount] = useState(isInvitation && searchParams.get('existing') === 'true');
+  const [invitationReady, setInvitationReady] = useState(!isInvitation);
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -22,6 +25,16 @@ export default function ResetPassword() {
     }
   }, [token]);
 
+  useEffect(() => {
+    if (!isInvitation || !token) return;
+    let active = true;
+    fetch(`${API_BASE_URL}/auth/invitation?token=${encodeURIComponent(token)}`)
+      .then(async response => { const body = await response.json(); if (!response.ok) throw new Error(body?.message || 'Invalid or expired invitation'); return body.data ?? body; })
+      .then(details => { if (active) { setExistingAccount(!details.requiresPasswordSetup); setInvitationReady(true); } })
+      .catch(reason => { if (active) setError(reason instanceof Error ? reason.message : 'Could not verify invitation'); });
+    return () => { active = false; };
+  }, [isInvitation, token]);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!token) return;
@@ -30,7 +43,8 @@ export default function ResetPassword() {
     setError(null);
 
     if (password !== confirmPassword) {
-      setError('New password and confirm password must match.');
+      setError('Password and confirmation must match.');
+      setIsLoading(false);
       return;
     }
 
@@ -47,7 +61,7 @@ export default function ResetPassword() {
       }
 
       // Success, redirect to login
-      navigate('/login', { state: { message: 'Password has been successfully reset. Please login.' } });
+      navigate(isInvitation && searchParams.get('tenantId') ? `/login?tenantId=${encodeURIComponent(searchParams.get('tenantId')!)}` : '/login', { state: { message: isInvitation ? 'Invitation accepted. Please login.' : 'Password has been successfully reset. Please login.' } });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
@@ -58,8 +72,8 @@ export default function ResetPassword() {
   return (
     <AuthLayout>
       <div className="w-full">
-        <h1 className="text-[32px] font-bold text-slate-900 tracking-tight mb-2">Set New Password</h1>
-        <p className="text-slate-500 mb-8">Please enter your new password below.</p>
+        <h1 className="text-[32px] font-bold text-slate-900 tracking-tight mb-2">{existingAccount ? 'Accept invitation' : 'Set New Password'}</h1>
+        <p className="text-slate-500 mb-8">{existingAccount ? 'Enter your existing account password to join this workspace. Your password will remain unchanged.' : 'Please enter your new password below.'}</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           {error && (
@@ -70,12 +84,12 @@ export default function ResetPassword() {
 
           {/* Password */}
           <div className="space-y-1.5">
-            <label className="block text-sm font-medium text-slate-700">New Password</label>
+            <label className="block text-sm font-medium text-slate-700">{existingAccount ? 'Current password' : 'New Password'}</label>
             <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 className="w-full pl-4 pr-12 py-3 border border-slate-200 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#0C5A69]/20 focus:border-[#0C5A69] transition-all"
-                placeholder="Create a strong password"
+                placeholder={existingAccount ? "Enter your account password" : "Create a strong password"}
                 required
                 disabled={!token}
                 value={password}
@@ -119,10 +133,10 @@ export default function ResetPassword() {
           {/* Submit */}
           <button
             type="submit"
-            disabled={isLoading || !token}
+            disabled={isLoading || !token || !invitationReady}
             className="w-full bg-[#0C5A69] hover:bg-[#084855] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-semibold py-3.5 rounded-xl mt-6 transition-all shadow-[0_4px_14px_0_rgba(12,90,105,0.2)] hover:shadow-[0_6px_20px_rgba(12,90,105,0.23)] hover:-translate-y-0.5 active:translate-y-0"
           >
-            {isLoading ? 'Resetting...' : 'Reset Password'}
+            {isLoading ? 'Submitting...' : isInvitation ? 'Accept invitation' : 'Reset Password'}
           </button>
         </form>
 

@@ -1,6 +1,6 @@
 import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import { Eye, EyeOff } from 'lucide-react';
 import AuthLayout from '../../../shared/layouts/AuthLayout';
 import api from '../../../shared/api/axios';
@@ -9,6 +9,7 @@ import { setAuth } from '../../../store/authSlice';
 
 export default function Login() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const dispatch = useDispatch();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +25,7 @@ export default function Login() {
     const password = formData.get('password') as string;
 
     try {
-      const { data } = await api.post('/auth/login', { email, password });
+      const { data } = await api.post('/auth/login', { email, password, tenantId: searchParams.get('tenantId') || undefined });
 
       // Cookie is set automatically by the backend
       // Save user to Redux
