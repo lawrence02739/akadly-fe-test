@@ -21,6 +21,9 @@ import {
   GraduationCap,
   Truck,
   RotateCcw,
+  Megaphone,
+  MessageCircle,
+  Bell,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -146,6 +149,30 @@ const navItems = [
     permissions: ["analytics:read"],
   },
   {
+    icon: Megaphone,
+    label: "Announcements",
+    path: "/partner/announcements",
+    permissions: [],
+  },
+  {
+    icon: Bell,
+    label: "Notifications",
+    path: "/partner/notifications",
+    permissions: [],
+  },
+  // {
+  //   icon: FileText,
+  //   label: "Notification Templates",
+  //   path: "/partner/notifications/templates",
+  //   permissions: [],
+  // },
+  {
+    icon: MessageCircle,
+    label: "Lesson Q&A",
+    path: "/partner/qa",
+    permissions: [],
+  },
+  {
     icon: MessageSquare,
     label: "Messages",
     path: "/partner/messages",
@@ -185,10 +212,9 @@ export default function Sidebar() {
             key={idx}
             to={item.path}
             className={({ isActive }) =>
-              `flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all ${
-                isActive
-                  ? "bg-primary-800 text-white shadow-md"
-                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+              `flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-all ${isActive
+                ? "bg-primary-800 text-white shadow-md"
+                : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
               }`
             }
             title={item.label}

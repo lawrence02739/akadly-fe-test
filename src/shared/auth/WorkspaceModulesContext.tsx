@@ -37,6 +37,7 @@ export function moduleForPartnerPath(path: string): string | null {
     profile: 'account',
     subscriptions: 'account',
     payments: 'account',
+    // notifications: 'notification',
   };
   return modules[section] ?? null;
 }
