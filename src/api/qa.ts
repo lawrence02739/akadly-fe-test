@@ -7,37 +7,37 @@ export const qaApi = {
     const params = new URLSearchParams({ page: page.toString(), limit: limit.toString() });
     if (status) params.append('status', status);
     if (assigneeUserId) params.append('assigneeUserId', assigneeUserId);
-    const { data } = await api.get('/questions', { params });
+    const { data } = await api.get('/qa', { params });
     return data.data;
   },
 
   getTenantQuestionDetail: async (id: string) => {
-    const { data } = await api.get(`/questions/${id}`);
+    const { data } = await api.get(`/qa/${id}`);
     return data.data;
   },
 
   replyToQuestion: async (id: string, body: string, attachments: any[] = []) => {
-    const { data } = await api.post(`/questions/${id}/reply`, { body, attachments });
+    const { data } = await api.post(`/qa/${id}/reply`, { body, attachments });
     return data.data;
   },
 
   addInternalNote: async (id: string, body: string, attachments: any[] = []) => {
-    const { data } = await api.post(`/questions/${id}/internal-note`, { body, attachments });
+    const { data } = await api.post(`/qa/${id}/internal-note`, { body, attachments });
     return data.data;
   },
 
   resolveQuestion: async (id: string) => {
-    const { data } = await api.post(`/questions/${id}/resolve`);
+    const { data } = await api.post(`/qa/${id}/resolve`);
     return data.data;
   },
 
   assignQuestion: async (id: string, assigneeUserId: string, assigneeName: string) => {
-    const { data } = await api.post(`/questions/${id}/assign`, { assigneeUserId, assigneeName });
+    const { data } = await api.post(`/qa/${id}/assign`, { assigneeUserId, assigneeName });
     return data.data;
   },
 
   changePriority: async (id: string, priority: QuestionPriority) => {
-    const { data } = await api.post(`/questions/${id}/priority`, { priority });
+    const { data } = await api.post(`/qa/${id}/priority`, { priority });
     return data.data;
   },
 
