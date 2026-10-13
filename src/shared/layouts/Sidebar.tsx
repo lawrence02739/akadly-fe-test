@@ -24,6 +24,7 @@ import {
   Megaphone,
   MessageCircle,
   Bell,
+  Presentation,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -105,6 +106,12 @@ const navItems = [
     label: "Users",
     path: "/partner/users",
     permissions: ["member:read"],
+  },
+  {
+    icon: Presentation,
+    label: "Instructors",
+    path: "/partner/instructors",
+    permissions: ["instructor:read"],
   },
   {
     icon: CreditCard,
