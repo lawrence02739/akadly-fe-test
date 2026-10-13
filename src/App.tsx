@@ -45,6 +45,10 @@ import AuthCallback from "./features/auth/pages/AuthCallback";
 import WorkspacePage from "./shared/pages/WorkspacePage";
 import TeamAccessPage from "./features/team/pages/TeamAccessPage";
 import AcceptInvitation from "./features/team/pages/AcceptInvitation";
+import InstructorsPage from "./features/instructors/pages/InstructorsPage";
+import AddInstructorPage from "./features/instructors/pages/AddInstructorPage";
+import InstructorDetailsPage from "./features/instructors/pages/InstructorDetailsPage";
+import InvitationSentPage from "./features/instructors/pages/InvitationSentPage";
 import PaymentsPage from "./features/payments/pages/PaymentsPage";
 import ReportsPage from "./features/reports/pages/ReportsPage";
 import TicketsListPage from "./features/tickets/pages/TicketsListPage";
@@ -355,6 +359,47 @@ function App() {
             element={
               <AccessRoute anyOf={["member:read"]}>
                 <TeamAccessPage />
+              </AccessRoute>
+            }
+          />
+          {/* Instructors */}
+          <Route
+            path="instructors"
+            element={
+              <AccessRoute anyOf={["instructor:read", "instructor:manage"]}>
+                <InstructorsPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="instructors/new"
+            element={
+              <AccessRoute anyOf={["instructor:manage"]}>
+                <AddInstructorPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="instructors/:id"
+            element={
+              <AccessRoute anyOf={["instructor:read", "instructor:manage"]}>
+                <InstructorDetailsPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="instructors/:id/edit"
+            element={
+              <AccessRoute anyOf={["instructor:manage"]}>
+                <AddInstructorPage editMode />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="instructors/:id/invitation-sent"
+            element={
+              <AccessRoute anyOf={["instructor:manage"]}>
+                <InvitationSentPage />
               </AccessRoute>
             }
           />
