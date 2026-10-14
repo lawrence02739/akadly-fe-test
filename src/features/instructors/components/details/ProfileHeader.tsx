@@ -13,6 +13,7 @@ interface ProfileHeaderProps {
   onResendInvitation: () => void;
   onToggleStatus: () => void;
   onDelete: () => void;
+  onRemoveRole?: () => void;
   isActionLoading?: boolean;
 }
 
@@ -22,6 +23,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
   onResendInvitation,
   onToggleStatus,
   onDelete,
+  onRemoveRole,
   isActionLoading = false,
 }) => {
   const displayName = instructor.fullName || instructor.name || '';
@@ -121,6 +123,18 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
             <Edit2 className="h-3.5 w-3.5" />
             Edit Profile
           </button>
+
+          {onRemoveRole && (
+            <button
+              type="button"
+              onClick={onRemoveRole}
+              disabled={isActionLoading}
+              title="Remove instructor role and convert back to standard user"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-amber-200 bg-amber-50/50 px-3 py-2 text-xs font-medium text-amber-800 hover:bg-amber-100/60 disabled:opacity-50"
+            >
+              Remove Role
+            </button>
+          )}
 
           <button
             type="button"

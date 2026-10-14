@@ -45,7 +45,8 @@ export const InitialAssignmentSection: React.FC<
       .get('/courses')
       .then((res) => {
         if (!isMounted) return;
-        const list = res.data?.data?.courses || res.data?.courses || res.data?.data || res.data || [];
+        const raw = res.data?.data ?? res.data;
+        const list = raw?.items || raw?.courses || raw || [];
         setCourses(Array.isArray(list) ? list : []);
       })
       .catch(() => {
@@ -70,10 +71,11 @@ export const InitialAssignmentSection: React.FC<
     let isMounted = true;
     setLoadingBatches(true);
     api
-      .get('/batches', { params: { courseId } })
+      .get('/batches', { params: { courseId, view: 'active', pageSize: 100 } })
       .then((res) => {
         if (!isMounted) return;
-        const list = res.data?.data?.batches || res.data?.batches || res.data?.data || res.data || [];
+        const raw = res.data?.data ?? res.data;
+        const list = raw?.items || raw?.batches || raw || [];
         setBatches(Array.isArray(list) ? list : []);
       })
       .catch(() => {

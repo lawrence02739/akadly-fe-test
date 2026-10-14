@@ -175,3 +175,29 @@ export const updateInstructorPermissions = async (
   const { data } = await api.patch(`/instructors/${id}/permissions`, dto);
   return normalizeInstructor(data.data ?? data);
 };
+
+export const getConvertibleUsers = async (
+  search?: string,
+): Promise<import('../types/instructor.types').ConvertibleUserItem[]> => {
+  const { data } = await api.get('/instructors/convertible-users', {
+    params: search ? { search } : {},
+  });
+  const res = data?.data ?? data;
+  return Array.isArray(res) ? res : [];
+};
+
+export const convertToInstructor = async (
+  dto: import('../types/instructor.types').ConvertToInstructorDto,
+): Promise<InstructorView> => {
+  const { data } = await api.post('/instructors/convert', dto);
+  return normalizeInstructor(data.data ?? data);
+};
+
+export const removeInstructorRole = async (
+  id: string,
+  options?: { removeAssignments?: boolean },
+): Promise<unknown> => {
+  const { data } = await api.post(`/instructors/${id}/remove-role`, options ?? {});
+  return data?.data ?? data;
+};
+

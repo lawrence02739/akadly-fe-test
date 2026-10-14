@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, ShieldCheck, BookOpen, Users, Save, X } from 'lucide-react';
 import type {
+  InstructorAssignment,
   InstructorPermissionFlags,
   InstructorView,
 } from '../../types/instructor.types';
 import { TeachingRole } from '../../types/instructor.types';
 import api from '../../../../shared/api/axios';
+import { ConfirmRemoveAssignmentDialog } from '../ConfirmRemoveAssignmentDialog';
 
 interface CoursesAccessTabProps {
   instructor: InstructorView;
@@ -36,6 +38,11 @@ export const CoursesAccessTab: React.FC<CoursesAccessTabProps> = ({
   const [isAssigning, setIsAssigning] = useState(false);
   const [assignError, setAssignError] = useState<string | null>(null);
 
+  // Cohort Assignment Delete Modal State
+  const [assignmentToRemove, setAssignmentToRemove] =
+    useState<InstructorAssignment | null>(null);
+  const [isRemovingAssignment, setIsRemovingAssignment] = useState(false);
+
   // Permission Flags State
   const [flags, setFlags] = useState<InstructorPermissionFlags>({
     editCourseContent: instructor.permissionFlags.editCourseContent,
@@ -50,8 +57,10 @@ export const CoursesAccessTab: React.FC<CoursesAccessTabProps> = ({
     setAssignError(null);
     setSelectedCourseId('');
     setSelectedBatchId('');
-    api.get('/courses').then((res) => {
-      const list = res.data?.data?.courses || res.data?.courses || res.data?.data || res.data || [];
+    api.get('/courses', { params: { pageSize: 100 } }).then((res) => {
+      const raw = res.data?.data ?? res.data;
+      const list =
+        raw?.items || raw?.courses || (Array.isArray(raw) ? raw : []);
       const formatted = Array.isArray(list)
         ? list.map((c: any) => ({ id: c.id || c._id, title: c.title }))
         : [];
@@ -66,13 +75,17 @@ export const CoursesAccessTab: React.FC<CoursesAccessTabProps> = ({
       setBatches([]);
       return;
     }
-    api.get('/batches', { params: { courseId } }).then((res) => {
-      const list = res.data?.data?.batches || res.data?.batches || res.data?.data || res.data || [];
-      const formatted = Array.isArray(list)
-        ? list.map((b: any) => ({ id: b.id || b._id, name: b.name }))
-        : [];
-      setBatches(formatted);
-    });
+    api
+      .get('/batches', { params: { courseId, pageSize: 100 } })
+      .then((res) => {
+        const raw = res.data?.data ?? res.data;
+        const list =
+          raw?.items || raw?.batches || (Array.isArray(raw) ? raw : []);
+        const formatted = Array.isArray(list)
+          ? list.map((b: any) => ({ id: b.id || b._id, name: b.name }))
+          : [];
+        setBatches(formatted);
+      });
   };
 
   const handleConfirmAssignment = async () => {
@@ -103,6 +116,19 @@ export const CoursesAccessTab: React.FC<CoursesAccessTabProps> = ({
       setTimeout(() => setPermissionSuccess(false), 3000);
     } catch {
       // Handled by toast in page
+    }
+  };
+
+  const handleConfirmRemoveAssignment = async () => {
+    if (!assignmentToRemove) return;
+    try {
+      setIsRemovingAssignment(true);
+      await onRemoveAssignment(assignmentToRemove.id);
+      setAssignmentToRemove(null);
+    } catch {
+      // Handled by toast in page
+    } finally {
+      setIsRemovingAssignment(false);
     }
   };
 
@@ -169,7 +195,7 @@ export const CoursesAccessTab: React.FC<CoursesAccessTabProps> = ({
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => onRemoveAssignment(assignment.id)}
+                        onClick={() => setAssignmentToRemove(assignment)}
                         className="rounded p-1 text-slate-400 hover:bg-rose-50 hover:text-rose-600"
                         title="Remove cohort assignment"
                       >
@@ -379,6 +405,20 @@ export const CoursesAccessTab: React.FC<CoursesAccessTabProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* Confirm Remove Cohort Assignment Dialog */}
+      {assignmentToRemove && (
+        <ConfirmRemoveAssignmentDialog
+          isOpen={Boolean(assignmentToRemove)}
+          courseTitle={assignmentToRemove.courseTitle}
+          batchName={assignmentToRemove.batchName}
+          isRemoving={isRemovingAssignment}
+          onConfirm={handleConfirmRemoveAssignment}
+          onCancel={() => {
+            if (!isRemovingAssignment) setAssignmentToRemove(null);
+          }}
+        />
       )}
     </div>
   );

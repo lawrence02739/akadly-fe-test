@@ -14,6 +14,7 @@ import { InstructorFilters } from '../components/InstructorFilters';
 import { InstructorTable } from '../components/InstructorTable';
 import { InvitationBanner } from '../components/InvitationBanner';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
+import ConvertExistingUserDialog from '../components/ConvertExistingUserDialog';
 import type { InstructorListItem } from '../types/instructor.types';
 
 export const InstructorsPage: React.FC = () => {
@@ -30,6 +31,7 @@ export const InstructorsPage: React.FC = () => {
   // Modal state
   const [deletingInstructor, setDeletingInstructor] =
     useState<InstructorListItem | null>(null);
+  const [convertModalOpen, setConvertModalOpen] = useState(false);
 
   // Debounce search by 300ms
   useEffect(() => {
@@ -133,14 +135,23 @@ export const InstructorsPage: React.FC = () => {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => navigate('/partner/instructors/new')}
-          className="inline-flex items-center gap-2 rounded-xl bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#094753] transition-colors"
-        >
-          <Plus className="h-4 w-4" />
-          Add Instructor
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setConvertModalOpen(true)}
+            className="inline-flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs hover:bg-slate-50 transition-colors"
+          >
+            Convert existing user
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/partner/instructors/new')}
+            className="inline-flex items-center gap-2 rounded-xl bg-[#0C5A69] px-4 py-2.5 text-sm font-semibold text-white shadow-xs hover:bg-[#094753] transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            Add Instructor
+          </button>
+        </div>
       </div>
 
       {/* Filter Bar with Tabs and Dropdowns */}
@@ -192,6 +203,16 @@ export const InstructorsPage: React.FC = () => {
         isDeleting={deleteMutation.isPending}
         onConfirm={handleConfirmDelete}
         onCancel={() => setDeletingInstructor(null)}
+      />
+
+      {/* Convert Existing User Dialog */}
+      <ConvertExistingUserDialog
+        isOpen={convertModalOpen}
+        onClose={() => setConvertModalOpen(false)}
+        onSuccess={() => {
+          setConvertModalOpen(false);
+          // Instructors query automatically invalidated or refetched
+        }}
       />
     </div>
   );

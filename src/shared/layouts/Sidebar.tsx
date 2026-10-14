@@ -46,7 +46,7 @@ const navItems = [
     permissions: [],
   },
   { icon: Lightbulb, label: "Feature requests", path: "/partner/feature-requests", permissions: [] },
-  { icon: UserRound, label: "My profile", path: "/partner/profile", permissions: [] },
+  { icon: UserRound, label: "My profile", path: "/partner/settings/profile", permissions: [] },
   {
     icon: GraduationCap,
     label: "Students",
@@ -263,22 +263,18 @@ export default function Sidebar() {
               <Sparkles className="w-5 h-5" strokeWidth={2.5} />
             </NavLink>
           )}
-        {modules?.includes('settings') && (user?.isOwner ||
-          granted.has("settings:read") ||
-          granted.has("settings:manage")) && (
-            <NavLink
-              to="/partner/settings"
-              title="Settings"
-              className={({ isActive }) =>
-                `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
-                  ? "bg-primary-800 text-white shadow-md"
-                  : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                }`
-              }
-            >
-              <Settings className="w-5 h-5" strokeWidth={2.5} />
-            </NavLink>
-          )}
+        <NavLink
+          to="/partner/settings/profile"
+          title="Settings"
+          className={({ isActive }) =>
+            `w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isActive
+              ? "bg-primary-800 text-white shadow-md"
+              : "text-slate-400 hover:bg-slate-100 hover:text-slate-600"
+            }`
+          }
+        >
+          <Settings className="w-5 h-5" strokeWidth={2.5} />
+        </NavLink>
       </div>
     </aside>
   );

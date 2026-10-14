@@ -249,3 +249,36 @@ export interface ListInstructorsParams {
   page?: number;
   limit?: number;
 }
+
+export interface ConvertibleUserItem {
+  id: string; // memberId
+  memberId?: string;
+  userId: string;
+  name: string;
+  email: string;
+  status: string;
+  roleNames: string[];
+  joinedAt?: string;
+}
+
+export interface ConvertToInstructorDto {
+  memberId: string;
+  specialty: string;
+  instructorType: InstructorType;
+  engagement: {
+    startDate?: string | null;
+    endDate?: string | null;
+    requiredWeeklyHours?: number | null;
+    weeklySchedule?: WeeklySlot[];
+    timezone?: string;
+    renewalNote?: string;
+    renewalReviewDate?: string | null;
+  };
+  permissions?: Partial<InstructorPermissionFlags>;
+  initialAssignment?: {
+    courseId: string;
+    batchId: string;
+    teachingRole: TeachingRole;
+  };
+}
+

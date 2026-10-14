@@ -25,6 +25,9 @@ import {
   usePermissionsCatalog,
   useTeamMutations,
 } from "../hooks/useTeamAccess";
+import MemberTypeBadge from "../../instructors/components/MemberTypeBadge";
+import ConvertToInstructorDialog from "../../instructors/components/ConvertToInstructorDialog";
+import RemoveInstructorRoleDialog from "../../instructors/components/RemoveInstructorRoleDialog";
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
@@ -83,6 +86,8 @@ export default function TeamAccessPage() {
     roleId: undefined,
   });
   const [invitesSearch, setInvitesSearch] = useState("");
+  const [convertingMember, setConvertingMember] = useState<ApiMember | null>(null);
+  const [removingInstructorMember, setRemovingInstructorMember] = useState<ApiMember | null>(null);
 
   // ── Fetch with server-side pagination ──
   const membersRes = useMembers(membersQ);
@@ -397,6 +402,9 @@ export default function TeamAccessPage() {
                                 OWNER
                               </span>
                             )}
+                            {member.memberType === 'instructor' && (
+                              <MemberTypeBadge memberType="instructor" />
+                            )}
                             <span
                               className={`rounded-full px-2 py-0.5 text-xs font-medium ${
                                 member.status === "active"
@@ -422,38 +430,59 @@ export default function TeamAccessPage() {
                           </p>
                         </div>
                         {canManageMembers && !member.isOwner && (
-                          <>
+                          <div className="flex items-center gap-2">
                             <button
                               onClick={() => openMember(member)}
                               className="rounded-lg border px-3 py-1.5 text-xs font-semibold hover:bg-slate-50 transition-colors"
                             >
                               Edit access
                             </button>
-                            <button
-                              onClick={async () => {
-                                try {
-                                  await mutations.status.mutateAsync({
-                                    id: member.id,
-                                    action: member.status === "active" ? "suspend" : "activate",
-                                  });
-                                  toast.success(
-                                    member.status === "active"
-                                      ? "User suspended."
-                                      : "User activated.",
-                                  );
-                                } catch (e) {
-                                  toast.error(errorText(e));
-                                }
-                              }}
-                              className={`px-2 text-xs font-semibold ${
-                                member.status === "active"
-                                  ? "text-rose-500 hover:text-rose-700"
-                                  : "text-emerald-600 hover:text-emerald-800"
-                              }`}
-                            >
-                              {member.status === "active" ? "Suspend" : "Activate"}
-                            </button>
-                          </>
+                            {member.memberType === 'instructor' ? (
+                              <button
+                                onClick={() => setRemovingInstructorMember(member)}
+                                className="rounded-lg border border-amber-200 bg-amber-50/50 px-2.5 py-1.5 text-xs font-semibold text-amber-800 hover:bg-amber-100 transition-colors"
+                              >
+                                Remove role
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => setConvertingMember(member)}
+                                className="rounded-lg border border-teal-200 bg-teal-50 px-2.5 py-1.5 text-xs font-semibold text-[#0C5A69] hover:bg-teal-100 transition-colors"
+                              >
+                                Convert to instructor
+                              </button>
+                            )}
+                            {member.memberType === 'instructor' ? (
+                              <span className="text-[11px] text-slate-400 italic">
+                                Managed in Instructors
+                              </span>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    await mutations.status.mutateAsync({
+                                      id: member.id,
+                                      action: member.status === "active" ? "suspend" : "activate",
+                                    });
+                                    toast.success(
+                                      member.status === "active"
+                                        ? "User suspended."
+                                        : "User activated.",
+                                    );
+                                  } catch (e) {
+                                    toast.error(errorText(e));
+                                  }
+                                }}
+                                className={`px-2 text-xs font-semibold ${
+                                  member.status === "active"
+                                    ? "text-rose-500 hover:text-rose-700"
+                                    : "text-emerald-600 hover:text-emerald-800"
+                                }`}
+                              >
+                                {member.status === "active" ? "Suspend" : "Activate"}
+                              </button>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
@@ -792,6 +821,36 @@ export default function TeamAccessPage() {
           />
         </div>
       </AccessModal>
+
+      {/* Convert to Instructor Dialog */}
+      {convertingMember && (
+        <ConvertToInstructorDialog
+          isOpen={true}
+          onClose={() => setConvertingMember(null)}
+          memberId={convertingMember.id}
+          memberName={convertingMember.name}
+          memberEmail={convertingMember.email}
+          onSuccess={() => {
+            setConvertingMember(null);
+            void membersRes.refetch();
+          }}
+        />
+      )}
+
+      {/* Remove Instructor Role Dialog */}
+      {removingInstructorMember && (
+        <RemoveInstructorRoleDialog
+          isOpen={true}
+          onClose={() => setRemovingInstructorMember(null)}
+          instructorId={removingInstructorMember.instructorId || removingInstructorMember.id}
+          instructorName={removingInstructorMember.name}
+          assignmentsCount={0}
+          onSuccess={() => {
+            setRemovingInstructorMember(null);
+            void membersRes.refetch();
+          }}
+        />
+      )}
     </div>
   );
 }
