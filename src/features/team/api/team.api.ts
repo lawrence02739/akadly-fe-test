@@ -39,6 +39,8 @@ export interface ApiMember {
   name: string;
   email: string;
   isOwner: boolean;
+  memberType?: 'user' | 'instructor';
+  instructorId?: string;
   roleIds: string[];
   roleNames: string[];
   roles: AssignedRole[];

@@ -56,6 +56,9 @@ import TicketDetailsPage from "./features/tickets/pages/TicketDetailsPage";
 import TenantTicketDetailsPage from "./features/tickets/pages/TenantTicketDetailsPage";
 import TenantTicketsDashboardPage from "./features/tickets/pages/TenantTicketsDashboardPage";
 import MyProfilePage from "./features/profile/pages/MyProfilePage";
+import AccountSecurityPage from "./features/profile/pages/AccountSecurityPage";
+import NotificationPreferencesPage from "./features/profile/pages/NotificationPreferencesPage";
+import TeachingPreferencesPage from "./features/profile/pages/TeachingPreferencesPage";
 import AccessRoute from "./shared/auth/AccessRoute";
 import {
   AdminGuard,
@@ -413,7 +416,11 @@ function App() {
           <Route path="feature-requests" element={<FeatureRequestsPage />} />
           <Route path="feature-requests/new" element={<FeatureRequestCreatePage />} />
           <Route path="feature-requests/:id" element={<FeatureRequestDetailPage />} />
-          <Route path="profile" element={<MyProfilePage />} />
+          <Route path="profile" element={<Navigate to="settings/profile" replace />} />
+          <Route path="settings/profile" element={<MyProfilePage />} />
+          <Route path="settings/account-security" element={<AccountSecurityPage />} />
+          <Route path="settings/notifications" element={<NotificationPreferencesPage />} />
+          <Route path="settings/teaching" element={<TeachingPreferencesPage />} />
           <Route
             path="tickets/:ticketId"
             element={<TenantTicketDetailsPage />}
@@ -587,6 +594,8 @@ function App() {
 
         {/* Redirect Root to Login */}
         <Route path="/" element={<Navigate to="/login" replace />} />
+        <Route path="/settings" element={<Navigate to="/partner/settings/profile" replace />} />
+        <Route path="/settings/*" element={<Navigate to="/partner/settings/profile" replace />} />
         <Route path="/f/:id" element={<PublicFormPage />} />
 
         {/* ── Student Portal ─────────────────────────────────────────────── */}

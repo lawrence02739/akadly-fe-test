@@ -17,6 +17,7 @@ import { CoursesAccessTab } from '../components/details/CoursesAccessTab';
 import { EngagementTab } from '../components/details/EngagementTab';
 import { PerformanceTab } from '../components/details/PerformanceTab';
 import { ConfirmDeleteDialog } from '../components/ConfirmDeleteDialog';
+import RemoveInstructorRoleDialog from '../components/RemoveInstructorRoleDialog';
 import type { TeachingRole } from '../types/instructor.types';
 
 type TabKey = 'overview' | 'courses' | 'engagement' | 'performance';
@@ -43,6 +44,7 @@ export const InstructorDetailsPage: React.FC = () => {
   const updatePermissionsMutation = useUpdateInstructorPermissions();
 
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isRemoveRoleModalOpen, setIsRemoveRoleModalOpen] = useState(false);
 
   if (isLoading || !instructor) {
     return (
@@ -144,6 +146,7 @@ export const InstructorDetailsPage: React.FC = () => {
         onResendInvitation={handleResendInvite}
         onToggleStatus={handleToggleStatus}
         onDelete={() => setIsDeleteModalOpen(true)}
+        onRemoveRole={() => setIsRemoveRoleModalOpen(true)}
         isActionLoading={
           sendInviteMutation.isPending || setStatusMutation.isPending
         }
@@ -201,6 +204,19 @@ export const InstructorDetailsPage: React.FC = () => {
         isDeleting={deleteMutation.isPending}
         onConfirm={handleConfirmDelete}
         onCancel={() => setIsDeleteModalOpen(false)}
+      />
+
+      {/* Remove Instructor Role Dialog */}
+      <RemoveInstructorRoleDialog
+        isOpen={isRemoveRoleModalOpen}
+        onClose={() => setIsRemoveRoleModalOpen(false)}
+        instructorId={instructor.id}
+        instructorName={instructor.fullName || instructor.name || ''}
+        assignmentsCount={instructor.assignments?.length || 0}
+        onSuccess={() => {
+          setIsRemoveRoleModalOpen(false);
+          navigate('/partner/instructors');
+        }}
       />
     </div>
   );
