@@ -1,20 +1,33 @@
 import api from '../../../shared/api/axios';
 
+export type MasterDataType =
+  | 'CATEGORY'
+  | 'TAG'
+  | 'SUBJECT'
+  | 'SPECIALITY'
+  | 'SPECIALTY';
+
 export interface MasterData {
   _id: string;
   tenantId: string;
-  type: 'CATEGORY' | 'TAG';
+  type: MasterDataType;
   name: string;
   code?: string;
   status: string;
 }
 
-export const fetchMasterData = async (type: 'CATEGORY' | 'TAG'): Promise<MasterData[]> => {
-  const { data } = await api.get(`/master-data?type=${type}`);
+export const fetchMasterData = async (
+  type?: MasterDataType,
+): Promise<MasterData[]> => {
+  const query = type ? `?type=${type}` : '';
+  const { data } = await api.get(`/master-data${query}`);
   return data.data; // assuming typical wrap
 };
 
-export const createMasterData = async (type: 'CATEGORY' | 'TAG', name: string): Promise<MasterData> => {
+export const createMasterData = async (
+  type: MasterDataType,
+  name: string,
+): Promise<MasterData> => {
   const { data } = await api.post('/master-data', { type, name });
   return data.data || data; // handle both wrapped and unwrapped just in case
 };

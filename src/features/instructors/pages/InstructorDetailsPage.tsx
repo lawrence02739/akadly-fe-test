@@ -103,12 +103,12 @@ export const InstructorDetailsPage: React.FC = () => {
 
   const handleRemoveAssignment = async (assignmentId: string) => {
     if (!id) return;
-    if (!window.confirm('Remove this cohort assignment?')) return;
     try {
       await removeAssignmentMutation.mutateAsync({ id, assignmentId });
       toast.success('Assignment removed.');
     } catch (err: any) {
       toast.error(err.response?.data?.message || 'Failed to remove assignment.');
+      throw err;
     }
   };
 

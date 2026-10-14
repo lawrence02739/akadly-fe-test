@@ -34,6 +34,7 @@ export type BatchListItem = CreatedBatch & {
 
 export type BatchListResult = {
   items: BatchListItem[];
+  batches?: BatchListItem[];
   metrics: {
     activeBatches: number;
     enrolledStudents: number;
