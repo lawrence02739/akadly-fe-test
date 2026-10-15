@@ -36,6 +36,8 @@ import { QuestionInbox } from "./features/lesson-qa/pages/QuestionInbox";
 import { QuestionDetail } from "./features/lesson-qa/pages/QuestionDetail";
 import NotificationTemplatesPage from "./features/notification-templates/pages/NotificationTemplatesPage";
 import NotificationTemplateEditorPage from "./features/notification-templates/pages/NotificationTemplateEditorPage";
+import MediaLibraryPage from "./features/media-library/pages/MediaLibraryPage";
+import MediaAssetDetailsPage from "./features/media-library/pages/MediaAssetDetailsPage";
 
 import Signup from "./features/auth/pages/Signup";
 import VerifyEmail from "./features/auth/pages/VerifyEmail";
@@ -199,6 +201,22 @@ function App() {
             element={
               <AccessRoute anyOf={["course:read", "course:manage"]}>
                 <BatchesDashboard />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="media-library"
+            element={
+              <AccessRoute anyOf={["media:read", "media:manage"]}>
+                <MediaLibraryPage />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="media-library/:id"
+            element={
+              <AccessRoute anyOf={["media:read", "media:manage"]}>
+                <MediaAssetDetailsPage />
               </AccessRoute>
             }
           />

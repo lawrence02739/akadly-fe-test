@@ -28,6 +28,7 @@ export const useUpdateCourseNode = () => {
       updateCourseNode(courseId, nodeId, dto),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['courseNodes', variables.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['media-assets'] });
     },
   });
 };
@@ -39,6 +40,7 @@ export const useDeleteCourseNode = () => {
       deleteCourseNode(courseId, nodeId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['courseNodes', variables.courseId] });
+      queryClient.invalidateQueries({ queryKey: ['media-assets'] });
     },
   });
 };
