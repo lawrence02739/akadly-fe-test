@@ -25,11 +25,12 @@ import {
   MessageCircle,
   Bell,
   Presentation,
+  Film,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../store";
-import { moduleForPartnerPath, useWorkspaceModules } from "../auth/WorkspaceModulesContext";
+import { isPartnerModuleAvailable, useWorkspaceModules } from "../auth/WorkspaceModulesContext";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/partner/home", permissions: [] },
@@ -64,6 +65,12 @@ const navItems = [
     label: "Courses",
     path: "/partner/courses",
     permissions: ["course:read", "course:manage"],
+  },
+  {
+    icon: Film,
+    label: "Media Library",
+    path: "/partner/media-library",
+    permissions: ["media:read", "media:manage"],
   },
   {
     icon: Users,
@@ -199,7 +206,7 @@ export default function Sidebar() {
   const granted = new Set(user?.permissions ?? []);
   const visibleItems = navItems.filter(
     (item) =>
-      (!modules || !moduleForPartnerPath(item.path) || modules.includes(moduleForPartnerPath(item.path)!)) &&
+      isPartnerModuleAvailable(modules, item.path) &&
       (user?.isOwner ||
         !item.permissions ||
         item.permissions.length === 0 ||

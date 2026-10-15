@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Upload, Video, FileText, Headphones, File, Link as LinkIcon, Loader2, CheckCircle, HelpCircle, ExternalLink, Trash2, ClipboardCheck, Radio, Code2 } from 'lucide-react';
+import { Upload, Video, FileText, Headphones, File, Link as LinkIcon, Loader2, CheckCircle, HelpCircle, ExternalLink, Trash2, ClipboardCheck, Radio, Code2, FolderOpen } from 'lucide-react';
 import { type Descendant, RichTextEditor } from '@myexamly/word-editor';
 import { useUpload } from '../../hooks/useUpload';
 import { useUpdateCourseNode } from '../../hooks/useCourseNodes';
@@ -10,6 +10,10 @@ import AssignmentContentEditor from './AssignmentContentEditor';
 import LiveClassContentEditor from './LiveClassContentEditor';
 import CodingContentEditor from './CodingContentEditor';
 import FormContentEditor from './FormContentEditor';
+import { MediaPickerModal } from '../../../media-library/components/MediaPickerModal';
+import { SelectedMediaCard } from '../../../media-library/components/SelectedMediaCard';
+import { NODE_TYPE_TO_MEDIA_TYPES } from '../../../media-library/constants';
+import type { MediaAsset, MediaType } from '../../../media-library/types';
 // ─── Type Configs ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; label: string; accept?: string; hint?: string }> = {
   VIDEO: { icon: Video, color: 'text-blue-600', bgColor: 'bg-blue-50', label: 'Video', accept: 'video/*', hint: 'MP4, WebM or OGG (max 2GB)' },
@@ -34,12 +38,26 @@ function FileUploadPanel({
   const [progress, setProgress] = useState(0);
   const [uploadedUrl, setUploadedUrl] = useState(content?.sourceType === 'upload' ? content?.fileUrl : '');
   const [externalUrl, setExternalUrl] = useState(content?.sourceType === 'url' ? content?.fileUrl : '');
-  const [tab, setTab] = useState<'upload' | 'url'>(content?.sourceType === 'url' ? 'url' : 'upload');
+  const [tab, setTab] = useState<'upload' | 'url' | 'library'>(
+    content?.sourceType === 'library'
+      ? 'library'
+      : content?.sourceType === 'url'
+        ? 'url'
+        : 'upload',
+  );
+  const [isPickerOpen, setIsPickerOpen] = useState(false);
+  const [libraryAsset, setLibraryAsset] = useState<MediaAsset | null>(null);
 
   useEffect(() => {
     setUploadedUrl(content?.sourceType === 'upload' ? content?.fileUrl : '');
     setExternalUrl(content?.sourceType === 'url' ? content?.fileUrl : '');
-    setTab(content?.sourceType === 'url' ? 'url' : 'upload');
+    setTab(
+      content?.sourceType === 'library'
+        ? 'library'
+        : content?.sourceType === 'url'
+          ? 'url'
+          : 'upload',
+    );
     setFile(null);
     setProgress(0);
   }, [content, nodeId]);
@@ -60,6 +78,27 @@ function FileUploadPanel({
   };
 
   const handleSave = () => {
+    if (tab === 'library') {
+      const assetId = libraryAsset?.id || content?.mediaAssetId;
+      const fileUrl = libraryAsset?.fileUrl || content?.fileUrl;
+      if (!assetId || !fileUrl) {
+        toast.error('Please select an asset from the media library');
+        return;
+      }
+      onSave({
+        sourceType: 'library',
+        mediaAssetId: assetId,
+        fileUrl,
+        fileName: libraryAsset?.fileName || content?.fileName,
+        mimeType: libraryAsset?.mimeType || content?.mimeType,
+        sizeBytes: libraryAsset?.sizeBytes || content?.sizeBytes,
+        durationSeconds:
+          libraryAsset?.metadata?.durationSeconds ??
+          content?.durationSeconds ??
+          null,
+      });
+      return;
+    }
     const url = tab === 'url' ? externalUrl : uploadedUrl;
     onSave({ fileUrl: url, sourceType: tab });
   };
@@ -75,6 +114,12 @@ function FileUploadPanel({
           <Upload className="w-4 h-4" /> Upload File
         </button>
         <button
+          onClick={() => setTab('library')}
+          className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-sm font-medium rounded-md transition-colors ${tab === 'library' ? 'bg-white shadow-sm text-slate-800 font-semibold' : 'text-slate-600'}`}
+        >
+          <FolderOpen className="w-4 h-4 text-primary-600" /> Media Library
+        </button>
+        <button
           onClick={() => setTab('url')}
           className={`flex-1 flex items-center justify-center gap-2 py-1.5 text-sm font-medium rounded-md transition-colors ${tab === 'url' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-600'}`}
         >
@@ -82,7 +127,52 @@ function FileUploadPanel({
         </button>
       </div>
 
-      {tab === 'upload' ? (
+      {tab === 'library' ? (
+        (content?.sourceType === 'library' && content?.mediaAssetId) || libraryAsset ? (
+          <SelectedMediaCard
+            assetId={libraryAsset?.id || content?.mediaAssetId}
+            fileUrl={libraryAsset?.fileUrl || content?.fileUrl}
+            fileName={libraryAsset?.fileName || content?.fileName}
+            mimeType={libraryAsset?.mimeType || content?.mimeType}
+            sizeBytes={libraryAsset?.sizeBytes || content?.sizeBytes}
+            durationSeconds={libraryAsset?.metadata?.durationSeconds ?? content?.durationSeconds}
+            mediaType={
+              libraryAsset?.type ||
+              (NODE_TYPE_TO_MEDIA_TYPES[type]?.[0] as MediaType) ||
+              'VIDEO'
+            }
+            title={libraryAsset?.title || content?.title}
+            onChangeMedia={() => setIsPickerOpen(true)}
+            onDetach={() => {
+              setLibraryAsset(null);
+              onSave(null);
+              toast.success('Media detached from node');
+            }}
+          />
+        ) : (
+          <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center text-center hover:bg-slate-50 transition-colors space-y-3">
+            <div
+              className={`w-12 h-12 rounded-full ${cfg?.bgColor ?? 'bg-slate-100'} ${cfg?.color ?? 'text-slate-600'} flex items-center justify-center mb-1`}
+            >
+              <FolderOpen className="w-6 h-6 text-primary-600" />
+            </div>
+            <h3 className="text-sm font-semibold text-slate-800">
+              Select {cfg?.label ?? 'Media'} from Library
+            </h3>
+            <p className="text-xs text-slate-500 max-w-sm">
+              Attach an existing asset from your central media library or upload a new one to reuse across courses.
+            </p>
+            <button
+              type="button"
+              onClick={() => setIsPickerOpen(true)}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 hover:bg-primary-700 text-white rounded-lg text-sm font-semibold transition-colors shadow-sm"
+            >
+              <FolderOpen className="w-4 h-4" />
+              Choose from Media Library
+            </button>
+          </div>
+        )
+      ) : tab === 'upload' ? (
         <div className="border-2 border-dashed border-slate-300 rounded-xl p-8 flex flex-col items-center text-center hover:bg-slate-50 transition-colors">
           <div className={`w-12 h-12 rounded-full ${cfg?.bgColor ?? 'bg-slate-100'} ${cfg?.color ?? 'text-slate-600'} flex items-center justify-center mb-4`}>
             <Icon className="w-6 h-6" />
@@ -132,13 +222,36 @@ function FileUploadPanel({
         </div>
       )}
 
-      <button
-        onClick={handleSave}
-        disabled={tab === 'upload' ? !uploadedUrl : !externalUrl}
-        className="w-full px-4 py-2 bg-teal-700 text-white rounded-lg text-sm font-semibold hover:bg-teal-800 disabled:opacity-40 disabled:cursor-not-allowed"
-      >
-        Save Content
-      </button>
+      {tab !== 'library' && (
+        <button
+          onClick={handleSave}
+          disabled={tab === 'upload' ? !uploadedUrl : !externalUrl}
+          className="w-full px-4 py-2 bg-teal-700 text-white rounded-lg text-sm font-semibold hover:bg-teal-800 disabled:opacity-40 disabled:cursor-not-allowed"
+        >
+          Save Content
+        </button>
+      )}
+
+      <MediaPickerModal
+        isOpen={isPickerOpen}
+        onClose={() => setIsPickerOpen(false)}
+        courseId={courseId}
+        allowedTypes={NODE_TYPE_TO_MEDIA_TYPES[type]}
+        title={`Select ${cfg?.label ?? 'Media'} for Lesson`}
+        onSelect={(asset: MediaAsset) => {
+          setLibraryAsset(asset);
+          onSave({
+            sourceType: 'library',
+            mediaAssetId: asset.id,
+            fileUrl: asset.fileUrl,
+            fileName: asset.fileName,
+            mimeType: asset.mimeType,
+            sizeBytes: asset.sizeBytes,
+            durationSeconds: asset.metadata?.durationSeconds ?? null,
+          });
+          toast.success('Attached media from library!');
+        }}
+      />
     </div>
   );
 }

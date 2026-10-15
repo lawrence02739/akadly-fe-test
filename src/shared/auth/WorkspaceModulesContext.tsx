@@ -15,6 +15,7 @@ export function moduleForPartnerPath(path: string): string | null {
     students: 'student',
     courses: 'course',
     batches: 'course',
+    'media-library': 'media',
     forms: 'form',
     books: 'book',
     orders: 'order',
@@ -40,4 +41,19 @@ export function moduleForPartnerPath(path: string): string | null {
     // notifications: 'notification',
   };
   return modules[section] ?? null;
+}
+
+export function isPartnerModuleAvailable(
+  modules: string[] | null,
+  path: string,
+): boolean {
+  if (!modules) return true;
+  const required = moduleForPartnerPath(path);
+  if (!required) return true;
+  if (modules.includes(required)) return true;
+  // Media library is accessible if either media module or course/curriculum is enabled
+  if (required === 'media' && (modules.includes('course') || modules.includes('curriculum'))) {
+    return true;
+  }
+  return false;
 }

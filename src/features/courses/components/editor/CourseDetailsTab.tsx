@@ -1,13 +1,16 @@
-import { Upload, Image as ImageIcon, Loader2 } from 'lucide-react';
+import { Upload, Image as ImageIcon, Loader2, FolderOpen } from 'lucide-react';
 import { useUpload } from '../../hooks/useUpload';
 import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import CreatableDropdown from '../../../../shared/components/CreatableDropdown';
 import { useCategories, useTags, useCreateCategory, useCreateTag, useInstructors } from '../../hooks/useMasterData';
+import { MediaPickerModal } from '../../../media-library/components/MediaPickerModal';
+import type { MediaAsset } from '../../../media-library/types';
 
 export default function CourseDetailsTab({ courseData, onChange, onSave, isSaving }: { courseData: any, onChange: (field: string, value: any) => void, onSave: () => void, isSaving: boolean }) {
   const { mutateAsync: uploadFile, isPending } = useUpload();
   const [progress, setProgress] = useState(0);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   const { data: categories } = useCategories();
   const { data: tagsList } = useTags();
@@ -28,7 +31,7 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
         // Store the full S3 public URL
         onChange('thumbnail', fileUrl);
         toast.success('Thumbnail uploaded successfully!');
-      } catch (err) {
+      } catch {
         toast.error('Failed to upload thumbnail');
       }
     }
@@ -167,12 +170,32 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
                   Upload your course image here. It must meet our course image quality standards to be accepted.
                   Important guidelines: 750x422 pixels; .jpg, .jpeg, .gif, or .png. no text on the image.
                 </p>
-                <div>
+                <div className="flex items-center gap-3 flex-wrap">
                   <input type="file" id="thumbnail" className="hidden" accept="image/*" onChange={handleThumbnailUpload} />
-                  <label htmlFor="thumbnail" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer">
+                  <label htmlFor="thumbnail" className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm">
                     <Upload className="w-4 h-4" />
                     Upload Image
                   </label>
+                  <button
+                    type="button"
+                    onClick={() => setPickerOpen(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-white border border-slate-300 rounded-lg text-sm font-semibold text-slate-700 hover:bg-slate-50 cursor-pointer shadow-sm"
+                  >
+                    <FolderOpen className="w-4 h-4 text-primary-600" />
+                    Choose from Library
+                  </button>
+                  {courseData.thumbnail && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onChange('thumbnail', '');
+                        onChange('thumbnailMediaId', null);
+                      }}
+                      className="inline-flex items-center gap-1 px-3 py-2 text-xs font-medium text-rose-600 hover:bg-rose-50 rounded-lg border border-rose-200 transition-colors"
+                    >
+                      Remove
+                    </button>
+                  )}
                 </div>
                 {isPending && (
                   <div className="w-full max-w-xs mt-2">
@@ -184,6 +207,17 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
               </div>
             </div>
           </div>
+
+          <MediaPickerModal
+            isOpen={pickerOpen}
+            onClose={() => setPickerOpen(false)}
+            allowedTypes={['IMAGE']}
+            title="Choose Course Thumbnail from Media Library"
+            onSelect={(asset: MediaAsset) => {
+              onChange('thumbnail', asset.fileUrl);
+              onChange('thumbnailMediaId', asset.id);
+            }}
+          />
         </div>
       </div>
 

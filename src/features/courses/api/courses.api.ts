@@ -24,3 +24,8 @@ export const updateCourse = async (id: string, dto: any) => {
 export const deleteCourse = async (id: string) => {
   await api.delete(`/courses/${id}`);
 };
+
+export const fetchCourseStructure = async (courseId: string) => {
+  const { data } = await api.get(`/courses/${courseId}/structure`);
+  return data.data ?? data;
+};

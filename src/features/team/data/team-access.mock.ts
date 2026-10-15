@@ -29,6 +29,23 @@ export const permissionGroups: PermissionGroup[] = [
     ],
   },
   {
+    resource: "media",
+    label: "Media Library",
+    description: "Digital assets management and course attachments",
+    permissions: [
+      {
+        key: "media:read",
+        label: "View media library",
+        description: "Browse, search, and preview digital assets.",
+      },
+      {
+        key: "media:manage",
+        label: "Manage media library",
+        description: "Upload, edit, link, replace, and delete digital assets.",
+      },
+    ],
+  },
+  {
     resource: "member",
     label: "Users & access",
     description: "Workspace users, invitations, and roles",
@@ -120,6 +137,8 @@ export const initialRoles: TeamRole[] = [
       "course:read",
       "course:manage",
       "curriculum:manage",
+      "media:read",
+      "media:manage",
       "member:read",
     ],
     memberCount: 8,

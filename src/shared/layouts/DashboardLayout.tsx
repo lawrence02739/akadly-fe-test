@@ -6,7 +6,7 @@ import TopNav from "./TopNav";
 import AccessRoute from "../auth/AccessRoute";
 import type { RootState } from "../../store";
 import api from "../api/axios";
-import { moduleForPartnerPath, WorkspaceModulesContext } from "../auth/WorkspaceModulesContext";
+import { isPartnerModuleAvailable, moduleForPartnerPath, WorkspaceModulesContext } from "../auth/WorkspaceModulesContext";
 
 export default function DashboardLayout() {
   const user = useSelector((state: RootState) => state.auth.user);
@@ -87,7 +87,7 @@ export default function DashboardLayout() {
                 <div className="m-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center text-slate-600">Loading workspace access...</div>
               ) : preferencesStatus === "error" ? (
                 <div className="m-auto max-w-lg rounded-xl border border-amber-200 bg-white p-8 text-center"><h1 className="text-xl font-bold text-slate-900">Workspace access unavailable</h1><p className="mt-2 text-sm text-slate-600">Could not load your workspace settings. Please refresh the page.</p></div>
-              ) : requiredModule && !effectiveModules.includes(requiredModule) ? (
+              ) : requiredModule && !isPartnerModuleAvailable(effectiveModules, location.pathname) ? (
                 <div className="m-auto max-w-lg rounded-xl border border-slate-200 bg-white p-8 text-center"><h1 className="text-xl font-bold text-slate-900">Module unavailable</h1><p className="mt-2 text-sm text-slate-500">This module is not enabled for your workspace.</p></div>
               ) : <Outlet />}
             </div>
