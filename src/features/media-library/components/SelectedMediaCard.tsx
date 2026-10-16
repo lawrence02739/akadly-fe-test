@@ -24,18 +24,55 @@ export function SelectedMediaCard({
   mimeType,
   sizeBytes,
   durationSeconds,
-  mediaType = 'VIDEO',
+  mediaType,
   title,
   onChangeMedia,
   onDetach,
 }: SelectedMediaProps) {
+  // Infer correct media type if not explicitly set or if mismatched
+  const effectiveMediaType: MediaType = (() => {
+    const cleanMime = (mimeType || '').toLowerCase();
+    const cleanName = (fileName || fileUrl || '').toLowerCase();
+
+    if (
+      cleanMime.startsWith('image/') ||
+      /\.(jpg|jpeg|png|gif|webp|svg|bmp)$/i.test(cleanName)
+    ) {
+      return 'IMAGE';
+    }
+    if (
+      cleanMime.startsWith('audio/') ||
+      /\.(mp3|wav|ogg|m4a|aac|flac)$/i.test(cleanName)
+    ) {
+      return 'AUDIO';
+    }
+    if (
+      cleanMime === 'application/pdf' ||
+      /\.(pdf|docx?|pptx?|xlsx?|txt)$/i.test(cleanName)
+    ) {
+      return 'DOCUMENT';
+    }
+    if (
+      cleanMime.startsWith('video/') ||
+      /\.(mp4|webm|ogg|mov|mkv)$/i.test(cleanName)
+    ) {
+      return 'VIDEO';
+    }
+
+    if (mediaType && ['IMAGE', 'VIDEO', 'AUDIO', 'DOCUMENT'].includes(mediaType)) {
+      return mediaType;
+    }
+
+    return 'VIDEO';
+  })();
+
   // Construct a minimal MediaAsset object for MediaThumb
   const dummyAsset: MediaAsset = {
     id: assetId || '',
     tenantId: '',
     title: title || fileName || 'Selected Media',
     description: null,
-    type: mediaType,
+    type: effectiveMediaType,
     status: 'ACTIVE',
     category: null,
     subject: null,
@@ -90,7 +127,7 @@ export function SelectedMediaCard({
             <h4 className="text-xs font-semibold text-slate-900 truncate">
               {title || fileName}
             </h4>
-            <MediaTypeBadge type={mediaType} showIcon={false} />
+            <MediaTypeBadge type={effectiveMediaType} showIcon={false} />
           </div>
 
           <p className="text-[11px] text-slate-500 truncate mt-0.5">
