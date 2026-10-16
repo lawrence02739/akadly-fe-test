@@ -13,6 +13,7 @@ import { IdentitySection } from '../components/InstructorForm/IdentitySection';
 import { InstructorTypeSelector } from '../components/InstructorForm/InstructorTypeSelector';
 import { EngagementSection } from '../components/InstructorForm/EngagementSection';
 import { InitialAssignmentSection } from '../components/InstructorForm/InitialAssignmentSection';
+import { DocumentsSection } from '../components/InstructorForm/DocumentsSection';
 import { PermissionsCard } from '../components/InstructorForm/PermissionsCard';
 import { InvitationCard } from '../components/InstructorForm/InvitationCard';
 import { ReviewInvitationDrawer } from '../components/InstructorForm/ReviewInvitationDrawer';
@@ -21,6 +22,7 @@ import {
   InstructorType,
   TeachingRole,
   type WeeklySlot,
+  type InstructorDocument,
 } from '../types/instructor.types';
 
 interface AddInstructorPageProps {
@@ -61,6 +63,9 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
   const [courseId, setCourseId] = useState('');
   const [batchId, setBatchId] = useState('');
   const [teachingRole, setTeachingRole] = useState<TeachingRole>(TeachingRole.LEAD);
+
+  // Documents State
+  const [documents, setDocuments] = useState<InstructorDocument[]>([]);
 
   // Permissions State
   const [editCourseContent, setEditCourseContent] = useState(false);
@@ -148,6 +153,7 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
       setExpertise(existingInstructor.expertise || []);
       setBio(existingInstructor.bio || '');
       setInstructorType(existingInstructor.instructorType);
+      setDocuments(existingInstructor.documents || []);
 
       const eng = existingInstructor.engagement || {};
       setStartDate(eng.startDate ? eng.startDate.split('T')[0] : '');
@@ -250,6 +256,7 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
           courseId && batchId
             ? { courseId, batchId, teachingRole }
             : undefined,
+        documents: documents.length > 0 ? documents : undefined,
         sendInvitation: false,
       };
 
@@ -262,6 +269,10 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
   };
 
   const handleConfirmSubmit = async () => {
+    if (!validate()) {
+      toast.error('Please fix validation errors before proceeding.');
+      return;
+    }
     try {
       if (editMode && editId) {
         await updateMutation.mutateAsync({
@@ -286,6 +297,7 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
               gradeAssessments,
               communicateWithLearners,
             },
+            documents,
           },
         });
         toast.success('Instructor updated successfully.');
@@ -317,6 +329,7 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
             courseId && batchId
               ? { courseId, batchId, teachingRole }
               : undefined,
+          documents: documents.length > 0 ? documents : undefined,
           sendInvitation,
         };
 
@@ -436,15 +449,28 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
           )}
           <button
             type="button"
-            onClick={handleOpenReview}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0C5A69] px-4 py-2 text-xs font-semibold text-white hover:bg-[#094753]"
+            onClick={editMode ? handleConfirmSubmit : handleOpenReview}
+            disabled={updateMutation.isPending || createMutation.isPending}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-[#0C5A69] px-4 py-2 text-xs font-semibold text-white hover:bg-[#094753] disabled:opacity-50"
           >
-            <Send className="h-3.5 w-3.5" />
-            {editMode
-              ? 'Save Changes'
-              : sendInvitation
-                ? 'Review & Send'
-                : 'Save Profile'}
+            {editMode ? (
+              updateMutation.isPending ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  Saving Changes...
+                </>
+              ) : (
+                <>
+                  <Save className="h-3.5 w-3.5" />
+                  Save Changes
+                </>
+              )
+            ) : (
+              <>
+                <Send className="h-3.5 w-3.5" />
+                {sendInvitation ? 'Review & Send' : 'Save Profile'}
+              </>
+            )}
           </button>
         </div>
       </div>
@@ -521,6 +547,12 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
             errors={errors}
           />
 
+          {/* Instructor Documents */}
+          <DocumentsSection
+            documents={documents}
+            onChangeDocuments={setDocuments}
+          />
+
           {/* Initial Assignment (new mode only) */}
           {!editMode && (
             <InitialAssignmentSection
@@ -565,6 +597,7 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
         onClose={() => setIsReviewOpen(false)}
         onConfirmSend={handleConfirmSubmit}
         isSubmitting={createMutation.isPending || updateMutation.isPending}
+        editMode={editMode}
         formData={{
           name,
           email,
@@ -591,6 +624,7 @@ export const AddInstructorPage: React.FC<AddInstructorPageProps> = ({
             courseId && batchId
               ? { courseId, batchId, teachingRole }
               : undefined,
+          documents,
           sendInvitation,
         }}
       />
