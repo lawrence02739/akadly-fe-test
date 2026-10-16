@@ -7,6 +7,8 @@ import {
   Clock,
   ArrowRight,
   Activity,
+  FileText,
+  ExternalLink,
 } from 'lucide-react';
 import type { InstructorView } from '../../types/instructor.types';
 import {
@@ -174,6 +176,34 @@ export const OverviewTab: React.FC<OverviewTabProps> = ({
               <p className="mt-1.5 text-xs text-slate-600 leading-relaxed whitespace-pre-line">
                 {instructor.bio}
               </p>
+            </div>
+          )}
+
+          {/* Attached Documents */}
+          {instructor.documents && instructor.documents.length > 0 && (
+            <div className="mt-5 border-t border-slate-100 pt-4">
+              <span className="text-xs text-slate-400 font-medium">
+                Attached Documents ({instructor.documents.length})
+              </span>
+              <div className="mt-2.5 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {instructor.documents.map((doc, idx) => (
+                  <a
+                    key={idx}
+                    href={doc.fileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center justify-between gap-2 rounded-lg border border-slate-200 bg-slate-50/70 p-2.5 text-xs hover:border-[#0C5A69] hover:bg-teal-50/30 transition-colors group"
+                  >
+                    <div className="flex items-center gap-2 truncate">
+                      <FileText className="h-4 w-4 text-[#0C5A69] shrink-0" />
+                      <span className="font-medium text-slate-800 truncate group-hover:text-[#0C5A69]">
+                        {doc.title}
+                      </span>
+                    </div>
+                    <ExternalLink className="h-3.5 w-3.5 text-slate-400 shrink-0 group-hover:text-[#0C5A69]" />
+                  </a>
+                ))}
+              </div>
             </div>
           )}
         </div>

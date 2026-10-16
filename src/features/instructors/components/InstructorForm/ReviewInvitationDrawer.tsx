@@ -12,6 +12,7 @@ interface ReviewInvitationDrawerProps {
   onClose: () => void;
   onConfirmSend: () => void;
   isSubmitting: boolean;
+  editMode?: boolean;
   formData: {
     name: string;
     email: string;
@@ -39,6 +40,7 @@ interface ReviewInvitationDrawerProps {
       teachingRole: TeachingRole;
     };
     sendInvitation: boolean;
+    documents?: { title: string; fileUrl: string }[];
   };
 }
 
@@ -47,6 +49,7 @@ export const ReviewInvitationDrawer: React.FC<ReviewInvitationDrawerProps> = ({
   onClose,
   onConfirmSend,
   isSubmitting,
+  editMode = false,
   formData,
 }) => {
   if (!isOpen) return null;
@@ -69,10 +72,12 @@ export const ReviewInvitationDrawer: React.FC<ReviewInvitationDrawerProps> = ({
         <div className="flex items-center justify-between border-b border-slate-200 px-6 py-4">
           <div>
             <h3 className="text-lg font-semibold text-slate-900">
-              Review Instructor Details
+              {editMode ? 'Review & Save Changes' : 'Review Instructor Details'}
             </h3>
             <p className="text-xs text-slate-500">
-              Step 2 of 3 — Verify profile, scope, and invitation settings before proceeding.
+              {editMode
+                ? 'Verify updated instructor details before saving.'
+                : 'Step 2 of 3 — Verify profile, scope, and invitation settings before proceeding.'}
             </p>
           </div>
           <button
@@ -192,22 +197,53 @@ export const ReviewInvitationDrawer: React.FC<ReviewInvitationDrawerProps> = ({
             </div>
           </div>
 
-          {/* Next steps notice */}
-          <div className="flex items-start gap-3 rounded-xl border border-teal-200 bg-teal-50/50 p-4 text-xs text-teal-900">
-            <Mail className="h-5 w-5 shrink-0 text-teal-700" />
-            <div>
-              <p className="font-semibold">
-                {sendInvitation
-                  ? 'An email invitation link will be sent.'
-                  : 'Profile will be saved as a Draft.'}
-              </p>
-              <p className="mt-0.5 text-teal-800">
-                {sendInvitation
-                  ? 'The invitation is valid for 7 days. The instructor will set their password and verify their account before accessing assigned courses.'
-                  : 'You can review or send the invitation at any time from the Instructors table.'}
-              </p>
+          {/* Attached documents */}
+          {formData.documents && formData.documents.length > 0 && (
+            <div className="rounded-xl border border-slate-200 p-4 bg-slate-50/50">
+              <h4 className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Attached Documents ({formData.documents.length})
+              </h4>
+              <div className="mt-3 space-y-1.5">
+                {formData.documents.map((doc, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between text-xs rounded-md bg-white border border-slate-200 px-3 py-1.5"
+                  >
+                    <span className="font-medium text-slate-800 truncate">
+                      {doc.title}
+                    </span>
+                    <a
+                      href={doc.fileUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-teal-700 hover:underline shrink-0 ml-2"
+                    >
+                      View
+                    </a>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Next steps notice */}
+          {!editMode && (
+            <div className="flex items-start gap-3 rounded-xl border border-teal-200 bg-teal-50/50 p-4 text-xs text-teal-900">
+              <Mail className="h-5 w-5 shrink-0 text-teal-700" />
+              <div>
+                <p className="font-semibold">
+                  {sendInvitation
+                    ? 'An email invitation link will be sent.'
+                    : 'Profile will be saved as a Draft.'}
+                </p>
+                <p className="mt-0.5 text-teal-800">
+                  {sendInvitation
+                    ? 'The invitation is valid for 7 days. The instructor will set their password and verify their account before accessing assigned courses.'
+                    : 'You can review or send the invitation at any time from the Instructors table.'}
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Footer */}
@@ -218,7 +254,7 @@ export const ReviewInvitationDrawer: React.FC<ReviewInvitationDrawerProps> = ({
             disabled={isSubmitting}
             className="rounded-lg border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-50"
           >
-            Back
+            Cancel
           </button>
           <button
             type="button"
@@ -231,7 +267,11 @@ export const ReviewInvitationDrawer: React.FC<ReviewInvitationDrawerProps> = ({
             ) : (
               <>
                 <CheckCircle2 className="h-4 w-4" />
-                {sendInvitation ? 'Send Invitation' : 'Save Profile'}
+                {editMode
+                  ? 'Save Changes'
+                  : sendInvitation
+                    ? 'Send Invitation'
+                    : 'Save Profile'}
               </>
             )}
           </button>

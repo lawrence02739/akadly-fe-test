@@ -100,6 +100,11 @@ export interface InstructorInvitation {
   revokedAt: string | null;
 }
 
+export interface InstructorDocument {
+  title: string;
+  fileUrl: string;
+}
+
 export interface InstructorView {
   id: string;
   tenantId: string;
@@ -135,6 +140,7 @@ export interface InstructorView {
   lastActiveAt: string | null;
   engagementState: EngagementState;
   invitationState: InvitationState;
+  documents?: InstructorDocument[];
 }
 
 export interface InstructorListItem {
@@ -207,6 +213,7 @@ export interface CreateInstructorDto {
     teachingRole: TeachingRole;
   };
   sendInvitation?: boolean;
+  documents?: InstructorDocument[];
 }
 
 export interface UpdateInstructorDto {
@@ -227,6 +234,7 @@ export interface UpdateInstructorDto {
     renewalReviewDate?: string | null;
   };
   permissions?: Partial<InstructorPermissionFlags>;
+  documents?: InstructorDocument[];
 }
 
 export interface AddAssignmentDto {
@@ -280,5 +288,6 @@ export interface ConvertToInstructorDto {
     batchId: string;
     teachingRole: TeachingRole;
   };
+  documents?: InstructorDocument[];
 }
 
