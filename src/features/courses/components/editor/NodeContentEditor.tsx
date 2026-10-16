@@ -96,6 +96,7 @@ function FileUploadPanel({
           libraryAsset?.metadata?.durationSeconds ??
           content?.durationSeconds ??
           null,
+        mediaType: libraryAsset?.type || content?.mediaType,
       });
       return;
     }
@@ -138,6 +139,7 @@ function FileUploadPanel({
             durationSeconds={libraryAsset?.metadata?.durationSeconds ?? content?.durationSeconds}
             mediaType={
               libraryAsset?.type ||
+              (content?.mediaType as MediaType) ||
               (NODE_TYPE_TO_MEDIA_TYPES[type]?.[0] as MediaType) ||
               'VIDEO'
             }
@@ -248,6 +250,7 @@ function FileUploadPanel({
             mimeType: asset.mimeType,
             sizeBytes: asset.sizeBytes,
             durationSeconds: asset.metadata?.durationSeconds ?? null,
+            mediaType: asset.type,
           });
           toast.success('Attached media from library!');
         }}
