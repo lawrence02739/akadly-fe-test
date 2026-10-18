@@ -10,10 +10,11 @@ import {
   type BatchListResult,
   type BatchStudent,
 } from "../api/batches.api";
-import { teamApi, type ApiMember } from "../../team/api/team.api";
 import { listStudentOptions } from "../../students/api/students.api";
 import type { StudentOption } from "../../students/types";
 import { listCourses } from "../../courses/api/courses.api";
+import { usersApi } from "../../users/api/users.api";
+import type { ApiUser } from "../../users/types";
 
 type Status = "upcoming" | "active" | "completed" | "cancelled";
 const statusLabel = (status: Status) =>
@@ -45,12 +46,12 @@ const Card = ({
   </section>
 );
 
-function teacherNames(batch: BatchListItem, members: ApiMember[]) {
+function teacherNames(batch: BatchListItem, members: ApiUser[]) {
   return [batch.primaryTeacherUserId, batch.coTeacherUserId]
     .filter(Boolean)
     .map(
       (id) =>
-        members.find((member) => member.userId === id)?.name ??
+        members.find((member) => member.id === id)?.name ??
         "Assigned teacher",
     )
     .join(" � ");
@@ -64,7 +65,7 @@ function Overview({
   onCreate: () => void;
 }) {
   const [result, setResult] = useState<BatchListResult | null>(null);
-  const [members, setMembers] = useState<ApiMember[]>([]);
+  const [members, setMembers] = useState<ApiUser[]>([]);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [courseId, setCourseId] = useState("");
@@ -94,13 +95,13 @@ function Overview({
             sortBy: "startsAt",
             sortOrder,
           }),
-          teamApi.members({ page: 1, pageSize: 100, status: "active" }),
+          usersApi.list({ page: 1, limit: 100, status: "active" }),
           listCourses(),
         ])
           .then(([batches, team, courseItems]) => {
             if (mounted) {
               setResult(batches);
-              setMembers(team.data);
+              setMembers(team.items);
               setCourses(courseItems);
             }
           })
@@ -402,7 +403,7 @@ function Detail({
   const [availableStudents, setAvailableStudents] = useState<StudentOption[]>(
     [],
   );
-  const [members, setMembers] = useState<ApiMember[]>([]);
+  const [members, setMembers] = useState<ApiUser[]>([]);
   const [edit, setEdit] = useState(false);
   const [studentId, setStudentId] = useState("");
   const [studentSearch, setStudentSearch] = useState("");
@@ -413,14 +414,14 @@ function Detail({
       batchApi.students(id),
       batchApi.waitlist(id),
       listStudentOptions(),
-      teamApi.members({ page: 1, pageSize: 100, status: "active" }),
+      usersApi.list({ page: 1, limit: 100, status: "active" }),
     ])
       .then(([b, s, w, options, team]) => {
         setBatch(b);
         setStudents(s);
         setWaitlist(w);
         setAvailableStudents(options);
-        setMembers(team.data);
+        setMembers(team.items);
       })
       .catch(() => toast.error("Could not load batch details.")), [id]);
   useEffect(() => {

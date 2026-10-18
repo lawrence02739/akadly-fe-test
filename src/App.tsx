@@ -45,8 +45,7 @@ import ForgotPassword from "./features/auth/pages/ForgotPassword";
 import ResetPassword from "./features/auth/pages/ResetPassword";
 import AuthCallback from "./features/auth/pages/AuthCallback";
 import WorkspacePage from "./shared/pages/WorkspacePage";
-import TeamAccessPage from "./features/team/pages/TeamAccessPage";
-import AcceptInvitation from "./features/team/pages/AcceptInvitation";
+import UsersPage from "./features/users/pages/UsersPage";
 import InstructorsPage from "./features/instructors/pages/InstructorsPage";
 import AddInstructorPage from "./features/instructors/pages/AddInstructorPage";
 import InstructorDetailsPage from "./features/instructors/pages/InstructorDetailsPage";
@@ -114,7 +113,6 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/accept-invite" element={<AcceptInvitation />} />
         <Route
           path="/admin/team/invitations/accept"
           element={<AdminTeamInvitationAccept />}
@@ -379,10 +377,11 @@ function App() {
             path="users"
             element={
               <AccessRoute anyOf={["member:read"]}>
-                <TeamAccessPage />
+                <UsersPage />
               </AccessRoute>
             }
           />
+          <Route path="team" element={<Navigate to="/partner/users" replace />} />
           {/* Instructors */}
           <Route
             path="instructors"

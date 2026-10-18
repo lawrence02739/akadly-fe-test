@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { assignmentApi } from '../api/assignments.api';
 import { listCourses } from '../../courses/api/courses.api';
 import { listBatches } from '../../batches/api/batches.api';
-import { teamApi } from '../../team/api/team.api';
+import { usersApi } from '../../users/api/users.api';
 import { getPresignedUploadUrl, uploadToS3 } from '../../courses/api/uploads.api';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Eye, ArrowRight, Upload, AlignLeft, Link as LinkIcon, Paperclip, FileText, Trash2, Calendar } from 'lucide-react';
@@ -47,7 +47,7 @@ export default function AssignmentEditor() {
     Promise.all([
       listCourses().then(res => setCourses(res)),
       listBatches({ pageSize: 100 }).then(res => setBatches(res.items)),
-      teamApi.members({ pageSize: 100 }).then(res => setGraders(res.data))
+      usersApi.list({ limit: 100, status: 'active' }).then(res => setGraders(res.items))
     ]).catch(() => console.error('Failed to load form options'));
 
     if (id) {

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { qaApi } from '../../../api/qa';
-import { teamApi } from '../../team/api/team.api';
+import { usersApi } from '../../users/api/users.api';
 import type { LessonQuestion, QuestionMessage } from '../../../types/qa';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, CheckCircle, ExternalLink, ChevronRight, Paperclip, Clock, ShieldAlert } from 'lucide-react';
@@ -39,7 +39,7 @@ export function QuestionDetail() {
   
   useEffect(() => {
     if (id) fetchDetail(id);
-    teamApi.members({ pageSize: 100 }).then(res => setInstructors(res.data)).catch(console.error);
+    usersApi.list({ limit: 100, status: 'active' }).then(res => setInstructors(res.items)).catch(console.error);
   }, [id]);
 
   const fetchDetail = async (qId: string) => {

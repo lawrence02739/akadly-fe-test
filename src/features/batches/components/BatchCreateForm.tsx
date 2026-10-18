@@ -2,8 +2,9 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ArrowLeft, Check } from "lucide-react";
 import toast from "react-hot-toast";
 import { listCourses } from "../../courses/api/courses.api";
-import { teamApi, type ApiMember } from "../../team/api/team.api";
 import { createBatch } from "../api/batches.api";
+import { usersApi } from "../../users/api/users.api";
+import type { ApiUser } from "../../users/types";
 
 type CourseOption = { id: string; title: string; status?: string };
 type CreatedBatchView = {
@@ -56,7 +57,7 @@ export default function BatchCreateForm({
   onCreated: (batch: CreatedBatchView) => void;
 }) {
   const [courses, setCourses] = useState<CourseOption[]>([]);
-  const [teachers, setTeachers] = useState<ApiMember[]>([]);
+  const [teachers, setTeachers] = useState<ApiUser[]>([]);
   const [loadingOptions, setLoadingOptions] = useState(true);
   const [loadingError, setLoadingError] = useState("");
   const [saving, setSaving] = useState(false);
@@ -81,7 +82,7 @@ export default function BatchCreateForm({
     let active = true;
     Promise.all([
       listCourses(),
-      teamApi.members({ page: 1, pageSize: 100, status: "active" }),
+      usersApi.list({ page: 1, limit: 100, status: "active" }),
     ])
       .then(([courseItems, members]) => {
         if (!active) return;
@@ -90,7 +91,7 @@ export default function BatchCreateForm({
             (course: CourseOption) => course.status !== "ARCHIVED",
           ),
         );
-        setTeachers(members.data);
+        setTeachers(members.items);
       })
       .catch(
         () =>
@@ -107,10 +108,10 @@ export default function BatchCreateForm({
 
   const course = courses.find((item) => item.id === form.courseId);
   const primaryTeacher = teachers.find(
-    (item) => item.userId === form.primaryTeacherUserId,
+    (item) => item.id === form.primaryTeacherUserId,
   );
   const coTeacher = teachers.find(
-    (item) => item.userId === form.coTeacherUserId,
+    (item) => item.id === form.coTeacherUserId,
   );
   const setValue = <K extends keyof typeof form>(
     key: K,
@@ -257,8 +258,8 @@ export default function BatchCreateForm({
                     {loadingOptions ? "Loading teachers…" : "Select a teacher"}
                   </option>
                   {teachers.map((item) => (
-                    <option key={item.id} value={item.userId}>
-                      {item.name} · {item.roleNames.join(", ") || "Team member"}
+                    <option key={item.id} value={item.id}>
+                      {item.name} · {item.roles.map((r: { name: string }) => r.name).join(", ") || "Team member"}
                     </option>
                   ))}
                 </select>
@@ -273,11 +274,11 @@ export default function BatchCreateForm({
                 >
                   <option value="">No co-teacher</option>
                   {teachers
-                    .filter((item) => item.userId !== form.primaryTeacherUserId)
+                    .filter((item) => item.id !== form.primaryTeacherUserId)
                     .map((item) => (
-                      <option key={item.id} value={item.userId}>
+                      <option key={item.id} value={item.id}>
                         {item.name} ·{" "}
-                        {item.roleNames.join(", ") || "Team member"}
+                        {item.roles.map((r: { name: string }) => r.name).join(", ") || "Team member"}
                       </option>
                     ))}
                 </select>
