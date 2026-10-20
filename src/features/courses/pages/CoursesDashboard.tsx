@@ -4,6 +4,8 @@ import CourseCard from '../components/CourseCard';
 import { useNavigate } from 'react-router-dom';
 import { useListCourses } from '../hooks/useCourses';
 import { useCategories, useTags } from '../hooks/useMasterData';
+import { Pagination } from '../../../shared/components/Pagination';
+import type { PaginationMeta } from '../../../shared/api/pagination';
 
 export default function CoursesDashboard() {
   const navigate = useNavigate();
@@ -19,6 +21,8 @@ export default function CoursesDashboard() {
   const [selectedLevel, setSelectedLevel] = useState('');
   const [selectedStatus, setSelectedStatus] = useState('');
   const [sortBy, setSortBy] = useState('newest');
+  const [page, setPage] = useState(1);
+  const pageSize = 12;
 
   // Apply filters and sort
   const filteredCourses = useMemo(() => {
@@ -53,6 +57,22 @@ export default function CoursesDashboard() {
     
     return result;
   }, [courses, searchTitle, selectedCategory, selectedTag, selectedLanguage, selectedLevel, selectedStatus, sortBy]);
+
+  const total = filteredCourses.length;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+  const paginatedCourses = useMemo(() => {
+    const start = (page - 1) * pageSize;
+    return filteredCourses.slice(start, start + pageSize);
+  }, [filteredCourses, page, pageSize]);
+
+  const paginationMeta: PaginationMeta = {
+    page,
+    pageSize,
+    total,
+    totalPages,
+    hasNext: page < totalPages,
+    hasPrev: page > 1,
+  };
 
   return (
     <div className="max-w-7xl mx-auto space-y-6">
@@ -99,22 +119,22 @@ export default function CoursesDashboard() {
              type="text" 
              placeholder="Search titles..." 
              value={searchTitle}
-             onChange={e => setSearchTitle(e.target.value)}
+             onChange={e => { setSearchTitle(e.target.value); setPage(1); }}
              className="w-full pl-8 pr-3 py-1.5 focus:outline-none" 
            />
         </div>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
-        <select value={selectedCategory} onChange={e => setSelectedCategory(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
+        <select value={selectedCategory} onChange={e => { setSelectedCategory(e.target.value); setPage(1); }} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
           <option value="">Category</option>
           {categories?.map((c: any) => <option key={c._id} value={c.name}>{c.name}</option>)}
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
-        <select value={selectedTag} onChange={e => setSelectedTag(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer max-w-[120px]">
+        <select value={selectedTag} onChange={e => { setSelectedTag(e.target.value); setPage(1); }} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer max-w-[120px]">
           <option value="">Tags</option>
           {tagsList?.map((t: any) => <option key={t._id} value={t.name}>{t.name}</option>)}
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
-        <select value={selectedLanguage} onChange={e => setSelectedLanguage(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
+        <select value={selectedLanguage} onChange={e => { setSelectedLanguage(e.target.value); setPage(1); }} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
           <option value="">Language</option>
           <option value="English">English</option>
           <option value="Spanish">Spanish</option>
@@ -122,20 +142,20 @@ export default function CoursesDashboard() {
           <option value="German">German</option>
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
-        <select value={selectedLevel} onChange={e => setSelectedLevel(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
+        <select value={selectedLevel} onChange={e => { setSelectedLevel(e.target.value); setPage(1); }} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
           <option value="">Level</option>
           <option value="Beginner">Beginner</option>
           <option value="Intermediate">Intermediate</option>
           <option value="Advanced">Advanced</option>
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
-        <select value={selectedStatus} onChange={e => setSelectedStatus(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
+        <select value={selectedStatus} onChange={e => { setSelectedStatus(e.target.value); setPage(1); }} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
           <option value="">Status</option>
           <option value="DRAFT">Draft</option>
           <option value="PUBLISHED">Published</option>
         </select>
         <div className="h-6 w-px bg-slate-200 shrink-0"></div>
-        <select value={sortBy} onChange={e => setSortBy(e.target.value)} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
+        <select value={sortBy} onChange={e => { setSortBy(e.target.value); setPage(1); }} className="bg-transparent font-medium text-slate-600 focus:outline-none cursor-pointer">
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
         </select>
@@ -151,6 +171,7 @@ export default function CoursesDashboard() {
                 setSelectedLevel('');
                 setSelectedStatus('');
                 setSortBy('newest');
+                setPage(1);
               }}
               className="text-xs font-semibold text-rose-500 hover:text-rose-600 transition-colors shrink-0"
             >
@@ -173,21 +194,21 @@ export default function CoursesDashboard() {
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredCourses.map((course: any) => (
+          {paginatedCourses.map((course: any) => (
             <CourseCard key={course.id} course={course} />
           ))}
         </div>
       )}
 
       {/* Pagination Footer */}
-      <div className="flex items-center justify-between pt-4">
-        <p className="text-sm text-slate-500 font-medium">Showing 1-{filteredCourses.length} of {filteredCourses.length} courses</p>
-        <div className="flex items-center gap-2">
-          <button className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 opacity-50 cursor-not-allowed">Previous</button>
-          <button className="w-8 h-8 rounded-lg bg-primary-800 text-white text-sm font-medium flex items-center justify-center shadow-sm">1</button>
-          <button className="px-3 py-1.5 border border-slate-200 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 opacity-50 cursor-not-allowed">Next</button>
+      {total > 0 && (
+        <div className="bg-white rounded-xl border border-slate-200">
+          <Pagination
+            pagination={paginationMeta}
+            onPageChange={setPage}
+          />
         </div>
-      </div>
+      )}
     </div>
   );
 }

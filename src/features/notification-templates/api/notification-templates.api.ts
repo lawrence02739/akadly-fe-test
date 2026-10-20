@@ -1,6 +1,7 @@
 import api from '../../../shared/api/axios';
 import type {
   TemplateListResponse,
+  TemplateListRow,
   TemplateSummary,
   TemplateMeta,
   TemplateDetailResponse,
@@ -34,8 +35,16 @@ export const getTemplateSummary = async (): Promise<TemplateSummary> => {
 };
 
 export const listTemplates = async (params: ListTemplatesParams): Promise<TemplateListResponse> => {
-  const { data } = await api.get<TemplateListResponse | ApiEnvelope<TemplateListResponse>>(BASE_URL, { params });
-  return unwrap(data);
+  const { data } = await api.get<any>(BASE_URL, { params });
+  const items: TemplateListRow[] = Array.isArray(data.data) ? data.data : (data.data?.items ?? []);
+  const pagination = data.pagination;
+  return {
+    items,
+    pagination,
+    total: pagination?.total ?? items.length,
+    page: pagination?.page ?? (params.page || 1),
+    limit: pagination?.pageSize ?? pagination?.limit ?? (params.limit || 20),
+  };
 };
 
 export const getTemplate = async (id: string): Promise<TemplateDetailResponse> => {

@@ -14,6 +14,7 @@ import {
 import toast from "react-hot-toast";
 import { useListStudents, useDeleteStudent, useResendInvitation } from "../hooks/useStudents";
 import type { Student } from "../types";
+import { Pagination } from "../../../shared/components/Pagination";
 
 const statusColors: Record<string, { bg: string; dot: string; text: string }> = {
   ACTIVE: { bg: "bg-emerald-100", dot: "bg-emerald-500", text: "text-emerald-700" },
@@ -154,7 +155,6 @@ export default function StudentsPage() {
 
   const students = data?.items ?? [];
   const total = data?.total ?? 0;
-  const totalPages = Math.ceil(total / limit);
 
   const handleDelete = async (student: Student) => {
     if (!window.confirm(`Delete student "${student.fullName}"? This cannot be undone.`)) return;
@@ -286,19 +286,12 @@ export default function StudentsPage() {
       </div>
 
       {/* Pagination */}
-      {totalPages > 1 && (
-        <div className="flex items-center justify-center gap-2 mt-4">
-          <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40">Previous</button>
-          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-            <button
-              key={p}
-              onClick={() => setPage(p)}
-              className={`px-3 py-1.5 text-sm border rounded-lg ${p === page ? "bg-primary-800 text-white border-primary-800" : "hover:bg-slate-50"}`}
-            >
-              {p}
-            </button>
-          ))}
-          <button disabled={page === totalPages} onClick={() => setPage((p) => p + 1)} className="px-3 py-1.5 text-sm border rounded-lg disabled:opacity-40">Next</button>
+      {data?.pagination && data.pagination.totalPages > 1 && (
+        <div className="mt-4 bg-white rounded-xl border border-slate-200">
+          <Pagination
+            pagination={data.pagination}
+            onPageChange={setPage}
+          />
         </div>
       )}
     </div>

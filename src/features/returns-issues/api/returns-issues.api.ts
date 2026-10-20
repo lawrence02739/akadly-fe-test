@@ -27,7 +27,16 @@ export const returnsIssuesApi = {
     limit?: number;
   }): Promise<PaginatedTickets> => {
     const res = await api.get('/student-tickets', { params });
-    return unwrap(res);
+    const data = res.data;
+    const items: StudentTicketRow[] = Array.isArray(data.data) ? data.data : (data.data?.items ?? []);
+    const pagination = data.pagination;
+    return {
+      items,
+      pagination,
+      total: pagination?.total ?? items.length,
+      page: pagination?.page ?? (params.page || 1),
+      limit: pagination?.pageSize ?? pagination?.limit ?? (params.limit || 20),
+    };
   },
 
   getTicket: async (id: string): Promise<StudentTicketRow> => {

@@ -147,6 +147,7 @@ interface Tokens {
 interface Envelope<T> {
   data: T;
   message: string;
+  pagination?: Pagination;
   meta?: { pagination?: Pagination };
 }
 export interface Pagination {
@@ -466,7 +467,7 @@ const pageResult = <T>(
   params: { page: number; pageSize: number },
 ) => ({
   items: data.data.map(withId),
-  pagination: data.meta?.pagination ?? {
+  pagination: data.pagination ?? data.meta?.pagination ?? {
     page: params.page,
     pageSize: params.pageSize,
     total: data.data.length,
@@ -628,7 +629,7 @@ export const adminApi = {
     });
     return {
       items: data.data,
-      pagination: data.meta?.pagination ?? {
+      pagination: data.pagination ?? data.meta?.pagination ?? {
         page: params.page,
         pageSize: params.pageSize,
         total: data.data.length,
@@ -756,7 +757,7 @@ export const adminApi = {
     );
     return {
       items: data.data,
-      pagination: data.meta?.pagination ?? {
+      pagination: data.pagination ?? data.meta?.pagination ?? {
         page: params.page,
         pageSize: params.pageSize,
         total: data.data.length,

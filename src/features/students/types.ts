@@ -106,9 +106,12 @@ export interface ListStudentsParams {
   limit?: number;
 }
 
+import type { PaginationMeta } from '../../shared/api/pagination';
+
 export interface PaginatedStudentsResponse {
   items: Student[];
   total: number;
   page: number;
   limit: number;
+  pagination?: PaginationMeta;
 }

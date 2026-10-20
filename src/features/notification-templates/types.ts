@@ -195,11 +195,14 @@ export interface TemplateListRow {
   updatedAt: string;
 }
 
+import type { PaginationMeta } from '../../shared/api/pagination';
+
 export interface TemplateListResponse {
   items: TemplateListRow[];
   total: number;
   page: number;
   limit: number;
+  pagination?: PaginationMeta;
 }
 
 export interface TemplateSummary {

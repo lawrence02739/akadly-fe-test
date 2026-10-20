@@ -55,9 +55,12 @@ export interface ListBooksParams {
   limit?: number;
 }
 
+import type { PaginationMeta } from '../../shared/api/pagination';
+
 export interface PaginatedBooksResponse {
   items: Book[];
   total: number;
   page: number;
   limit: number;
+  pagination?: PaginationMeta;
 }

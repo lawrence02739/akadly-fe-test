@@ -10,11 +10,14 @@ export interface QuestionFilters {
   pageSize?: number;
 }
 
+import type { PaginationMeta } from '../../../shared/api/pagination';
+
 export interface QuestionsResponse {
   items: Question[];
   total: number;
   page: number;
   pageSize: number;
+  pagination?: PaginationMeta;
 }
 
 export const fetchQuestions = async (filters: QuestionFilters = {}): Promise<QuestionsResponse> => {
@@ -27,7 +30,16 @@ export const fetchQuestions = async (filters: QuestionFilters = {}): Promise<Que
   if (filters.pageSize) params.append('pageSize', filters.pageSize.toString());
 
   const response = await api.get(`/questions?${params.toString()}`);
-  return response.data?.data || response.data;
+  const data = response.data;
+  const items: Question[] = Array.isArray(data.data) ? data.data : (data.data?.items ?? []);
+  const pagination = data.pagination;
+  return {
+    items,
+    pagination,
+    total: pagination?.total ?? items.length,
+    page: pagination?.page ?? (filters.page || 1),
+    pageSize: pagination?.pageSize ?? (filters.pageSize || 20),
+  };
 };
 
 export const fetchQuestion = async (id: string): Promise<Question> => {

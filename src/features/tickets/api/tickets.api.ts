@@ -121,6 +121,7 @@ export interface Pagination {
 }
 interface Envelope<T> {
   data: T;
+  pagination?: Pagination;
   meta?: { pagination?: Pagination };
 }
 const asId = <T extends { _id?: unknown; id?: string }>(
@@ -131,7 +132,7 @@ const paged = <T extends { _id?: unknown; id?: string }>(
   fallback: { page: number; pageSize: number },
 ) => ({
   items: response.data.map(asId),
-  pagination: response.meta?.pagination ?? {
+  pagination: response.pagination ?? response.meta?.pagination ?? {
     ...fallback,
     total: response.data.length,
     totalPages: 1,

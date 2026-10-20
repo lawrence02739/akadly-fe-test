@@ -31,11 +31,12 @@ export async function listMediaAssets(
 
   if (Array.isArray(raw?.data)) {
     rawItems = raw.data;
-    if (raw?.meta?.pagination) {
-      total = raw.meta.pagination.total ?? rawItems.length;
-      page = raw.meta.pagination.page ?? page;
-      limit = raw.meta.pagination.pageSize ?? limit;
-      totalPages = raw.meta.pagination.totalPages ?? 1;
+    const pagination = raw?.pagination ?? raw?.meta?.pagination;
+    if (pagination) {
+      total = pagination.total ?? rawItems.length;
+      page = pagination.page ?? page;
+      limit = pagination.pageSize ?? limit;
+      totalPages = pagination.totalPages ?? 1;
     } else {
       total = rawItems.length;
       totalPages = Math.max(1, Math.ceil(total / limit));

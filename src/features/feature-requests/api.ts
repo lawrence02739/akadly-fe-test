@@ -6,8 +6,26 @@ export type FeatureRequest = { id: string; title: string; description: string; c
 type Envelope<T> = { data: T };
 const unwrap = <T,>(response: { data: Envelope<T> }) => response.data.data;
 
+import type { PaginationMeta } from '../../shared/api/pagination';
+
+export type PaginatedFeatureRequestsResponse = {
+  items: FeatureRequest[];
+  pagination?: PaginationMeta;
+};
+
 export const featureRequestsApi = {
-  list: async (params: Record<string, string | undefined> = {}) => unwrap(await api.get<Envelope<FeatureRequest[]>>('/feature-requests', { params })),
+  list: async (
+    params: Record<string, string | number | undefined> = {},
+  ): Promise<PaginatedFeatureRequestsResponse> => {
+    const res = await api.get('/feature-requests', { params });
+    const items: FeatureRequest[] = Array.isArray(res.data.data)
+      ? res.data.data
+      : (res.data.data?.items ?? []);
+    return {
+      items,
+      pagination: res.data.pagination,
+    };
+  },
   categories: async () => unwrap(await api.get<Envelope<Array<{ slug: string; name: string }>>>('/feature-requests/categories')),
   get: async (id: string) => unwrap(await api.get<Envelope<FeatureRequest>>(`/feature-requests/${id}`)),
   create: async (payload: { title: string; description: string; category: string }) => unwrap(await api.post<Envelope<FeatureRequest>>('/feature-requests', payload)),

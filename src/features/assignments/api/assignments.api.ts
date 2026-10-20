@@ -29,12 +29,13 @@ export const assignmentApi = {
     }
     const suffix = params.toString();
     const { data } = await api.get(`/assignments${suffix ? `?${suffix}` : ''}`);
+    const pagination = data.pagination || data.meta?.pagination;
     return {
       items: data.data || [],
-      total: data.meta?.pagination?.total || 0,
-      page: data.meta?.pagination?.page || 1,
-      limit: data.meta?.pagination?.pageSize || 10,
-      totalPages: data.meta?.pagination?.totalPages || 0,
+      total: pagination?.total || 0,
+      page: pagination?.page || 1,
+      limit: pagination?.pageSize || 10,
+      totalPages: pagination?.totalPages || 0,
     };
   },
 
