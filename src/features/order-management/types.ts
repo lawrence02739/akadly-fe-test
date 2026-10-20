@@ -76,9 +76,12 @@ export interface ListOrdersParams {
   createdAfter?: string;
 }
 
+import type { PaginationMeta } from '../../shared/api/pagination';
+
 export interface PaginatedResponse<T> {
   items: T[];
   total: number;
   page: number;
   limit: number;
+  pagination?: PaginationMeta;
 }

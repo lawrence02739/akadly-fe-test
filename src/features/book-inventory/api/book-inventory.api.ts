@@ -10,7 +10,15 @@ import type {
 
 export const listBooks = async (params: ListBooksParams = {}): Promise<PaginatedBooksResponse> => {
   const { data } = await api.get('/books', { params });
-  return data.data ?? data;
+  const items: Book[] = Array.isArray(data.data) ? data.data : (data.data?.items ?? []);
+  const pagination = data.pagination;
+  return {
+    items,
+    pagination,
+    total: pagination?.total ?? items.length,
+    page: pagination?.page ?? (params.page || 1),
+    limit: pagination?.pageSize ?? pagination?.limit ?? (params.limit || 20),
+  };
 };
 
 export const getBook = async (id: string): Promise<Book> => {

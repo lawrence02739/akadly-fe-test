@@ -78,7 +78,10 @@ export async function listBatches(
   }
   const suffix = params.toString();
   const { data } = await api.get(`/batches${suffix ? `?${suffix}` : ""}`);
-  return data.data;
+  return {
+    ...data.data,
+    pagination: data.pagination ?? data.data?.pagination,
+  };
 }
 
 export type BatchStudent = {
@@ -105,8 +108,22 @@ export type BatchAnnouncement = {
 };
 
 const unwrap = async <T>(
-  response: Promise<{ data: { data: T } }>,
-): Promise<T> => (await response).data.data;
+  response: Promise<{ data: { data: T; pagination?: any } }>,
+): Promise<T> => {
+  const res = await response;
+  if (
+    res.data?.pagination &&
+    res.data?.data &&
+    typeof res.data.data === "object" &&
+    !("pagination" in (res.data.data as any))
+  ) {
+    return {
+      ...(res.data.data as any),
+      pagination: res.data.pagination,
+    };
+  }
+  return res.data.data;
+};
 
 type BatchResourcePage<T> = {
   items: T[];

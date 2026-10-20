@@ -61,9 +61,12 @@ export interface ListCourierPartnersParams {
   limit?: number;
 }
 
+import type { PaginationMeta } from '../../shared/api/pagination';
+
 export interface PaginatedCourierPartnersResponse {
   items: CourierPartner[];
   total: number;
   page: number;
   limit: number;
+  pagination?: PaginationMeta;
 }

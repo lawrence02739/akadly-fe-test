@@ -39,7 +39,9 @@ export const listInstructors = async (
 
   if (Array.isArray(raw?.data)) {
     items = raw.data;
-    if (raw?.meta?.pagination) {
+    if (raw?.pagination) {
+      meta = raw.pagination;
+    } else if (raw?.meta?.pagination) {
       meta = raw.meta.pagination;
     }
   } else if (raw?.data && typeof raw.data === 'object') {

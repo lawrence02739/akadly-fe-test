@@ -9,7 +9,16 @@ export const orderManagementApi = {
 
   listOrders: async (params: ListOrdersParams): Promise<PaginatedResponse<Order>> => {
     const res = await api.get('/orders', { params });
-    return res.data.data ?? res.data;
+    const data = res.data;
+    const items: Order[] = Array.isArray(data.data) ? data.data : (data.data?.items ?? []);
+    const pagination = data.pagination;
+    return {
+      items,
+      pagination,
+      total: pagination?.total ?? items.length,
+      page: pagination?.page ?? (params.page || 1),
+      limit: pagination?.pageSize ?? pagination?.limit ?? (params.limit || 20),
+    };
   },
 
   getOrder: async (id: string): Promise<Order> => {

@@ -12,7 +12,24 @@ export const listCourierPartners = async (
   params: ListCourierPartnersParams = {},
 ): Promise<PaginatedCourierPartnersResponse> => {
   const { data } = await api.get('/courier-partners', { params });
-  return data.data ?? data;
+  const items: CourierPartner[] = Array.isArray(data.data)
+    ? data.data
+    : (data.data?.items ?? []);
+  const pagination =
+    data.pagination ??
+    (data.data && typeof data.data === 'object' && 'total' in data.data
+      ? data.data
+      : undefined);
+  return {
+    items,
+    pagination,
+    total: pagination?.total ?? items.length,
+    page: pagination?.page ?? (params.page || 1),
+    limit:
+      pagination?.pageSize ??
+      pagination?.limit ??
+      (params.limit || 20),
+  };
 };
 
 export const listCourierPartnerOptions = async (search?: string): Promise<CourierPartnerOption[]> => {

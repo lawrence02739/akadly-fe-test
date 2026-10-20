@@ -12,7 +12,15 @@ export const listStudents = async (
   params: ListStudentsParams = {},
 ): Promise<PaginatedStudentsResponse> => {
   const { data } = await api.get('/students', { params });
-  return data.data ?? data;
+  const items: Student[] = Array.isArray(data.data) ? data.data : (data.data?.items ?? []);
+  const pagination = data.pagination;
+  return {
+    items,
+    pagination,
+    total: pagination?.total ?? items.length,
+    page: pagination?.page ?? (params.page || 1),
+    limit: pagination?.pageSize ?? pagination?.limit ?? (params.limit || 20),
+  };
 };
 
 export const listStudentOptions = async (search?: string): Promise<StudentOption[]> => {
