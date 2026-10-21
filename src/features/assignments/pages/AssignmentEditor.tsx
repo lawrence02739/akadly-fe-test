@@ -193,7 +193,23 @@ export default function AssignmentEditor() {
   // When a course is selected, batchId and graderUserId become required.
   const courseLinked = Boolean(courseId);
 
-  const handleUnlinkCourse = () => {
+  const handleUnlinkCourse = async () => {
+    if (id) {
+      try {
+        setLoading(true);
+        await assignmentApi.unlinkCourse(id);
+        toast.success('Course unlinked and removed from course structure');
+      } catch (err: any) {
+        const msg =
+          err?.response?.data?.error?.message ||
+          err?.response?.data?.message ||
+          'Failed to unlink course';
+        toast.error(msg);
+        return;
+      } finally {
+        setLoading(false);
+      }
+    }
     setCourseId('');
     setNodeId('');
     setNodeTitle('');
