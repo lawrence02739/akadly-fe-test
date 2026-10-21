@@ -61,4 +61,7 @@ export const assignmentApi = {
   close: (id: string) => unwrap<Assignment>(api.post(`/assignments/${id}/status/close`)),
 
   archive: (id: string) => unwrap<Assignment>(api.post(`/assignments/${id}/status/archive`)),
+
+  unlinkCourse: (id: string) =>
+    unwrap<Assignment>(api.post(`/assignments/${id}/unlink-course`)),
 };
