@@ -189,7 +189,10 @@ export default function AssignmentsDashboard() {
                   <tr key={item.id} className="hover:bg-gray-50 transition-colors">
                     <td className="whitespace-nowrap py-4 pl-6 pr-3 text-sm">
                       <div className="font-medium text-gray-900">{item.title}</div>
-                      <div className="text-gray-500 text-xs mt-0.5">{item.courseTitle || 'No Course Linked'}</div>
+                      <div className="text-gray-500 text-xs mt-0.5">
+                        {item.courseTitle || 'No Course Linked'}
+                        {item.nodeTitle ? ` • ${item.nodeTitle}` : ''}
+                      </div>
                     </td>
                     <td className="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
                       {item.batchName || '-'}

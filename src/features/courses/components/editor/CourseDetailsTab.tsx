@@ -115,14 +115,21 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Instructor</label>
               <select
-                value={courseData.instructor || ''}
+                value={
+                  typeof courseData.instructor === 'object'
+                    ? courseData.instructor?.id ||
+                      courseData.instructor?._id ||
+                      ''
+                    : courseData.instructor || ''
+                }
                 onChange={(e) => onChange('instructor', e.target.value)}
                 className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="">Select Instructor</option>
                 {instructors?.map((inst: any) => (
                   <option key={inst.id} value={inst.id}>
-                    {inst.name}
+                    {inst.name || inst.email}{' '}
+                    {inst.specialty ? `(${inst.specialty})` : ''}
                   </option>
                 ))}
               </select>

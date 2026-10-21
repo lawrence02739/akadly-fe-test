@@ -70,10 +70,14 @@ export const listInstructors = async (
 };
 
 export const listInstructorOptions = async (
-  search?: string,
+  params?: { search?: string; specialty?: string } | string,
 ): Promise<InstructorOption[]> => {
+  const queryParams =
+    typeof params === 'string'
+      ? { search: params }
+      : params || {};
   const { data } = await api.get('/instructors/options', {
-    params: search ? { search } : {},
+    params: queryParams,
   });
   const res = data.data ?? data;
   if (Array.isArray(res)) {
