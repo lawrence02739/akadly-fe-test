@@ -16,6 +16,7 @@ export interface AssignmentSubmissionSettings {
 export interface AssignmentGradingSettings {
   maxScore: number;
   defaultGraderUserId?: string;
+  specialty?: string;
 }
 
 export interface AssignmentLateSubmissionSettings {
@@ -26,6 +27,9 @@ export interface AssignmentLateSubmissionSettings {
 export interface AssignmentAvailability {
   courseId?: string;
   courseTitle?: string;
+  nodeId?: string;
+  nodeTitle?: string;
+  specialty?: string;
   batchId?: string;
   batchName?: string;
   publishAt?: string;

@@ -51,14 +51,52 @@ export default function CourseCard({ course }: { course: Course }) {
           {course.description}
         </p>
 
-        {/* Author */}
-        <div className="flex items-center gap-3 mb-4">
-          <img src={course.author?.avatar || 'https://ui-avatars.com/api/?name=Instructor&background=f1f5f9'} alt={course.author?.name || 'Instructor'} className="w-8 h-8 rounded-full border border-slate-200" />
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-slate-800">{course.author?.name || 'Instructor'}</span>
-            <span className="text-[10px] text-slate-500 font-medium">{course.author?.role || 'Teacher'}</span>
-          </div>
-        </div>
+        {/* Author / Instructor */}
+        {(() => {
+          const instructorName =
+            (typeof course.instructor === 'object'
+              ? course.instructor?.name
+              : null) ||
+            course.author?.name ||
+            (typeof course.instructor === 'string' &&
+            !course.instructor.match(/^[0-9a-fA-F]{24}$/)
+              ? course.instructor
+              : null) ||
+            'Instructor';
+          const instructorAvatar =
+            (typeof course.instructor === 'object'
+              ? course.instructor?.avatar ||
+                course.instructor?.profilePictureKey
+              : null) ||
+            course.author?.avatar ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(
+              instructorName,
+            )}&background=f1f5f9`;
+          const instructorRole =
+            (typeof course.instructor === 'object'
+              ? course.instructor?.specialty
+              : null) ||
+            course.author?.role ||
+            'Instructor';
+
+          return (
+            <div className="flex items-center gap-3 mb-4">
+              <img
+                src={instructorAvatar}
+                alt={instructorName}
+                className="w-8 h-8 rounded-full border border-slate-200 object-cover"
+              />
+              <div className="flex flex-col">
+                <span className="text-xs font-bold text-slate-800">
+                  {instructorName}
+                </span>
+                <span className="text-[10px] text-slate-500 font-medium">
+                  {instructorRole}
+                </span>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Stats & Price */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-100">

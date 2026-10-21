@@ -15,6 +15,7 @@ export interface Course {
     rating: number;
   };
   price: number;
+  instructor?: any;
 }
 
 export const mockCourses: Course[] = [

@@ -3,9 +3,11 @@ import { X, Image as ImageIcon, ChevronLeft, Sparkles, Undo2, Redo2, Bold, Itali
 import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/api/axios';
 import toast from 'react-hot-toast';
+import { useInstructors } from '../hooks/useMasterData';
 
 export default function CreateCourse() {
   const navigate = useNavigate();
+  const { data: instructors } = useInstructors();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -13,7 +15,7 @@ export default function CreateCourse() {
     language: 'English',
     category: 'Design & Development',
     tags: [] as string[],
-    instructor: 'Select Instructor',
+    instructor: '',
     pricingPlan: 'One-time plan',
     discountedPrice: '',
     price: '',
@@ -222,9 +224,12 @@ export default function CreateCourse() {
                   className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-700 focus:border-teal-700 transition-colors bg-white appearance-none"
                   style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")', backgroundPosition: 'right 1rem center', backgroundRepeat: 'no-repeat', backgroundSize: '1.25em 1.25em' }}
                 >
-                  <option>Select Instructor</option>
-                  <option>Elena Rostova</option>
-                  <option>Akif Ansari</option>
+                  <option value="">Select Instructor</option>
+                  {instructors?.map((inst: any) => (
+                    <option key={inst.id} value={inst.id}>
+                      {inst.name || inst.email} {inst.specialty ? `(${inst.specialty})` : ''}
+                    </option>
+                  ))}
                 </select>
               </div>
             </div>
@@ -367,8 +372,15 @@ export default function CreateCourse() {
                     <img src="https://i.pravatar.cc/100?img=5" alt="Instructor" className="w-full h-full object-cover" />
                   </div>
                   <div>
-                    <div className="font-bold text-slate-900 text-sm">{formData.instructor !== 'Select Instructor' ? formData.instructor : 'Elena Rostova'}</div>
-                    <div className="text-xs text-slate-500">Senior Product Designer</div>
+                    <div className="font-bold text-slate-900 text-sm">
+                      {instructors?.find((i: any) => i.id === formData.instructor)?.name ||
+                        (formData.instructor && formData.instructor !== 'Select Instructor'
+                          ? formData.instructor
+                          : 'Instructor')}
+                    </div>
+                    <div className="text-xs text-slate-500">
+                      {instructors?.find((i: any) => i.id === formData.instructor)?.specialty || 'Instructor'}
+                    </div>
                   </div>
                 </div>
 

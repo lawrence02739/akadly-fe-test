@@ -1,13 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { assignmentApi } from '../api/assignments.api';
-import { listCourses } from '../../courses/api/courses.api';
+import { listCourses, fetchCourseStructure } from '../../courses/api/courses.api';
 import { listBatches } from '../../batches/api/batches.api';
 import { usersApi } from '../../users/api/users.api';
+import { fetchMasterData } from '../../courses/api/master-data.api';
+import { listInstructorOptions, listSpecialties } from '../../instructors/api/instructors.api';
 import { getPresignedUploadUrl, uploadToS3 } from '../../courses/api/uploads.api';
 import toast from 'react-hot-toast';
 import { ArrowLeft, Eye, ArrowRight, Upload, AlignLeft, Link as LinkIcon, Paperclip, FileText, Trash2, Calendar } from 'lucide-react';
 import clsx from 'clsx';
+
+interface FlatNode {
+  id: string;
+  title: string;
+  type: string;
+  indent: number;
+}
 
 export default function AssignmentEditor() {
   const { id } = useParams();
@@ -24,8 +33,11 @@ export default function AssignmentEditor() {
   const [attemptLimit, setAttemptLimit] = useState('2 attempts');
   const [allowReplacement, setAllowReplacement] = useState(true);
 
-  // State for Availability
+  // State for Availability & Linking
   const [courseId, setCourseId] = useState('');
+  const [nodeId, setNodeId] = useState('');
+  const [nodeTitle, setNodeTitle] = useState('');
+  const [specialty, setSpecialty] = useState('');
   const [batchId, setBatchId] = useState('');
   const [graderUserId, setGraderUserId] = useState('');
   const [publishDate, setPublishDate] = useState('');
@@ -34,7 +46,10 @@ export default function AssignmentEditor() {
 
   // Dynamic Options
   const [courses, setCourses] = useState<any[]>([]);
+  const [flatNodes, setFlatNodes] = useState<FlatNode[]>([]);
+  const [loadingNodes, setLoadingNodes] = useState(false);
   const [batches, setBatches] = useState<any[]>([]);
+  const [specialties, setSpecialties] = useState<string[]>([]);
   const [graders, setGraders] = useState<any[]>([]);
 
   // Attachments
@@ -43,33 +58,109 @@ export default function AssignmentEditor() {
 
   const [loading, setLoading] = useState(false);
 
+  // Fetch initial dropdown master data
   useEffect(() => {
     Promise.all([
-      listCourses().then(res => setCourses(res)),
-      listBatches({ pageSize: 100 }).then(res => setBatches(res.items)),
-      usersApi.list({ limit: 100, status: 'active' }).then(res => setGraders(res.items))
-    ]).catch(() => console.error('Failed to load form options'));
+      listCourses().then(res => setCourses(Array.isArray(res) ? res : (res as any)?.items || [])),
+      listBatches({ pageSize: 100 }).then(res => setBatches(res.items || [])),
+      fetchMasterData('SPECIALITY').catch(() => []),
+      listSpecialties().catch(() => []),
+    ])
+      .then(([_, __, masterItems, instSpecialties]) => {
+        const namesFromMaster = Array.isArray(masterItems)
+          ? masterItems.map((m: any) => m.name || m).filter(Boolean)
+          : [];
+        const namesFromInst = Array.isArray(instSpecialties)
+          ? instSpecialties
+          : [];
+        const combined = Array.from(new Set([...namesFromMaster, ...namesFromInst])).sort();
+        setSpecialties(combined);
+      })
+      .catch(() => console.error('Failed to load form options'));
 
     if (id) {
       setLoading(true);
       assignmentApi.get(id)
         .then(data => {
-          setTitle(data.title);
-          setInstructionsHtml(data.instructionsHtml);
+          setTitle(data.title || '');
+          setInstructionsHtml(data.instructionsHtml || '');
           if (data.availability) {
             setCourseId(data.availability.courseId || '');
+            setNodeId(data.availability.nodeId || '');
+            setNodeTitle(data.availability.nodeTitle || '');
+            setSpecialty(data.availability.specialty || data.grading?.specialty || '');
             setBatchId(data.availability.batchId || '');
             if (data.availability.publishAt) setPublishDate(new Date(data.availability.publishAt).toISOString().slice(0, 16));
             if (data.availability.dueAt) setDueDate(new Date(data.availability.dueAt).toISOString().slice(0, 16));
             setTimezone(data.availability.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone);
           }
           if (data.grading?.defaultGraderUserId) setGraderUserId(data.grading.defaultGraderUserId);
+          if (data.grading?.specialty && !specialty) setSpecialty(data.grading.specialty);
           if (data.attachments) setAttachments(data.attachments);
         })
         .catch(() => toast.error('Failed to load assignment'))
         .finally(() => setLoading(false));
     }
   }, [id]);
+
+  // Fetch course structure nodes when courseId changes
+  useEffect(() => {
+    if (!courseId) {
+      setFlatNodes([]);
+      setLoadingNodes(false);
+      return;
+    }
+    setLoadingNodes(true);
+    fetchCourseStructure(courseId)
+      .then((tree) => {
+        let list = tree;
+        if (!Array.isArray(list) && Array.isArray(list?.data)) {
+          list = list.data;
+        }
+        if (!Array.isArray(list)) list = [];
+
+        const flat: FlatNode[] = [];
+        const flatten = (nodes: any[], depth: number = 0) => {
+          nodes.forEach((n) => {
+            flat.push({
+              id: String(n.id || n._id),
+              title: n.title,
+              type: n.type,
+              indent: depth,
+            });
+            if (n.children && Array.isArray(n.children)) {
+              flatten(n.children, depth + 1);
+            }
+          });
+        };
+        flatten(list);
+        setFlatNodes(flat);
+      })
+      .catch((err) => {
+        console.error('Failed to fetch course structure', err);
+        setFlatNodes([]);
+      })
+      .finally(() => setLoadingNodes(false));
+  }, [courseId]);
+
+  // Fetch instructors / graders whenever specialty changes
+  useEffect(() => {
+    listInstructorOptions(specialty ? { specialty } : undefined)
+      .then((items) => {
+        if (Array.isArray(items) && items.length > 0) {
+          setGraders(items);
+        } else {
+          usersApi.list({ limit: 100, status: 'active' }).then(res => {
+            setGraders(res.items || []);
+          });
+        }
+      })
+      .catch(() => {
+        usersApi.list({ limit: 100, status: 'active' }).then(res => {
+          setGraders(res.items || []);
+        });
+      });
+  }, [specialty]);
 
   const toggleSubmissionType = (type: string) => {
     setSubmissionTypes(prev => prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type]);
@@ -99,11 +190,37 @@ export default function AssignmentEditor() {
     }
   };
 
+  // When a course is selected, batchId and graderUserId become required.
+  const courseLinked = Boolean(courseId);
+
+  const handleUnlinkCourse = () => {
+    setCourseId('');
+    setNodeId('');
+    setNodeTitle('');
+    setBatchId('');
+    setSpecialty('');
+    setGraderUserId('');
+    setFlatNodes([]);
+  };
+
   const handleSave = async (publish = false) => {
     if (!title) {
       toast.error('Assignment title is required');
       return;
     }
+
+    // When a course is linked, batch and grader are required
+    if (courseLinked) {
+      if (!batchId) {
+        toast.error('Batch is required when a course is linked');
+        return;
+      }
+      if (!graderUserId) {
+        toast.error('Grader / Instructor is required when a course is linked');
+        return;
+      }
+    }
+
     setLoading(true);
     try {
       const payload = {
@@ -118,15 +235,30 @@ export default function AssignmentEditor() {
         },
         availability: {
           courseId: courseId || undefined,
+          courseTitle:
+            courses.find((c) => String(c.id || c._id) === courseId)?.title ||
+            undefined,
+          nodeId: nodeId || undefined,
+          nodeTitle:
+            nodeTitle ||
+            flatNodes.find((n) => n.id === nodeId)?.title ||
+            undefined,
+          specialty: specialty || undefined,
           batchId: batchId || undefined,
-          publishAt: publishDate ? new Date(publishDate).toISOString() : undefined,
+          batchName:
+            batches.find((b) => String(b.id || b._id) === batchId)?.name ||
+            undefined,
+          publishAt: publishDate
+            ? new Date(publishDate).toISOString()
+            : undefined,
           dueAt: dueDate ? new Date(dueDate).toISOString() : undefined,
           timezone,
         },
         grading: {
           maxScore: 100,
-          defaultGraderUserId: graderUserId || undefined
-        }
+          defaultGraderUserId: graderUserId || undefined,
+          specialty: specialty || undefined,
+        },
       };
       
       let savedId = id;
@@ -147,8 +279,12 @@ export default function AssignmentEditor() {
       if (!id && savedId) {
         navigate(`/partner/assignments/${savedId}/edit`, { replace: true });
       }
-    } catch (e) {
-      toast.error('Failed to save assignment');
+    } catch (e: any) {
+      const errMsg =
+        e?.response?.data?.error?.details?.[0]?.message ||
+        e?.response?.data?.message ||
+        'Failed to save assignment';
+      toast.error(errMsg);
     } finally {
       setLoading(false);
     }
@@ -225,7 +361,7 @@ export default function AssignmentEditor() {
 
             <div>
               <label htmlFor="instructions" className="block text-sm font-medium leading-6 text-gray-900">
-                Instructions *
+                Instructions
               </label>
               <div className="mt-2">
                 <div className="rounded-md ring-1 ring-inset ring-gray-300 focus-within:ring-2 focus-within:ring-inset focus-within:ring-teal-600">
@@ -390,52 +526,157 @@ export default function AssignmentEditor() {
               <p className="mt-1 text-sm text-gray-500">Assign the activity to the right learning group.</p>
             </div>
             <div className="p-6 space-y-6">
-              
               <div className="space-y-4">
+                {/* Course */}
                 <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900">Course</label>
+                  <div className="flex items-center justify-between">
+                    <label className="block text-sm font-medium leading-6 text-gray-900">Course</label>
+                    {courseLinked && (
+                      <button
+                        type="button"
+                        onClick={handleUnlinkCourse}
+                        className="text-xs text-red-500 hover:text-red-700 font-medium transition-colors"
+                      >
+                        ✕ Unlink Course
+                      </button>
+                    )}
+                  </div>
                   <select
                     value={courseId}
-                    onChange={e => setCourseId(e.target.value)}
+                    onChange={e => {
+                      setCourseId(e.target.value);
+                      setNodeId('');
+                      setNodeTitle('');
+                      // When course changes, reset course-dependent fields
+                      if (!e.target.value) {
+                        setBatchId('');
+                        setSpecialty('');
+                        setGraderUserId('');
+                      }
+                    }}
                     className="mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6"
                   >
                     <option value="">Select Course</option>
                     {courses.map(c => (
-                      <option key={c.id} value={c.id}>{c.title || c.name}</option>
+                      <option key={c.id || c._id} value={c.id || c._id}>{c.title || c.name}</option>
                     ))}
                   </select>
+                  {courseLinked && (
+                    <p className="mt-1 text-xs text-amber-600">Course linked — Batch and Grader are required</p>
+                  )}
                 </div>
+
+                {/* Course Node (Specific Node / Lesson) */}
                 <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900">Batch</label>
+                  <label className="block text-sm font-medium leading-6 text-gray-900">Course Node (Lesson / Section)</label>
+                  <select
+                    value={nodeId}
+                    disabled={!courseId || loadingNodes}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setNodeId(val);
+                      const found = flatNodes.find(n => n.id === val);
+                      setNodeTitle(found ? found.title : '');
+                    }}
+                    className="mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6 font-mono"
+                  >
+                    <option value="">
+                      {!courseId
+                        ? 'Select Course first'
+                        : loadingNodes
+                        ? 'Loading course structure...'
+                        : 'Select Course Node (Optional)'}
+                    </option>
+                    {nodeId && !flatNodes.some(n => n.id === nodeId) && (
+                      <option value={nodeId}>
+                        📄 {nodeTitle || 'Current Linked Node'}
+                      </option>
+                    )}
+                    {flatNodes.map(n => (
+                      <option key={n.id} value={n.id}>
+                        {'\u00A0'.repeat(n.indent * 4)}
+                        {n.type === 'MODULE' ? '📁 ' : n.type === 'ASSIGNMENT' ? '📝 ' : '📄 '}
+                        {n.title}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">Link this assignment directly to a course lesson or topic</p>
+                </div>
+
+                {/* Batch */}
+                <div>
+                  <label className="block text-sm font-medium leading-6 text-gray-900">
+                    Batch{courseLinked && <span className="text-red-500 ml-1">*</span>}
+                  </label>
                   <select
                     value={batchId}
                     onChange={e => setBatchId(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6"
+                    className={clsx(
+                      "mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6",
+                      courseLinked && !batchId ? "ring-red-300" : "ring-gray-300"
+                    )}
                   >
                     <option value="">Select Batch</option>
                     {batches.filter(b => !courseId || b.courseId === courseId).map(b => (
-                      <option key={b.id} value={b.id}>{b.name}</option>
+                      <option key={b.id || b._id} value={b.id || b._id}>{b.name}</option>
                     ))}
                   </select>
+                  {courseLinked && !batchId && (
+                    <p className="mt-1 text-xs text-red-500">Required when course is linked</p>
+                  )}
                 </div>
+
+                {/* Speciality (Master Data) */}
                 <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900">Grader</label>
+                  <label className="block text-sm font-medium leading-6 text-gray-900">Speciality (Master Data)</label>
+                  <select
+                    value={specialty}
+                    onChange={e => setSpecialty(e.target.value)}
+                    className="mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6"
+                  >
+                    <option value="">All Specialities / Select Speciality</option>
+                    {specialties.map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <p className="mt-1 text-xs text-gray-500">Filter instructors/graders by speciality</p>
+                </div>
+
+                {/* Grader / Instructor */}
+                <div>
+                  <label className="block text-sm font-medium leading-6 text-gray-900">
+                    Grader / Instructor{courseLinked && <span className="text-red-500 ml-1">*</span>}
+                  </label>
                   <select
                     value={graderUserId}
                     onChange={e => setGraderUserId(e.target.value)}
-                    className="mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6"
+                    className={clsx(
+                      "mt-2 block w-full rounded-md border-0 py-2 pl-3 pr-10 text-gray-900 ring-1 ring-inset focus:ring-2 focus:ring-teal-600 sm:text-sm sm:leading-6",
+                      courseLinked && !graderUserId ? "ring-red-300" : "ring-gray-300"
+                    )}
                   >
                     <option value="">Select Grader</option>
+                    {graderUserId && !graders.some(g => (g.userId || g.id) === graderUserId) && (
+                      <option value={graderUserId}>Current Grader ({graderUserId})</option>
+                    )}
                     {graders.map(g => (
-                      <option key={g.userId || g.id} value={g.userId || g.id}>{g.name}</option>
+                      <option key={g.userId || g.id} value={g.userId || g.id}>
+                        {g.name || g.fullName || g.email} {g.specialty ? `(${g.specialty})` : ''}
+                      </option>
                     ))}
                   </select>
+                  {courseLinked && !graderUserId && (
+                    <p className="mt-1 text-xs text-red-500">Required when course is linked</p>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-4 pt-4 border-t border-gray-200">
                 <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900">Publish date *</label>
+                  <label className="block text-sm font-medium leading-6 text-gray-900">
+                    Publish date{!courseLinked && <span className="text-red-500 ml-1">*</span>}
+                    {courseLinked && <span className="text-gray-400 ml-1 text-xs font-normal">(optional when linked to course)</span>}
+                  </label>
                   <div className="relative mt-2">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <Calendar className="h-4 w-4 text-gray-400" />
@@ -449,7 +690,10 @@ export default function AssignmentEditor() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium leading-6 text-gray-900">Due date *</label>
+                  <label className="block text-sm font-medium leading-6 text-gray-900">
+                    Due date{!courseLinked && <span className="text-red-500 ml-1">*</span>}
+                    {courseLinked && <span className="text-gray-400 ml-1 text-xs font-normal">(optional when linked to course)</span>}
+                  </label>
                   <div className="relative mt-2">
                     <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                       <Calendar className="h-4 w-4 text-gray-400" />
