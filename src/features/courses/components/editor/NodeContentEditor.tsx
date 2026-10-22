@@ -564,7 +564,7 @@ export default function NodeContentEditor({
             </div>
 
             {linkedQuiz && (
-              <a href={item.type === 'QUIZ' ? `/partner/quiz-studio?quizId=${linkedQuiz.id}` : `/partner/test-studio?testId=${linkedQuiz.id}`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors">
+              <a href={item.type === 'QUIZ' ? `/partner/quiz-studio?quizId=${linkedQuiz.id}` : `/partner/test-studio/${linkedQuiz.id}/details`} target="_blank" rel="noreferrer" className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors">
                 Open Fullscreen Editor <ExternalLink className="w-4 h-4" />
               </a>
             )}

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, Plus, Edit2, Trash2, AlertCircle, X, BookOpen, ChevronLeft, ChevronRight, Filter } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, AlertCircle, X, BookOpen, ChevronLeft, ChevronRight, Filter, Link2 } from 'lucide-react';
 import { useQuestions, useDeleteQuestion, useCreateQuestion, useUpdateQuestion } from '../hooks/useQuestions';
 import { QuestionModal } from './QuestionModal';
 import type { Question, CreateQuestionDto } from '../../quizzes/types';
@@ -216,6 +216,12 @@ export default function QuestionBankPage() {
                       {q.topic && (
                         <div className="text-xs text-slate-500 mt-1 truncate max-w-sm">
                           {q.topic}
+                        </div>
+                      )}
+                      {q.courseLink?.courseTitle && (
+                        <div className="inline-flex items-center gap-1 text-[11px] text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 mt-1">
+                          <Link2 className="w-3 h-3" />
+                          <span className="truncate max-w-xs">{q.courseLink.courseTitle}{q.courseLink.nodeTitle ? ` › ${q.courseLink.nodeTitle}` : ''}</span>
                         </div>
                       )}
                     </td>

@@ -49,3 +49,28 @@ export const useDeleteQuestion = () => {
     },
   });
 };
+
+export const useLinkQuestionCourse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: { courseId: string; nodeId?: string } }) =>
+      api.linkQuestionCourse(id, dto),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['quizzes'] });
+      queryClient.invalidateQueries({ queryKey: ['tests'] });
+    },
+  });
+};
+
+export const useUnlinkQuestionCourse = () => {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => api.unlinkQuestionCourse(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['questions'] });
+      queryClient.invalidateQueries({ queryKey: ['quizzes'] });
+      queryClient.invalidateQueries({ queryKey: ['tests'] });
+    },
+  });
+};

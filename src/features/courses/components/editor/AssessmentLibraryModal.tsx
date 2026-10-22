@@ -21,7 +21,8 @@ export default function AssessmentLibraryModal({
 
   if (!isOpen) return null;
 
-  const data = type === 'QUIZ' ? quizzes : tests;
+  const testsList = Array.isArray(tests) ? tests : (tests as any)?.items || [];
+  const data = type === 'QUIZ' ? quizzes : testsList;
   const isLoading = type === 'QUIZ' ? isLoadingQuizzes : isLoadingTests;
   const title = type === 'QUIZ' ? 'Quiz Library' : 'Test Library';
 
