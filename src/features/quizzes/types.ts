@@ -57,6 +57,15 @@ export interface Question {
   colII?: any[];
   // Type-specific content bag
   content?: Record<string, any>;
+  courseLink?: {
+    courseId: string;
+    nodeId?: string;
+    courseTitle?: string;
+    nodeTitle?: string;
+  };
+  bloomsLevel?: string;
+  authorName?: string;
+  inTest?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }

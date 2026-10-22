@@ -13,6 +13,10 @@ import CourseEditor from "./features/courses/pages/CourseEditor";
 import CourseStructureBuilder from "./features/courses/pages/CourseStructureBuilder";
 import QuizStudioPage from "./features/quizzes/pages/QuizStudioPage";
 import TestStudioPage from "./features/tests/TestStudioPage";
+import { TestDetailsPage } from "./features/tests/pages/TestDetailsPage";
+import { TestQuestionsPage } from "./features/tests/pages/TestQuestionsPage";
+import { TestSettingsPage } from "./features/tests/pages/TestSettingsPage";
+import { TestReviewPage } from "./features/tests/pages/TestReviewPage";
 import QuestionBankPage from "./features/questions/components/QuestionBankPage";
 import FormsDashboard from "./features/form-builder/pages/FormsDashboard";
 import { FormBuilderLayout } from "./features/form-builder/components/FormBuilderLayout";
@@ -445,6 +449,11 @@ function App() {
           <Route path="reports" element={<ReportsPage />} />
           <Route path="quiz-studio" element={<QuizStudioPage />} />
           <Route path="test-studio" element={<TestStudioPage />} />
+          <Route path="test-studio/new" element={<TestDetailsPage />} />
+          <Route path="test-studio/:testId/details" element={<TestDetailsPage />} />
+          <Route path="test-studio/:testId/questions" element={<TestQuestionsPage />} />
+          <Route path="test-studio/:testId/settings" element={<TestSettingsPage />} />
+          <Route path="test-studio/:testId/review" element={<TestReviewPage />} />
           <Route path="question-bank" element={<QuestionBankPage />} />
           <Route
             path="tasks"

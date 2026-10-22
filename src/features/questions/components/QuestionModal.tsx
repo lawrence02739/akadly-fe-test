@@ -3,6 +3,9 @@ import { X, ChevronDown, Plus, Trash2, Settings, Lock } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { Question, QuestionType, CreateQuestionDto } from '../../quizzes/types';
 import { useTags, useCreateTag, useCategories } from '../../courses/hooks/useMasterData';
+import { useListCourses } from '../../courses/hooks/useCourses';
+import { useCourseStructure } from '../../courses/hooks/useCourseNodes';
+import { useLinkQuestionCourse, useUnlinkQuestionCourse } from '../hooks/useQuestions';
 import CreatableDropdown from '../../../shared/components/CreatableDropdown';
 
 // ── Type editor imports ────────────────────────────────────────────────────────
@@ -150,6 +153,14 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
   const { mutateAsync: createTag, isPending: isCreatingTag } = useCreateTag();
   const { mutateAsync: uploadFile } = useUpload();
 
+  // ── Course Linking state (Optional, mirrored from assignment module) ──────
+  const [courseId, setCourseId] = useState<string>('');
+  const [nodeId, setNodeId] = useState<string>('');
+  const { data: coursesList = [] } = useListCourses();
+  const { data: courseNodes = [], isLoading: loadingNodes } = useCourseStructure(courseId);
+  const linkQuestionCourseMutation = useLinkQuestionCourse();
+  const unlinkQuestionCourseMutation = useUnlinkQuestionCourse();
+
   // ── Reset / hydrate on open ────────────────────────────────────────────────
   useEffect(() => {
     if (isOpen) {
@@ -169,6 +180,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         setNegativeMarking(question.negativeMarking !== undefined ? String(question.negativeMarking) : '');
         setCompletionTimeMinutes(question.completionTimeMinutes !== undefined ? String(question.completionTimeMinutes) : '');
         setMaxCharacterLimit((question as any).maxCharacterLimit !== undefined ? String((question as any).maxCharacterLimit) : '');
+        setCourseId(question.courseLink?.courseId || '');
+        setNodeId(question.courseLink?.nodeId || '');
 
         if (question.type === 'SINGLE' || question.type === 'MULTIPLE') {
           setOptions(question.options?.length ? [...question.options] : [{ text: '', correct: false }, { text: '', correct: false }]);
@@ -203,6 +216,8 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
         setNegativeMarking('');
         setCompletionTimeMinutes('');
         setMaxCharacterLimit('');
+        setCourseId('');
+        setNodeId('');
         setOptions([{ text: '', correct: false }, { text: '', correct: false }]);
         setMatchColI([{ text: '', match: '' }, { text: '', match: '' }]);
         setMatchColII(['', '']);
@@ -298,7 +313,32 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
       dto.content = content;
     }
 
+    // If question has an ID and course linking changed, call linkQuestionCourse
+    if (question?.id && courseId && (courseId !== question.courseLink?.courseId || nodeId !== question.courseLink?.nodeId)) {
+      try {
+        await linkQuestionCourseMutation.mutateAsync({
+          id: question.id,
+          dto: { courseId, nodeId: nodeId || undefined },
+        });
+      } catch (err: any) {
+        toast.error('Failed to link question to course: ' + (err?.response?.data?.message || err.message));
+      }
+    }
+
     await onSave(dto);
+  };
+
+  const handleUnlinkCourse = async () => {
+    if (question?.id && (question.courseLink?.courseId || courseId)) {
+      try {
+        await unlinkQuestionCourseMutation.mutateAsync(question.id);
+        toast.success('Course unlinked from question');
+      } catch (err: any) {
+        toast.error('Failed to unlink course: ' + (err?.response?.data?.message || err.message));
+      }
+    }
+    setCourseId('');
+    setNodeId('');
   };
 
   // ── Type-specific field renderer ────────────────────────────────────────────
@@ -597,6 +637,64 @@ export const QuestionModal: React.FC<QuestionModalProps> = ({
                 <option value="">No category</option>
                 {(categoriesList || []).map((cat: any) => (
                   <option key={cat.id || cat._id || cat.name} value={cat.id || cat._id}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+
+            {/* ── Course Linking (Optional, mirrored from assignment module) ── */}
+            <div className="field">
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <label>Course <span style={{ fontWeight: 400, color: 'var(--ink-soft)', fontSize: '11px' }}>(optional)</span></label>
+                {Boolean(courseId || question?.courseLink?.courseId) && (
+                  <button
+                    type="button"
+                    onClick={handleUnlinkCourse}
+                    style={{ background: 'none', border: 'none', color: '#ef4444', fontSize: '11px', fontWeight: 600, cursor: 'pointer' }}
+                  >
+                    ✕ Unlink Course
+                  </button>
+                )}
+              </div>
+              <select
+                value={courseId}
+                onChange={(e) => {
+                  setCourseId(e.target.value);
+                  setNodeId('');
+                }}
+              >
+                <option value="">Select Course (Standalone)</option>
+                {(coursesList || []).map((c: any) => (
+                  <option key={c.id || c._id} value={c.id || c._id}>{c.title || c.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="field">
+              <label>Course Node (Lesson / Section)</label>
+              <select
+                value={nodeId}
+                disabled={!courseId || loadingNodes}
+                onChange={(e) => setNodeId(e.target.value)}
+                style={{ fontFamily: 'monospace' }}
+              >
+                <option value="">
+                  {!courseId
+                    ? 'Select Course first'
+                    : loadingNodes
+                    ? 'Loading course structure...'
+                    : 'Select Course Node (Optional)'}
+                </option>
+                {nodeId && !courseNodes.some((n: any) => n.id === nodeId) && (
+                  <option value={nodeId}>
+                    📄 {question?.courseLink?.nodeTitle || 'Current Linked Node'}
+                  </option>
+                )}
+                {courseNodes.map((n: any) => (
+                  <option key={n.id} value={n.id}>
+                    {'\u00A0'.repeat((n.indent || 0) * 4)}
+                    {n.type === 'MODULE' ? '📁 ' : n.type === 'ASSIGNMENT' ? '📝 ' : n.type === 'QUIZ' || n.type === 'TEST' ? '⚡ ' : '📄 '}
+                    {n.title}
+                  </option>
                 ))}
               </select>
             </div>
