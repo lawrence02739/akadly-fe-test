@@ -11,6 +11,8 @@ import CoursesDashboard from "./features/courses/pages/CoursesDashboard";
 import BatchesDashboard from "./features/batches/pages/BatchesDashboard";
 import CourseEditor from "./features/courses/pages/CourseEditor";
 import CourseStructureBuilder from "./features/courses/pages/CourseStructureBuilder";
+import LiveClassActivities from "./features/live-classes/pages/LiveClassActivities";
+import CreateLiveClass from "./features/live-classes/pages/CreateLiveClass";
 import QuizStudioPage from "./features/quizzes/pages/QuizStudioPage";
 import TestStudioPage from "./features/tests/TestStudioPage";
 import { TestDetailsPage } from "./features/tests/pages/TestDetailsPage";
@@ -203,6 +205,30 @@ function App() {
             element={
               <AccessRoute anyOf={["course:read", "course:manage"]}>
                 <BatchesDashboard />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="live-classes"
+            element={
+              <AccessRoute anyOf={["live_class:read", "live_class:manage"]}>
+                <LiveClassActivities />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="live-classes/create"
+            element={
+              <AccessRoute anyOf={["live_class:manage"]}>
+                <CreateLiveClass />
+              </AccessRoute>
+            }
+          />
+          <Route
+            path="live-classes/:id/edit"
+            element={
+              <AccessRoute anyOf={["live_class:manage"]}>
+                <CreateLiveClass />
               </AccessRoute>
             }
           />

@@ -1,5 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { fetchMasterData, createMasterData, fetchInstructors } from '../api/master-data.api';
+import {
+  fetchMasterData,
+  createMasterData,
+  fetchInstructors,
+  fetchSupportStaff,
+} from '../api/master-data.api';
 
 export const useCategories = () => {
   return useQuery({
@@ -39,5 +44,12 @@ export const useInstructors = () => {
   return useQuery({
     queryKey: ['instructors'],
     queryFn: fetchInstructors,
+  });
+};
+
+export const useSupportStaff = () => {
+  return useQuery({
+    queryKey: ['support-staff'],
+    queryFn: fetchSupportStaff,
   });
 };

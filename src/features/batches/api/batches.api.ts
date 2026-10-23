@@ -78,9 +78,32 @@ export async function listBatches(
   }
   const suffix = params.toString();
   const { data } = await api.get(`/batches${suffix ? `?${suffix}` : ""}`);
+  const payload = data?.data;
+  const items: BatchListItem[] = Array.isArray(payload)
+    ? payload
+    : payload?.items || payload?.batches || [];
+
+  const pagination = data?.pagination ?? payload?.pagination ?? {
+    page: query.page ?? 1,
+    pageSize: query.pageSize ?? (items.length || 20),
+    total: items.length,
+    totalPages: Math.max(1, Math.ceil(items.length / (query.pageSize || 20))),
+    hasNext: false,
+    hasPrev: false,
+  };
+
+  const metrics = payload?.metrics ?? {
+    activeBatches: 0,
+    enrolledStudents: 0,
+    waitlistedStudents: 0,
+    startingSoon: 0,
+  };
+
   return {
-    ...data.data,
-    pagination: data.pagination ?? data.data?.pagination,
+    items,
+    batches: items,
+    metrics,
+    pagination,
   };
 }
 

@@ -38,12 +38,40 @@ export default function CourseEditor() {
 
   const handleSave = async () => {
     try {
+      const {
+        coInstructors: _unusedCi,
+        supportStaff: _unusedSs,
+        ...restCourseData
+      } = courseData;
+
+      const payload = {
+        ...restCourseData,
+        instructor:
+          typeof courseData.instructor === 'object' && courseData.instructor
+            ? courseData.instructor?.id || courseData.instructor?._id || ''
+            : courseData.instructor || undefined,
+        coInstructorIds: Array.isArray(courseData.coInstructorIds)
+          ? courseData.coInstructorIds
+          : Array.isArray(courseData.coInstructors)
+            ? courseData.coInstructors.map((c: any) => c.id || c)
+            : [],
+        supportStaffId:
+          courseData.supportStaffId !== undefined
+            ? courseData.supportStaffId
+            : typeof courseData.supportStaff === 'object' && courseData.supportStaff
+              ? courseData.supportStaff.id || courseData.supportStaff._id || null
+              : null,
+      };
+
       if (courseId) {
-        await updateCourse({ id: courseId, dto: courseData });
+        const updated = await updateCourse({ id: courseId, dto: payload });
+        if (updated) {
+          setCourseData(updated);
+        }
         setSavedCourseId(courseId);
         toast.success('Course details saved successfully!');
       } else {
-        const newCourse = await createCourse(courseData);
+        const newCourse = await createCourse(payload);
         setSavedCourseId(newCourse.id);
         setShowSuccessModal(true);
       }

@@ -67,3 +67,30 @@ export const fetchInstructors = async (): Promise<
   }));
 };
 
+export const fetchSupportStaff = async (): Promise<
+  { id: string; name: string; email: string }[]
+> => {
+  const { data } = await api.get('/users?type=user&status=active&pageSize=100');
+  const items = Array.isArray(data?.data?.data)
+    ? data.data.data
+    : Array.isArray(data?.data)
+      ? data.data
+      : Array.isArray(data?.items)
+        ? data.items
+        : [];
+  return items.map(
+    (u: {
+      id?: string;
+      _id?: string;
+      name?: string;
+      fullName?: string;
+      email: string;
+    }) => ({
+      id: u.id || u._id || '',
+      name: u.fullName || u.name || u.email,
+      email: u.email,
+    }),
+  );
+};
+
+

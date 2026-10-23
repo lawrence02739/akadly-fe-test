@@ -1,3 +1,8 @@
+export interface CoursePersonRef {
+  id: string;
+  name: string;
+}
+
 export type CourseNodeType =
   | 'MODULE'
   | 'VIDEO'
