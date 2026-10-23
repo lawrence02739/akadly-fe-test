@@ -12,7 +12,8 @@ export type CourseNodeType =
   | 'CODING'
   | 'ASSIGNMENT'
   | 'FORM'
-  | 'LIVE_CLASS';
+  | 'LIVE_CLASS'
+  | 'QUESTION';
 
 export interface CourseNode {
   id: string;

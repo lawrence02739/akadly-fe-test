@@ -11,6 +11,7 @@ const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; l
   ASSIGNMENT: { icon: ClipboardCheck, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Assignment' },
   LIVE_CLASS: { icon: Radio, color: 'text-rose-600', bgColor: 'bg-rose-50', label: 'Live Class' },
   CODING: { icon: Code2, color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
+  QUESTION: { icon: HelpCircle, color: 'text-teal-600', bgColor: 'bg-teal-50', label: 'Question' },
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

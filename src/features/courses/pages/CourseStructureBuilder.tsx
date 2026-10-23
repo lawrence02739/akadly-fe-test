@@ -31,13 +31,15 @@ const TYPE_ICONS: Record<string, any> = {
   VIDEO: Video, AUDIO: Headphones, PDF: FileText, FILE: File,
   TEXT: Type, HEADING: Heading, LINK: LinkIcon, QUIZ: HelpCircle,
   TEST: TestTube, CODING: Code, ASSIGNMENT: CheckSquare,
-  FORM: ListOrdered, LIVE_CLASS: MonitorPlay,
+  FORM: ListOrdered, LIVE_CLASS: MonitorPlay, QUESTION: HelpCircle,
 };
 const TYPE_COLORS: Record<string, string> = {
   VIDEO: 'bg-blue-50 text-blue-600', AUDIO: 'bg-purple-50 text-purple-600',
   PDF: 'bg-red-50 text-red-600', FILE: 'bg-slate-100 text-slate-600',
   TEXT: 'bg-emerald-50 text-emerald-600', HEADING: 'bg-amber-50 text-amber-600',
-  LINK: 'bg-indigo-50 text-indigo-600',
+  LINK: 'bg-indigo-50 text-indigo-600', QUESTION: 'bg-teal-50 text-teal-600',
+  QUIZ: 'bg-orange-50 text-orange-600', TEST: 'bg-blue-50 text-blue-600',
+  ASSIGNMENT: 'bg-amber-50 text-amber-600',
 };
 
 export default function CourseStructureBuilder() {
