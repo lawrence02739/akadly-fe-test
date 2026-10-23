@@ -25,6 +25,7 @@ const TYPE_CONFIG: Record<string, { icon: any; color: string; bgColor: string; l
   ASSIGNMENT: { icon: ClipboardCheck, color: 'text-amber-600', bgColor: 'bg-amber-50', label: 'Assignment' },
   LIVE_CLASS: { icon: Radio, color: 'text-rose-600', bgColor: 'bg-rose-50', label: 'Live Class' },
   CODING: { icon: Code2, color: 'text-indigo-600', bgColor: 'bg-indigo-50', label: 'Coding' },
+  QUESTION: { icon: HelpCircle, color: 'text-teal-600', bgColor: 'bg-teal-50', label: 'Question' },
 };
 
 // ─── Shared Upload UI ─────────────────────────────────────────────────────────
@@ -587,6 +588,29 @@ export default function NodeContentEditor({
             onSave={handleSaveContent}
             isSaving={isSaving}
           />
+        )}
+
+        {item.type === 'QUESTION' && (
+          <div className="space-y-4">
+            <div className="p-4 border border-slate-200 rounded-lg bg-slate-50 flex items-center justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-800">{item.title}</h3>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {item.content?.type ? `Type: ${item.content.type}` : 'Question Bank Item'}
+                  {item.content?.mark !== undefined ? ` • ${item.content.mark} Mark` : ''}
+                  {item.content?.difficulty ? ` • ${item.content.difficulty}` : ''}
+                </p>
+              </div>
+            </div>
+            <a
+              href="/partner/question-bank"
+              target="_blank"
+              rel="noreferrer"
+              className="flex items-center justify-center gap-2 w-full py-2 bg-slate-100 text-slate-700 rounded-lg text-sm font-semibold hover:bg-slate-200 transition-colors"
+            >
+              Open in Question Bank <ExternalLink className="w-4 h-4" />
+            </a>
+          </div>
         )}
 
         {item.type === 'LIVE_CLASS' && (
