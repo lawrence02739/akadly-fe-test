@@ -3,11 +3,13 @@ import { X, Image as ImageIcon, ChevronLeft, Sparkles, Undo2, Redo2, Bold, Itali
 import { useNavigate } from 'react-router-dom';
 import api from '../../../shared/api/axios';
 import toast from 'react-hot-toast';
-import { useInstructors } from '../hooks/useMasterData';
+import { useInstructors, useSupportStaff } from '../hooks/useMasterData';
+import MultiSelect from '../../../shared/components/MultiSelect';
 
 export default function CreateCourse() {
   const navigate = useNavigate();
   const { data: instructors } = useInstructors();
+  const { data: supportStaffUsers } = useSupportStaff();
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -16,6 +18,8 @@ export default function CreateCourse() {
     category: 'Design & Development',
     tags: [] as string[],
     instructor: '',
+    coInstructorIds: [] as string[],
+    supportStaffId: '',
     pricingPlan: 'One-time plan',
     discountedPrice: '',
     price: '',
@@ -29,13 +33,24 @@ export default function CreateCourse() {
     try {
       await api.post('/courses', {
         ...formData,
+        instructor: formData.instructor || undefined,
+        coInstructorIds:
+          formData.coInstructorIds.length > 0
+            ? formData.coInstructorIds
+            : undefined,
+        supportStaffId: formData.supportStaffId || null,
         price: formData.price ? Number(formData.price) : undefined,
-        discountedPrice: formData.discountedPrice ? Number(formData.discountedPrice) : undefined,
+        discountedPrice: formData.discountedPrice
+          ? Number(formData.discountedPrice)
+          : undefined,
         status: 'PUBLISHED',
       });
       navigate('/partner/courses');
     } catch (err) {
-      toast.error((err as { response?: { data?: { message?: string } } })?.response?.data?.message ?? 'Failed to create course');
+      toast.error(
+        (err as { response?: { data?: { message?: string } } })?.response?.data
+          ?.message ?? 'Failed to create course',
+      );
     }
   };
 
@@ -228,6 +243,54 @@ export default function CreateCourse() {
                   {instructors?.map((inst: any) => (
                     <option key={inst.id} value={inst.id}>
                       {inst.name || inst.email} {inst.specialty ? `(${inst.specialty})` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Co-instructors and Support staff */}
+            <div className="grid grid-cols-2 gap-6">
+              <div>
+                <MultiSelect
+                  label="Co-instructors"
+                  items={
+                    instructors
+                      ?.filter((inst: any) => inst.id !== formData.instructor)
+                      .map((inst: any) => ({
+                        id: inst.id,
+                        name: `${inst.name || inst.email}${inst.specialty ? ` (${inst.specialty})` : ''}`,
+                      })) || []
+                  }
+                  value={formData.coInstructorIds}
+                  onChange={(ids) =>
+                    setFormData({ ...formData, coInstructorIds: ids })
+                  }
+                  placeholder="Select co-instructors..."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-slate-900 mb-2">
+                  Support Staff
+                </label>
+                <select
+                  value={formData.supportStaffId}
+                  onChange={(e) =>
+                    setFormData({ ...formData, supportStaffId: e.target.value })
+                  }
+                  className="w-full px-4 py-3 border border-slate-200 rounded-lg focus:ring-2 focus:ring-teal-700 focus:border-teal-700 transition-colors bg-white appearance-none"
+                  style={{
+                    backgroundImage:
+                      'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' fill=\'none\' viewBox=\'0 0 24 24\' stroke=\'%236b7280\'%3E%3Cpath stroke-linecap=\'round\' stroke-linejoin=\'round\' stroke-width=\'2\' d=\'M19 9l-7 7-7-7\'%3E%3C/path%3E%3C/svg%3E")',
+                    backgroundPosition: 'right 1rem center',
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '1.25em 1.25em',
+                  }}
+                >
+                  <option value="">Select Support Staff</option>
+                  {supportStaffUsers?.map((staff) => (
+                    <option key={staff.id} value={staff.id}>
+                      {staff.name || staff.email}
                     </option>
                   ))}
                 </select>

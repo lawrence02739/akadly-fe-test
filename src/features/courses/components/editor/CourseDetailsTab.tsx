@@ -3,7 +3,15 @@ import { useUpload } from '../../hooks/useUpload';
 import { toast } from 'react-hot-toast';
 import { useState } from 'react';
 import CreatableDropdown from '../../../../shared/components/CreatableDropdown';
-import { useCategories, useTags, useCreateCategory, useCreateTag, useInstructors } from '../../hooks/useMasterData';
+import MultiSelect from '../../../../shared/components/MultiSelect';
+import {
+  useCategories,
+  useTags,
+  useCreateCategory,
+  useCreateTag,
+  useInstructors,
+  useSupportStaff,
+} from '../../hooks/useMasterData';
 import { MediaPickerModal } from '../../../media-library/components/MediaPickerModal';
 import type { MediaAsset } from '../../../media-library/types';
 
@@ -15,6 +23,7 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
   const { data: categories } = useCategories();
   const { data: tagsList } = useTags();
   const { data: instructors } = useInstructors();
+  const { data: supportStaffUsers } = useSupportStaff();
   const { mutateAsync: createCategory, isPending: isCreatingCategory } = useCreateCategory();
   const { mutateAsync: createTag, isPending: isCreatingTag } = useCreateTag();
 
@@ -130,6 +139,78 @@ export default function CourseDetailsTab({ courseData, onChange, onSave, isSavin
                   <option key={inst.id} value={inst.id}>
                     {inst.name || inst.email}{' '}
                     {inst.specialty ? `(${inst.specialty})` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Co-instructors and Support Staff */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <MultiSelect
+                label="Co-instructors"
+                items={
+                  instructors
+                    ?.filter(
+                      (inst: any) =>
+                        inst.id !==
+                        (typeof courseData.instructor === 'object'
+                          ? courseData.instructor?.id ||
+                            courseData.instructor?._id ||
+                            ''
+                          : courseData.instructor || ''),
+                    )
+                    .map((inst: any) => ({
+                      id: inst.id,
+                      name: `${inst.name || inst.email}${inst.specialty ? ` (${inst.specialty})` : ''}`,
+                    })) || []
+                }
+                value={
+                  Array.isArray(courseData.coInstructorIds)
+                    ? courseData.coInstructorIds
+                    : Array.isArray(courseData.coInstructors)
+                      ? courseData.coInstructors.map((c: any) => c.id || c)
+                      : []
+                }
+                onChange={(ids) => {
+                  onChange('coInstructorIds', ids);
+                  const mapped = ids.map((id) => ({
+                    id,
+                    name: instructors?.find((i: any) => i.id === id)?.name || '',
+                  }));
+                  onChange('coInstructors', mapped);
+                }}
+                placeholder="Select co-instructors..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-slate-700 mb-1">
+                Support Staff
+              </label>
+              <select
+                value={
+                  typeof courseData.supportStaff === 'object' && courseData.supportStaff
+                    ? courseData.supportStaff?.id ||
+                      courseData.supportStaff?._id ||
+                      ''
+                    : courseData.supportStaffId || ''
+                }
+                onChange={(e) => {
+                  const val = e.target.value;
+                  onChange('supportStaffId', val || null);
+                  const found = supportStaffUsers?.find((s) => s.id === val);
+                  onChange(
+                    'supportStaff',
+                    found ? { id: found.id, name: found.name } : null,
+                  );
+                }}
+                className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+              >
+                <option value="">Select Support Staff</option>
+                {supportStaffUsers?.map((staff) => (
+                  <option key={staff.id} value={staff.id}>
+                    {staff.name || staff.email}
                   </option>
                 ))}
               </select>

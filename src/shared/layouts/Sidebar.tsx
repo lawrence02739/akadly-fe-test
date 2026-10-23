@@ -26,6 +26,7 @@ import {
   Bell,
   Presentation,
   Film,
+  Video,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useSelector } from "react-redux";
@@ -77,6 +78,12 @@ const navItems = [
     label: "Batches & Cohorts",
     path: "/partner/batches",
     permissions: ["course:read", "course:manage"],
+  },
+  {
+    icon: Video,
+    label: "Live Classes",
+    path: "/partner/live-classes",
+    permissions: ["live_class:read", "live_class:manage"],
   },
   {
     icon: FileText,
