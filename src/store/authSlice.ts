@@ -10,6 +10,10 @@ export interface AuthUser {
   paymentStatus?: 'not_required' | 'pending' | 'paid' | 'failed' | 'overdue' | 'refunded';
   dueDate?: string | null;
   isReadOnly?: boolean;
+  onboarding?: {
+    status: 'PENDING' | 'IN_PROGRESS' | 'COMPLETED';
+    currentStep: 'ACCOUNT_PLAN' | 'BRANDING' | 'CHECKOUT' | 'LAUNCH';
+  };
 }
 
 interface AuthState {

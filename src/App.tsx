@@ -50,6 +50,8 @@ import VerifyEmail from "./features/auth/pages/VerifyEmail";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
 import ResetPassword from "./features/auth/pages/ResetPassword";
 import AuthCallback from "./features/auth/pages/AuthCallback";
+import { OnboardingPage } from "./features/onboarding/pages/OnboardingPage";
+import { OnboardingGate } from "./features/onboarding/components/OnboardingGate";
 import WorkspacePage from "./shared/pages/WorkspacePage";
 import UsersPage from "./features/users/pages/UsersPage";
 import InstructorsPage from "./features/instructors/pages/InstructorsPage";
@@ -120,6 +122,14 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route
+          path="/onboarding"
+          element={
+            <OnboardingGate>
+              <OnboardingPage />
+            </OnboardingGate>
+          }
+        />
+        <Route
           path="/admin/team/invitations/accept"
           element={<AdminTeamInvitationAccept />}
         />
@@ -171,7 +181,14 @@ function App() {
         />
 
         {/* Protected Routes (Static for now) */}
-        <Route path="/partner" element={<DashboardLayout />}>
+        <Route
+          path="/partner"
+          element={
+            <OnboardingGate>
+              <DashboardLayout />
+            </OnboardingGate>
+          }
+        >
           <Route
             path="home"
             element={

@@ -1,18 +1,29 @@
 import { API_BASE_URL } from '../../../shared/api/config';
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Eye, EyeOff } from 'lucide-react';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
+import { Eye, EyeOff, AlertCircle, CheckCircle2 } from 'lucide-react';
 import AuthLayout from '../../../shared/layouts/AuthLayout';
 import api from '../../../shared/api/axios';
 import { useDispatch } from 'react-redux';
 import { setAuth } from '../../../store/authSlice';
 
+const GOOGLE_ERROR_MESSAGES: Record<string, string> = {
+  NO_WORKSPACE: 'No academy workspace is associated with this Google account. Please contact your administrator.',
+  WORKSPACE_UNAVAILABLE: 'This workspace is currently suspended or inactive. Please contact support.',
+  GOOGLE_EMAIL_UNVERIFIED: 'Your Google email address is unverified. Please verify your email with Google and try again.',
+};
+
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
+  const [searchParams] = useSearchParams();
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const urlErrorCode = searchParams.get('error');
+  const urlErrorMessage = urlErrorCode ? (GOOGLE_ERROR_MESSAGES[urlErrorCode] || 'Authentication failed. Please try again.') : null;
+  const isOnboardingComplete = searchParams.get('onboarding') === 'complete';
 
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -31,11 +42,17 @@ export default function Login() {
       const user = data?.data?.user || data?.user;
       if (user) {
         dispatch(setAuth({ user }));
+
+        if (user.isOwner && user.onboarding?.status && user.onboarding.status !== 'COMPLETED') {
+          navigate('/onboarding');
+          return;
+        }
       }
 
       navigate('/partner/courses');
-    } catch (err: any) {
-      const msg = err.response?.data?.message || 'Invalid email or password.';
+    } catch (err: unknown) {
+      const errResponse = (err as { response?: { data?: { message?: string | string[] } } })?.response?.data;
+      const msg = errResponse?.message || 'Invalid email or password.';
       setError(Array.isArray(msg) ? msg.join(', ') : msg);
     } finally {
       setIsLoading(false);
@@ -46,7 +63,24 @@ export default function Login() {
     <AuthLayout>
       <div className="w-full">
         <h1 className="text-[32px] font-bold text-slate-900 tracking-tight mb-2">Welcome Back</h1>
-        <p className="text-slate-500 mb-8">Please enter your details to sign in.</p>
+        <p className="text-slate-500 mb-6">Please enter your details to sign in.</p>
+
+        {/* URL Param Alerts */}
+        {urlErrorMessage && (
+          <div className="mb-6 p-4 text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3 animate-in fade-in">
+            <AlertCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+            <div className="flex-1 font-medium">{urlErrorMessage}</div>
+          </div>
+        )}
+
+        {isOnboardingComplete && (
+          <div className="mb-6 p-4 text-sm text-emerald-800 bg-emerald-50 border border-emerald-200 rounded-xl flex items-start gap-3 animate-in fade-in">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0 mt-0.5" />
+            <div className="flex-1 font-medium">
+              🎉 Your academy onboarding is complete! Sign in with your password to access your partner dashboard.
+            </div>
+          </div>
+        )}
 
         {/* Google Auth Button */}
         <button

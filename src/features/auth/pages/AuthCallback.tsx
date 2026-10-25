@@ -21,11 +21,19 @@ export default function AuthCallback() {
 
         if (user && mounted) {
           dispatch(setAuth({ user }));
-          navigate('/partner/courses', { replace: true });
+          if (
+            user.isOwner &&
+            user.onboarding?.status &&
+            user.onboarding.status !== 'COMPLETED'
+          ) {
+            navigate('/onboarding', { replace: true });
+          } else {
+            navigate('/partner/courses', { replace: true });
+          }
         } else if (mounted) {
           navigate('/login', { replace: true });
         }
-      } catch (err) {
+      } catch {
         if (mounted) navigate('/login', { replace: true });
       }
     };
